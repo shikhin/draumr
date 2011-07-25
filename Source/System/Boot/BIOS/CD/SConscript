@@ -1,0 +1,42 @@
+# -*- python -*-
+
+# Draumr build system
+#
+# Copyright (c) Shikhin Sethi
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+import os
+
+Import("env", "sys_env")
+
+
+src = ["Src/Screen.asm",
+       "Src/Abort.asm",
+       "Src/Disk/Disk.asm",
+       "Src/Disk/ISO9660.asm",
+       "Link.ld"]
+
+
+# A target for building the Stage 1 binary.
+stage1obj = sys_env.Object("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/CD/Link.ld")
+stage1 = sys_env.Program("Stage1", "Stage1", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/CD/Link.ld")
+
+Depends(stage1obj, src)
+Depends(stage1, stage1obj)
+
+# Save the stage 1 target in the environment as we will need it later.
+env["CD_STAGE1"] = stage1
+

@@ -1,0 +1,11 @@
+*.iso
+*.o
+
+.bochsrc
+.sconsign.dblite
+debugger.out
+bochsout.txt
+*.swp
+*.pyc
+Source/System/Boot/BIOS/CD/Stage1
+
