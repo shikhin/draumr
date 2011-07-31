@@ -8,4 +8,6 @@ bochsout.txt
 *.swp
 *.pyc
 Source/System/Boot/BIOS/CD/Stage1
+Source/System/Boot/BIOS/PXE/Stage1
 
+Test.sh

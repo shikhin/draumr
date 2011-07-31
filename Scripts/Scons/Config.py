@@ -21,11 +21,13 @@ from SCons.Errors import StopError
 class Config :
     params = {
         "build" : ["debug", "release"],
+        "target" : ["iso", "pxe", "all"],
     }
 
     def __init__(self) :
         self.arch = "i686"
         self.build = "debug"
+        self.target = "iso"
 	
     def get_arch(self) :
         return self.arch
@@ -41,6 +43,7 @@ class Config :
                 raise StopError("Invalid value for %s parameter. Allowed values: %s." % (k, ", ".join(self.params[k])))
 
             if k == "build" : self.build = v
+            if k == "target" : self.target = v
 
     def _validate(self, key, value) :
         if not key in self.params :

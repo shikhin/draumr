@@ -1,8 +1,6 @@
-# -*- python -*-
-
 # Draumr build system
 #
-# Copyright (c) 2011 Shikhin Sethi
+# Copyright (c) 2011 Zoltan Kovacs, Shikhin Sethi
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +16,29 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-Import("env")
+import os
+import shutil
+import tempfile
+import glob
 
-# Setup system specific environment
-sys_env = env.Clone()
-sys_env["CPPPATH"] = ["#Source/System/Include", "Include"]
-sys_env["CPPFLAGS"] += ["-std=c99"]
-sys_env["LIBPATH"] = ["#Source/System/Lib"]
-sys_env["ASFLAGS"] += ["-felf"]
+from SCons.Builder import Builder
+from SCons.Action import Action
+from Isobuilder import _path
 
-SConscript(dirs=["Boot/BIOS/CD", "Boot/BIOS/PXE"], exports=["env", "sys_env"])
+def _pxe_builder(target, source, env) :
+    # Create a temporary directory to build the ISO image structure.
+    if not os.path.exists('/tftpboot'):
+        raise StopError("The /tftpboot directory, which would contain the PXE files, isn't present.")
+
+    # Copy the kernel to the image.
+    s = "/tftpboot"
+    
+    stage1 = str(env["PXE_STAGE1"][0])
+    bios = "Source/System/Boot/BIOS/CD/BIOS"
+    shutil.copy(stage1, s)
+    shutil.copy(bios, s)
+
+    return 0
+
+PXEBuilder = Builder(action = Action(_pxe_builder, None))
+

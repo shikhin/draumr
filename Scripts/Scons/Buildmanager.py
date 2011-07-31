@@ -19,7 +19,7 @@
 import os
 
 from Isobuilder import ISOBuilder
-
+from Pxebuilder import PXEBuilder
 from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
@@ -38,6 +38,7 @@ class BuildManager :
         env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
         env["LINK"] = "ld" 
         env["BUILDERS"]["ISO"] = ISOBuilder
+        env["BUILDERS"]["PXE"] = PXEBuilder
         
         # Add build specific flags
         b = self.config.get_build()

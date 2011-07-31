@@ -39,7 +39,7 @@ def _iso_builder(target, source, env) :
     shutil.copy(stage1, s)
     shutil.copy(bios, s)
 
-    os.system("mkisofs -b %s -boot-info-table -boot-load-size 4 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
+    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 4 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
 
     # Clean up our mess. :)
     shutil.rmtree(d)

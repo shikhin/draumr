@@ -36,9 +36,21 @@ env = bldmgr.create_env()
 # Run through the SConscript files.
 SConscript(dirs=["Source"], exports=["env"])
 
-# Create a bootable ISO image from the system.
-iso = env.ISO("Draumr.iso", None)
-Depends(iso, [env["CD_STAGE1"]])
-Clean(env["CD_STAGE1"], iso)
+if cfg.target == "all":
+    iso = env.ISO("Draumr.iso", None)
+    Depends(iso, [env["CD_STAGE1"]])
+   
+    pxe = env.PXE("/tftpboot/Stage1", None) 
+    Depends(pxe, [env["PXE_STAGE1"]])
 
-Default(iso)
+    Default([iso, pxe])
+
+elif cfg.target == "iso" :
+    iso = env.ISO("Draumr.iso", None)
+    Depends(iso, [env["CD_STAGE1"]])
+    Default(iso)
+
+elif cfg.target == "pxe" :
+    pxe = env.PXE("/tftpboot/Stage1", None)
+    Depends(pxe, [env["PXE_STAGE1"]])
+    Default(pxe)

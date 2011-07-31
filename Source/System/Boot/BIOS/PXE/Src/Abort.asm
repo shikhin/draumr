@@ -17,27 +17,25 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-SECTION .text
+SECTION .base
 
 
 ; Function for aborting boot.
-; es:si           Should contain the error message to print. 
+; es:si           Should contain the error message to print. If zero, basic error checking.
 ; ax              Should contain the error code for the "type of beep":
-;                 a) If ax is zero, only one long beep.
-; TODO: Need to add PXE errors.
+;                 a) If es:si is zero, OR if ax is zero, only one long beep.
+; TODO: Need to add error code for disk access errors.
 AbortBoot:
     cli
-    
-    ; Print error message on to screen.
-    call Print
+    mov bx, es
+    test bx, bx
+    jnz .Advanced
 
-    ; If AX is zero, use basic method.
-    test ax, ax
-    jz .Base
+    test si, si
+    jnz .Advanced
 
-    ; Test which beep to produce.
-    jmp .Base
 
+; Do the basic error checking. Ignore AX.
 .Base: 
     mov al, 10110110b          
 
@@ -65,6 +63,7 @@ AbortBoot:
    
     jmp .Exit
 
+
 .Exit:
     sti
 .Halt:
@@ -72,3 +71,18 @@ AbortBoot:
     jmp .Halt
 
 
+; Advanced error checking goes above the first 512 bytes!
+SECTION .text
+
+
+; Do advanced error checking. Use AX.
+.Advanced:    
+    ; Print error message on to screen.
+    call Print
+
+    ; If AX is zero, use basic method.
+    test ax, ax
+    jz .Base
+
+    ; Test which beep to produce.
+    jmp .Base
