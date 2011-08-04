@@ -19,10 +19,20 @@
 
 SECTION .data
 
-NoPXE db "ERROR: Not booted from PXE, or invalid PXE.", nl, 0
+NoPXE       db    "ERROR: Not booted from PXE, or invalid PXE.", nl, 0
+PXEAPIError db    "ERROR: Error occured while trying to access PXE API.", nl, 0 
+SIP         dd 0
+GIP         dd 0
+
+ALIGN 4
 PXEAPI:
     .Offset    dw 0                   ; Offset of PXE API.
     .Segment   dw 0                   ; Segment of PXE API.
+
+%define GET_CACHED_INFO 0x71
+%define TFTP_OPEN       0x20
+%define TFTP_CLOSE      0x21
+%define TFTP_READ       0x22
 
 SECTION .text
 
@@ -37,7 +47,7 @@ UsePXEAPI:
     push bx
     
     call far [PXEAPI]
-   
+    
     add sp, 6                         ; Clean up the stack.
     ret
 
@@ -76,8 +86,14 @@ InitPXE:
     jg .PXE                           ; If greater; use !PXE, else be content with PXENV+.
 
 .PXENV:
-    mov eax, [es:bx + 0x0A]
-    mov [PXEAPI], eax                 ; Save the API address for future use.
+    mov ecx, [es:bx + 0x0A]
+
+    push ds
+    xor ax, ax
+    mov ds, ax
+    mov [ds:PXEAPI], ecx              ; Save the API address for future use.
+    pop ds
+
     jmp .Return
 
 .PXE:
@@ -112,9 +128,14 @@ InitPXE:
 
     pop bx                            ; Get BX back - by poping it from the stack.
 
-    mov eax, [es:bx + 0x10]           ; Get the address of the API.
-    mov [PXEAPI], eax                 ; Save the API for future use.
+    mov ecx, [es:bx + 0x10]           ; Get the address of the API.
+    push ds
 
+    xor ax, ax
+    mov ds, ax
+    mov [ds:PXEAPI], ecx              ; Save the API for future use.
+
+    pop ds
     ; Restore ES and BX.
     pop bx
     pop es
@@ -133,8 +154,9 @@ InitPXE:
 .NoPXE:
     ; Mov the address of the string into SI, and zero out AX, before aborting boot.
     xor ax, ax
+    mov ds, ax                        ; Clear out ES and DS.
     mov es, ax
-    
+ 
     mov si, NoPXE
     call AbortBoot   
 

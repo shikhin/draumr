@@ -27,6 +27,7 @@ src = ["Src/Main.asm",
        "Src/Screen.asm",
        "Src/Abort.asm",
        "Src/PXE/PXE.asm",
+       "Src/PXE/Disk.asm",
        "Link.ld"]
 
 # A target for building the Stage 1 binary.

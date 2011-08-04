@@ -99,8 +99,9 @@ ExtMain:
     mov di, 0x9000
     call ReadFromDiskM
 
-    jmp $ 
-
+.Die:
+    hlt
+    jmp .Die
 
 SECTION .pad
 ; Define the DRAUMRSS signature - so that it can be used to check sanity of boot file.

@@ -34,8 +34,24 @@ Startup:
 %include "Source/System/Boot/BIOS/PXE/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/PXE/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/PXE/Src/PXE/PXE.asm"
+%include "Source/System/Boot/BIOS/PXE/Src/PXE/Disk.asm"
+
+SECTION .data
 
 Finish db "Finish", nl, 0
+
+; Prepare the PXENV_GET_CACHED_INFO structure.
+PXENV_GET_CACHED_INFO:
+    .Status       dw 0
+    .PacketType   dw 2
+    .BufferSize   dw 0
+       .BufferOff dw 0                ; A zero over here means it should return the address of it's own buffer.
+       .BufferSeg dw 0
+    .BufferLimit  dw 0
+
+BIOS db "BIOS"
+
+SECTION .text
 
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.
@@ -54,11 +70,48 @@ Main:
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+.GetCachedInfo:
+    mov di, PXENV_GET_CACHED_INFO
+    mov bx, GET_CACHED_INFO
     
-    mov si, Finish
-    call Print
+    call UsePXEAPI                    ; Ask for the cached info.
+    
+    or ax, [PXENV_GET_CACHED_INFO]    ; Get the status into BX.
+    test ax, ax
+    jnz .Error
+
+    movzx esi, word [PXENV_GET_CACHED_INFO.BufferOff]
+    add esi, 20                       ; Put the source offset into ESI.
+       
+    xor ax, ax
+    mov es, ax
+    mov edi, SIP                      ; And address of destination in EDI.
+    
+    mov ax, [PXENV_GET_CACHED_INFO.BufferSeg]
+    mov ds, ax                        ; And the segment of source into DS.
+    movsd                             ; Save SIP somewhere.
+    movsd
+ 
+    xor ax, ax                        ; Set all the segment registers to 0x0000.
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov di, 0x9000
+    mov si, BIOS
+    mov ecx, 4
+    call ReadFile
 
 .Die:
     hlt
     jmp .Die
 
+.Error:
+    xor ax, ax
+    mov es, ax
+    mov ds, ax
+
+    mov si, PXEAPIError
+    call AbortBoot
