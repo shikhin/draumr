@@ -22,7 +22,7 @@ SECTIONS
         *(.data)                                                                                                                                                                                                            
     }
 
-    .pad 0x83F8 :
+    .pad 0x8BF8 :
     {
         pad = .;
         *(.pad)

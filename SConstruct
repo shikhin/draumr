@@ -34,23 +34,28 @@ bldmgr = BuildManager(cfg)
 env = bldmgr.create_env()
 
 # Run through the SConscript files.
-SConscript(dirs=["Source"], exports=["env"])
+Utils = SConscript(dirs=["Utilities"], exports=["env"])
+Source = SConscript(dirs=["Source"], exports=["env"])
+Depends(Source, Utils)
 
+image = env.Image("BootImage.comp", None)
 if cfg.target == "all":
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"]])
-   
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], image])
+
     pxe = env.PXE("/tftpboot/Stage1", None) 
-    Depends(pxe, [env["PXE_STAGE1"]])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
 
     Default([iso, pxe])
 
 elif cfg.target == "iso" :
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"]])
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], image])
+     
     Default(iso)
 
 elif cfg.target == "pxe" :
     pxe = env.PXE("/tftpboot/Stage1", None)
-    Depends(pxe, [env["PXE_STAGE1"]])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
+
     Default(pxe)

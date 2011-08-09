@@ -73,7 +73,20 @@ Main:
 times 510-($-$$) db 0
 dw 0xAA55
 
+SECTION .data
+
+; Abort boot if can't open file.
+ErrorFile db "ERROR: Error occured while trying to open file.", nl, 0
+
+; Or file is incorrect.
+ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", nl, 0
+
+Finish db "Finished!", nl, 0
+
+
 SECTION .text
+%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+
 ExtMain:
     push es
     mov ax, 0xB800                    
@@ -90,18 +103,96 @@ ExtMain:
     call FindBootFiles
 
 .LoadCommonBIOS:
-    mov ebx, [BIOS.LBA]
-    mov ecx, [BIOS.Size]
+    xor ax, ax                        ; Open File 0, or common BIOS file.
+    call OpenFile                     ; Open the File.
+    jc .Error
 
+    ; ECX contains size of file we are opening.
+    push ecx
+    mov ecx, 0x800                    ; Read only 0x800 bytes.
+
+    mov edi, 0x9000
+    call ReadFile                     ; Read the entire file.
+    
+    cmp ecx, 0x800                    ; Compare bytes read with to read bytes.
+    jb .Error2                        ; Error occured (if less).
+
+.CheckCommonBIOS1:
+    cmp dword [0x9000], "BIOS"        ; Check the signature.
+    jne .Error2
+
+    movzx ecx, word [0x9000 + 8]      ; Get the end of the BSS section in ECX.
+    sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x7FF
-    shr ecx, 11
+    shr ecx, 11                       ; Here we have the number of sectors of the file (according to the header).
+  
+    pop edx
+    push edx
 
-    mov di, 0x9000
-    call ReadFromDiskM
+    add edx, 0x7FF
+    shr edx, 11                       ; Here we have the number of sectors of the file (according to the fs).
+  
+    cmp edx, ecx
+    jne .Error2                       ; If both aren't similar error.
+
+.LoadRestFile:
+    add edi, 0x9800
+    pop ecx
+    mov edx, ecx
+    cmp ecx, 0x800
+    jb .Finish
+
+    sub ecx, 0x800                    ; Read the rest 0x800 bytes.
+    
+    call ReadFile                     ; Read the rest of the file.
+    
+    cmp ecx, edx                      ; Compare bytes read to bytes requested.
+    jb .Error2                        ; If below: Error.
+
+.Finish:
+    call CloseFile                    ; And then close the file.
+
+.CheckCommonBIOS2:
+    mov ecx, [0x9000 + 10]            ; Get the end of the file in ECX.
+    sub ecx, 0x9000 + 18              ; Subtract 0x9000 (address of start) + 18 (size of header) from it, to get the size.
+
+    mov esi, 0x9000 + 18              ; Calculate CRC from above byte 18.    
+    mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
+    
+    call CRC32
+    
+    not eax                           ; Inverse the bits to get the CRC value.
+    cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
+    jne .Error2                       ; Not equal? ERROR: Abort boot.
+
+.ZeroBSS:
+    mov esi, 0x9000 
+    movzx edi, word [esi + 6]         ; Move the start of BSS section into EDI.
+   
+    movzx ecx, word [esi + 8]
+    sub ecx, edi                      ; Calculate the length, and store it in ECX.
+
+    xor eax, eax                      ; Zero out EAX, since we want to clear the region.
+    rep stosb                         ; Clear out the BSS section.
+ 
+.JmpToBIOS:
+    ; TODO: Jump to the common BIOS specification here.
+    mov si, Finish
+    call Print
 
 .Die:
     hlt
     jmp .Die
+
+.Error:
+    xor ax, ax
+    mov si, ErrorFile
+    call AbortBoot
+
+.Error2:
+    xor ax, ax
+    mov si, ErrorBIOSFile
+    call AbortBoot
 
 SECTION .pad
 ; Define the DRAUMRSS signature - so that it can be used to check sanity of boot file.

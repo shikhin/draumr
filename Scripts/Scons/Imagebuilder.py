@@ -23,28 +23,12 @@ import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
+from Isobuilder import _path
 
-def _path(p) :
-    return os.path.sep.join(p)
-
-def _iso_builder(target, source, env) :
-    # Create a temporary directory to build the ISO image structure.
-    d = tempfile.mkdtemp()
-
-    # Copy the kernel to the image.
-    s = _path([d, "Boot"])
-    os.makedirs(s)
-    stage1 = str(env["CD_STAGE1"][0])
-    bios = str(env["BIOS"][0])
-    shutil.copy(stage1, s)
-    shutil.copy(bios, s)
-
-    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 8 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
-
-    # Clean up our mess. :)
-    shutil.rmtree(d)
+def _image_builder(target, source, env) :
+    os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
 
     return 0
 
-ISOBuilder = Builder(action = Action(_iso_builder, None))
+ImageBuilder = Builder(action = Action(_image_builder, None))
 

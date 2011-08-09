@@ -17,6 +17,7 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+
 SECTION .text
 
 
@@ -56,6 +57,8 @@ FindPVD:
     ret
 
 
+SECTION .data
+
 ; Some error strings.
 FilesNotFound     db "ERROR: Important boot files are not present.", nl, 0
 
@@ -71,6 +74,7 @@ Boot:
 BIOS:
     .LBA          dd 0                ; The LBA of the BIOS file.
     .Size         dd 0                ; The Size of the BIOS file in bytes.
+
 
 ; Is responsible for finding boot files.
 ;     @rc
@@ -181,4 +185,90 @@ FindBootFiles:
 
 .Return:
     popad
+    ret
+
+SECTION .data
+
+Open:
+    .IsOpen db 0                      ; Set to 1 is a file is open.
+    .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
+    .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
+    .Read   dd 0                      ; Last 'read' bytes.
+
+; Opens a file to be read from.
+; @al             Contains the code number of the file to open.
+;                 0 -> Common BIOS File.
+;     @rc 
+;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
+;                 @ecx    The size of the file you want to open.
+OpenFile:
+    pushad
+    
+    mov bl, [Open]
+    test bl, bl
+    jnz .Error
+
+    mov byte [Open], 1
+
+    cmp al, 0
+    jne .Error                        ; Currently you can only open the Common BIOS FILE!
+   
+.BIOS:
+    mov eax, [BIOS.LBA]
+    mov [Open.LBA], eax
+
+    mov eax, [BIOS.Size]
+    mov [Open.Size], eax
+
+.Return:
+    popad
+    mov ecx, [Open.Size] 
+    ret
+
+.Error:
+    stc 
+    popad
+    ret
+
+
+; Reads the 'next LBA' of the file currently opened.
+; @edi            The destination address of where to read the file to.
+; @ecx            The number of bytes to read.
+;     @rc
+;                 Aborts boot if any error occured (during read, that is).
+;                 @ecx    The number of bytes read -> would only be less than requested if EOF reached.
+ReadFile:
+    pushad
+
+    cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
+    mov [Open.Read], ecx              ; We can always read ONLY ECX bytes.
+
+    jbe .Cont
+  
+    mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
+
+.Cont:
+    sub [Open.Size], ecx              ; Subtract bytes read from bytes we can read.
+
+.Read:
+    mov ebx, [Open.LBA]               ; Get the LBA to read in EBX.
+    add ecx, 0x7FF
+    shr ecx, 11                       ; And the number of sectors to read in ECX.
+
+    or edi, 0x80000000                ; Do advanced error checking.
+
+    mov edx, ebx                      ; Get the LBA in EDX.
+    add edx, ecx                      ; Add the sectors reading to LBA.
+    mov [Open.LBA], edx               ; Store the new LBA.
+    
+    call ReadFromDiskM
+
+.Return:
+    popad
+    mov ecx, [Open.Read]              ; Save the Bytes Read number.
+    ret
+
+; Closes the file currently opened.
+CloseFile:
+    mov byte [Open], 0
     ret

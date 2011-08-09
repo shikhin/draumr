@@ -9,5 +9,8 @@ bochsout.txt
 *.pyc
 Source/System/Boot/BIOS/CD/Stage1
 Source/System/Boot/BIOS/PXE/Stage1
+Source/System/Boot/BIOS/BIOS/BIOS
 
+Utilities/*.util
+*.util
 Test.sh

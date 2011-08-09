@@ -146,6 +146,7 @@ CheckBootFile:
     cmp word [di + 510], 0xAA55
     jne AbortBoot                     ; The boot signature at 510 byte offset was incorrect - can't assume anything. ABORT!
 
+    add edi, 0x800                    ; The file is four sectors long as of now.
     cmp dword [di + 2040], "DRAU"     ; Check our Draumr signature.
     jne .FixFile
 
@@ -176,7 +177,7 @@ CheckBootFile:
 
 ; Check whether the file on disk is corrupt or not.
 .CheckFileAgain:
-    mov edi, 0x7C00
+    mov edi, 0x7C00 + 0x800
     cmp dword [di + 2040], "DRAU"     ; Check out the Draumr signature.
     jne AbortBoot
 

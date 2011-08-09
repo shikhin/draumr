@@ -20,6 +20,7 @@ import os
 
 from Isobuilder import ISOBuilder
 from Pxebuilder import PXEBuilder
+from Imagebuilder import ImageBuilder
 from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
@@ -39,7 +40,8 @@ class BuildManager :
         env["LINK"] = "ld" 
         env["BUILDERS"]["ISO"] = ISOBuilder
         env["BUILDERS"]["PXE"] = PXEBuilder
-        
+        env["BUILDERS"]["Image"] = ImageBuilder
+
         # Add build specific flags
         b = self.config.get_build()
 

@@ -30,7 +30,6 @@ PXENV_TFTP_OPEN:
     .Port         dw 0
     .PacketSize   dw 0
 
-
 PXENV_TFTP_READ:
     .Status       dw 0
     .PacketNumber dw 0
@@ -38,40 +37,88 @@ PXENV_TFTP_READ:
     .BufferOff    dw 0
     .BufferSeg    dw 0
 
+PXENV_TFTP_GET_FSIZE:
+    .Status       dw 0
+    .SIP          dd 0
+    .GIP          dd 0
+    .Filename     times 128 db 0
+    .Filesize     dd 0
+
 ; Save PacketSize here, for future reference by code.
 PacketSize:       dw 0
+IsOpen:           db 0
+BytesRead:        dd 0
+
+Files:
+    .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
+
+BIOSStr db "BIOS", 0
+times 128 - ($ - BIOSStr) db 0
+
 
 SECTION .text
 
-
-; Opens a file from the TFTP server, so that it can be read from.
-; @si             Should point to the asciiz filename.
-; @ecx            Should contain the length of the filename (< 128).
+; Opens a file to be read from.
+; @al             Contains the code number of the file to open.
+;                 0 -> Common BIOS File.
+;     @rc 
+;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
+;                 @ecx    The size of the file you want to open.
 OpenFile:
     pushad
-    
-    ; Zero out the PXENV_TFTP_OPEN structure.
-    push ecx                          ; Save the size of the filename.
+
     mov di, PXENV_TFTP_OPEN 
     mov ecx, 71                       ; Store 71-words.
     xor eax, eax                      ; We need to zero out the structure.
 
     rep stosw                         ; Clear out the entire structure.
 
-    pop ecx                           ; Restore the size of the filename.
+    mov di, PXENV_TFTP_GET_FSIZE
+    mov ecx, 71                       ; Store 71-words.
+    xor eax, eax                      ; We need to zero out the structure.
+
+    rep stosw                         ; Clear out the entire structure.
+
+    cmp byte [IsOpen], 1              ; Check whether any file has already been opened or not.
+    je .Error                         ; If yes, abort boot.
+
+    mov byte [IsOpen], 1
  
     ; Put some default values in there.
     mov word [PXENV_TFTP_OPEN.Port], UDP_PORT
     mov word [PXENV_TFTP_OPEN.PacketSize], PACKET_SIZE
     mov eax, [SIP]
     mov [PXENV_TFTP_OPEN.SIP], eax 
+    mov [PXENV_TFTP_GET_FSIZE.SIP], eax
 
     mov eax, [GIP]
     mov [PXENV_TFTP_OPEN.GIP], eax
+    mov [PXENV_TFTP_GET_FSIZE.GIP], eax
 
     ; Store the "filename" at PXENV_TFTP_OPEN.Filename
+    mov ecx, 32                       ; We need to store 32 dwords, or 128 bytes.
+    xor ebx, ebx
+    mov bl, al
+    add ebx, ebx                      ; Double 'al' to get words.
+    add bx, Files                     ; Add address to index.
+
+    mov si, [bx]                      ; And then get the address into SI.
+
     mov di, PXENV_TFTP_OPEN.Filename
-    rep movsb
+    rep movsd
+
+    mov si, [bx]
+    mov ecx, 32
+    mov di, PXENV_TFTP_GET_FSIZE.Filename
+    rep movsd                         ; And then get the filename into both the get file size, and open file structures.
+
+    mov di, PXENV_TFTP_GET_FSIZE
+    mov bx, TFTP_GET_FSIZE
+    call UsePXEAPI
+
+    or ax, [PXENV_TFTP_GET_FSIZE]
+    test ax, ax
+    jnz .Error
 
     ; Store the address of the input buffer, and the opcode at BX.
     mov di, PXENV_TFTP_OPEN
@@ -80,24 +127,30 @@ OpenFile:
 
     or ax, [PXENV_TFTP_OPEN]
     test ax, ax
-    jnz .Error                        ; Test if any error occured. If it did, abort boot!
+    jnz .Error                        ; Test if any error occured. If it did, return with error.
 
     ; Store PacketSize for future reference.
-    mov eax, [PXENV_TFTP_OPEN.PacketSize]
-    mov [PacketSize], eax
+    mov ax, [PXENV_TFTP_OPEN.PacketSize]
+    mov [PacketSize], ax
 
 .Return:
     popad
+    mov ecx, [PXENV_TFTP_GET_FSIZE.Filesize]
     ret
 
 .Error:
-    xor ax, ax
-    mov si, PXEAPIError
-    call AbortBoot
+    stc
+    popad
+    ret
 
-; Closes the previously opened file - if no file was previous opened, expect errors.
+; Closes the previously opened file.
 CloseFile:
     pushad
+
+    cmp byte [IsOpen], 0
+    je .Error
+
+    mov byte [IsOpen], 0
 
     mov di, PXENV_TFTP_OPEN
     mov bx, TFTP_CLOSE
@@ -117,43 +170,55 @@ CloseFile:
     call AbortBoot
 
 
-; Read a file completely off to some buffer.
-; @di             Should point to the output buffer (where to read the file to).
-; @ecx            Should contain the length of "filename".
-; @si             Should point to "filename".
+; Reads the required bytes of the file currently opened.
+; @edi            The destination address of where to read the file to.
+; @ecx            The number of bytes to read.
+;     @rc
+;                 Aborts boot if any error occured (during read, that is).
+;                 @ecx    The number of bytes read -> would only be less than requested if EOF reached.
 ReadFile:
     pushad
 
-    ; Open the file.
-    call OpenFile
-
+    xor eax, eax                      ; Zero out the how-many-bytes-did-i-read counter.
+    xor edx, edx
 .ReadFile: 
     mov [PXENV_TFTP_READ.BufferOff], di
     mov word [PXENV_TFTP_READ.Status], 0
     mov word [PXENV_TFTP_READ.BufferSize], 0
 
-    push di
+    push di                           ; Save DI for the moment (destination buffer address).
 
     mov di, PXENV_TFTP_READ
     mov bx, TFTP_READ
-    call UsePXEAPI
+    call UsePXEAPI                    ; Use the API to read.
 
-    pop di
+    pop di                            ; And restore DI back again.
 
-    or ax, [PXENV_TFTP_READ]
+    or ax, [PXENV_TFTP_READ] 
     test ax, ax
-    jnz .Error
+    jnz .Error                        ; If any error occured, abort boot.
 
-    add di, [PacketSize]
-    mov cx, [PXENV_TFTP_READ.BufferSize]
-    cmp cx, [PacketSize]
-    je .ReadFile
+    mov dx, [PXENV_TFTP_READ.BufferSize]
+    test dx, dx                       ; If only zero bytes given to me, KILL THEM!
+    jz .Return
 
-    ; Close the file.
-    call CloseFile
+    cmp dx, [PacketSize]
+    jge .Cont
+
+    mov dx, [PacketSize]
+
+.Cont:
+    add di, dx                        ; Skip on to the next x bytes.
+    add eax, edx                      ; Add to number of bytes read.
+    sub ecx, edx                      ; Subtract number of bytes read from bytes to read.
+
+    test ecx, ecx
+    jnz .ReadFile                     ; Iterate (if more bytes left to read).
     
 .Return:
+    mov [BytesRead], eax
     popad
+    mov ecx, [BytesRead]
     ret    
 
 .Error:

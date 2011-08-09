@@ -33,6 +33,7 @@ PXEAPI:
 %define TFTP_OPEN       0x20
 %define TFTP_CLOSE      0x21
 %define TFTP_READ       0x22
+%define TFTP_GET_FSIZE  0x25
 
 SECTION .text
 
