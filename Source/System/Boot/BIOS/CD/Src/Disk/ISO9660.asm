@@ -193,7 +193,6 @@ Open:
     .IsOpen db 0                      ; Set to 1 is a file is open.
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
-    .Read   dd 0                      ; Last 'read' bytes.
 
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
@@ -236,12 +235,10 @@ OpenFile:
 ; @ecx            The number of bytes to read.
 ;     @rc
 ;                 Aborts boot if any error occured (during read, that is).
-;                 @ecx    The number of bytes read -> would only be less than requested if EOF reached.
 ReadFile:
     pushad
 
     cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
-    mov [Open.Read], ecx              ; We can always read ONLY ECX bytes.
 
     jbe .Cont
   
@@ -265,7 +262,6 @@ ReadFile:
 
 .Return:
     popad
-    mov ecx, [Open.Read]              ; Save the Bytes Read number.
     ret
 
 ; Closes the file currently opened.

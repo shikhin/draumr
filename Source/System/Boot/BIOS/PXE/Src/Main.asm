@@ -103,15 +103,13 @@ Main:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     call OpenFile                     ; Open the File.
     jc .Error
-
+    
     ; ECX contains size of file we are opening.
     push ecx
     mov ecx, 512                      ; Read only 512 bytes.
 
     mov edi, 0x9000
     call ReadFile                     ; Read the entire file.
-    cmp ecx, 512                      ; Compare bytes read with "to read" bytes.
-    jb .Error2                        ; Error occured (if less).
 
 .CheckCommonBIOS1:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
@@ -122,9 +120,6 @@ Main:
       
     pop edx
     push edx
- 
-    cmp edx, ecx
-    jne .Error2                       ; If both aren't similar error.
 
 .LoadRestFile:
     add edi, 0x9000 + 512
@@ -136,9 +131,6 @@ Main:
     sub ecx, 512                      ; Read the rest 512 bytes.
     
     call ReadFile                     ; Read the rest of the file.
-    
-    cmp ecx, edx                      ; Compare bytes read to bytes requested.
-    jb .Error2                        ; If below: Error.
 
 .Finish:
     call CloseFile                    ; And then close the file.

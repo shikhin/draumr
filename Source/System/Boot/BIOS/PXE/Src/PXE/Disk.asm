@@ -47,7 +47,6 @@ PXENV_TFTP_GET_FSIZE:
 ; Save PacketSize here, for future reference by code.
 PacketSize:       dw 0
 IsOpen:           db 0
-BytesRead:        dd 0
 
 Files:
     .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
@@ -119,7 +118,7 @@ OpenFile:
     or ax, [PXENV_TFTP_GET_FSIZE]
     test ax, ax
     jnz .Error
-
+    
     ; Store the address of the input buffer, and the opcode at BX.
     mov di, PXENV_TFTP_OPEN
     mov bx, TFTP_OPEN
@@ -128,7 +127,7 @@ OpenFile:
     or ax, [PXENV_TFTP_OPEN]
     test ax, ax
     jnz .Error                        ; Test if any error occured. If it did, return with error.
-
+    
     ; Store PacketSize for future reference.
     mov ax, [PXENV_TFTP_OPEN.PacketSize]
     mov [PacketSize], ax
@@ -175,12 +174,11 @@ CloseFile:
 ; @ecx            The number of bytes to read.
 ;     @rc
 ;                 Aborts boot if any error occured (during read, that is).
-;                 @ecx    The number of bytes read -> would only be less than requested if EOF reached.
 ReadFile:
     pushad
 
-    xor eax, eax                      ; Zero out the how-many-bytes-did-i-read counter.
     xor edx, edx
+   
 .ReadFile: 
     mov [PXENV_TFTP_READ.BufferOff], di
     mov word [PXENV_TFTP_READ.Status], 0
@@ -193,32 +191,35 @@ ReadFile:
     call UsePXEAPI                    ; Use the API to read.
 
     pop di                            ; And restore DI back again.
+    
+    cmp word [PXENV_TFTP_READ], 0x3B  ; If status is 0x3B - then FILE_NOT_FOUND error, which implies reading AFTER EOF.
+    jne .Cont
 
+    xor ax, ax
+    mov word [PXENV_TFTP_READ], 0     ; If EOF, then no error code should be present, and bytes read should be 0.
+    mov word [PXENV_TFTP_READ.BufferSize], 0  
+
+.Cont:
     or ax, [PXENV_TFTP_READ] 
     test ax, ax
     jnz .Error                        ; If any error occured, abort boot.
-
+    
     mov dx, [PXENV_TFTP_READ.BufferSize]
-    test dx, dx                       ; If only zero bytes given to me, KILL THEM!
+    test dx, dx                       ; If size read is zero, then EOF reached.
     jz .Return
 
-    cmp dx, [PacketSize]
-    jge .Cont
+    add di, dx
+    
+    cmp ecx, edx
+    jb .Return
 
-    mov dx, [PacketSize]
-
-.Cont:
-    add di, dx                        ; Skip on to the next x bytes.
-    add eax, edx                      ; Add to number of bytes read.
-    sub ecx, edx                      ; Subtract number of bytes read from bytes to read.
+    sub ecx, edx
 
     test ecx, ecx
-    jnz .ReadFile                     ; Iterate (if more bytes left to read).
-    
+    jnz .ReadFile
+
 .Return:
-    mov [BytesRead], eax
     popad
-    mov ecx, [BytesRead]
     ret    
 
 .Error:
