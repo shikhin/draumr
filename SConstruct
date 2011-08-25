@@ -46,7 +46,10 @@ if cfg.target == "all":
     pxe = env.PXE("/tftpboot/Stage1", None) 
     Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
 
-    Default([iso, pxe])
+    floppy = env.Floppy("Draumr.flp", None)
+    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], imag])
+
+    Default([iso, pxe, floppy])
 
 elif cfg.target == "iso" :
     iso = env.ISO("Draumr.iso", None)
@@ -59,3 +62,9 @@ elif cfg.target == "pxe" :
     Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
 
     Default(pxe)
+
+elif cfg.target == "floppy" :
+    floppy = env.Floppy("Draumr.flp", None)
+    Depends(floppy, [env["FLOPPY_STAGE1"], env ["BIOS"], image])
+
+    Default(floppy)

@@ -17,14 +17,14 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-SECTION .text
+SECTION .base
 
 
 ; Function for aborting boot.
 ; es:si           Should contain the error message to print. 
 ; ax              Should contain the error code for the "type of beep":
-;                 a) If ax is zero, only one long beep.
-; TODO: Need to add PXE errors.
+;                 a) If ax is zero, only one long beep (basic mode).
+; TODO: Need to add Floppy errors.
 AbortBoot:
     cli
     
@@ -36,7 +36,7 @@ AbortBoot:
     jz .Base
 
     ; Test which beep to produce.
-    jmp .Base
+    jmp .Extended
 
 .Base: 
     mov al, 10110110b          
@@ -72,3 +72,6 @@ AbortBoot:
     jmp .Halt
 
 
+SECTION .text
+.Extended:
+    jmp .Base                         ; Currently, this is all we can achieve (later add Floppy errors)

@@ -40,10 +40,9 @@ BootInfo:
     times 40 db 0    
 
 
-%include "Source/System/Boot/BIOS/CD/Src/Abort.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Disk/Disk.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
+%include "Source/System/Boot/BIOS/Floppy/Src/Abort.asm"
+%include "Source/System/Boot/BIOS/Floppy/Src/Screen.asm"
+%include "Source/System/Boot/BIOS/Floppy/Src/Disk/Disk.asm"
 
 
 SECTION .base
@@ -63,10 +62,7 @@ Main:
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
    
-    call InitDisk
-    call CheckBootFile                ; Check whether the boot file (us) is intact or not.
-
-.Exit:			
+    call GetBootFile                  ; Get the complete boot file (us).
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
@@ -83,7 +79,6 @@ ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.",
 
 Finish db "Finished!", nl, 0
 
-
 SECTION .text
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
 
@@ -93,14 +88,9 @@ ExtMain:
     mov es, ax                        ; Save 0xB800 in @es, such that @es:0x0000 points to 0xB8000.
     call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
     pop es
-    
-    cmp byte [FindPVDMan], 1
-    jne .FindBootFiles
 
-    call FindPVD                      ; Find the PVD manually, if need be.
-
-.FindBootFiles: 
-    call FindBootFiles
+.FindBootFiles:
+    call InitBootFiles                ; Initialize boot file data - get the size currently.
 
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
@@ -109,34 +99,34 @@ ExtMain:
 
     ; ECX contains size of file we are opening.
     push ecx
-    mov ecx, 0x800                    ; Read only 0x800 bytes.
+    mov ecx, 0x200                    ; Read only 0x200 bytes.
 
     mov edi, 0x9000
     call ReadFile                     ; Read the entire file.
-    
+
 .CheckCommonBIOS1:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
     movzx ecx, word [0x9000 + 8]      ; Get the end of the BSS section in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
-    add ecx, 0x7FF
-    shr ecx, 11                       ; Here we have the number of sectors of the file (according to the header).
+    add ecx, 0x1FF
+    shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
   
     pop edx
     push edx
 
-    add edx, 0x7FF
-    shr edx, 11                       ; Here we have the number of sectors of the file (according to the fs).
+    add edx, 0x1FF
+    shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
 
 .LoadRestFile:
-    add edi, 0x9800
+    add edi, 0x9200
     pop ecx
     mov edx, ecx
-    cmp ecx, 0x800
+    cmp ecx, 0x200
     jb .Finish
 
-    sub ecx, 0x800                    ; Read the rest 0x800 bytes.
+    sub ecx, 0x200                    ; Read the rest 0x200 bytes.
     
     call ReadFile                     ; Read the rest of the file.
     
@@ -185,6 +175,10 @@ ExtMain:
     mov si, ErrorBIOSFile
     call AbortBoot
 
+.Hlt:
+    hlt
+    jmp .Hlt
+
 SECTION .pad
-; Define the DRAUMRSS signature - so that it can be used to check sanity of boot file.
-db "DRAUMRSS"
+; Define DRAUMRSS - so that it can be used to check the sanity of the file.
+db "DRAUMRSS"                         ; Define the boot signature - DRAUMRSS.

@@ -20,7 +20,9 @@ import os
 
 from Isobuilder import ISOBuilder
 from Pxebuilder import PXEBuilder
+from Floppybuilder import FloppyBuilder
 from Imagebuilder import ImageBuilder
+
 from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
@@ -41,6 +43,7 @@ class BuildManager :
         env["BUILDERS"]["ISO"] = ISOBuilder
         env["BUILDERS"]["PXE"] = PXEBuilder
         env["BUILDERS"]["Image"] = ImageBuilder
+        env["BUILDERS"]["Floppy"] = FloppyBuilder
 
         # Add build specific flags
         b = self.config.get_build()

@@ -1,8 +1,6 @@
-# -*- python -*-
-
 # Draumr build system
 #
-# Copyright (c) Shikhin Sethi
+# Copyright (c) 2011 Zoltan Kovacs, Shikhin Sethi
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,24 +17,27 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
+import shutil
+import tempfile
+import glob
 
-Import("env", "sys_env")
+from SCons.Builder import Builder
+from SCons.Action import Action
+from Isobuilder import _path
 
+def _floppy_builder(target, source, env) :
+    # Create a temporary directory to build the Floppy image structure.
+    d = tempfile.mkdtemp()
 
-src = ["Src/Main.asm",
-       "Src/Abort.asm",
-       "Src/Screen.asm",
-       "Src/Disk/Disk.asm",
-       "Link.ld"]
+    stage1 = str(env["FLOPPY_STAGE1"][0])
+    bios = str(env["BIOS"][0])
+    combined = _path([d, "Combined"])
+    
+    os.system("cat %s %s > %s" % (stage1, bios, combined))
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync" % (combined, target[0]))
+   
+    shutil.rmtree(d)
+    return 0
 
-
-# A target for building the Stage 1 binary.
-stage1obj = sys_env.Object("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Floppy/Link.ld")
-stage1 = sys_env.Program("Stage1", "Stage1", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Floppy/Link.ld")
-
-Depends(stage1obj, src)
-Depends(stage1, stage1obj)
-
-# Save the stage 1 target in the environment as we will need it later.
-env["FLOPPY_STAGE1"] = stage1
+FloppyBuilder = Builder(action = Action(_floppy_builder, None))
 

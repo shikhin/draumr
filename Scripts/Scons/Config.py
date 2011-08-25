@@ -21,7 +21,7 @@ from SCons.Errors import StopError
 class Config :
     params = {
         "build" : ["debug", "release"],
-        "target" : ["iso", "pxe", "all"],
+        "target" : ["iso", "pxe", "floppy", "all"],
     }
 
     def __init__(self) :

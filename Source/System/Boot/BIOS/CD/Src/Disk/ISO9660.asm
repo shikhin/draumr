@@ -194,6 +194,8 @@ Open:
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
 
+SECTION .text
+
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
 ;                 0 -> Common BIOS File.

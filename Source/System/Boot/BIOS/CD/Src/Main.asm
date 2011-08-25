@@ -62,11 +62,9 @@ Main:
     sti
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
-   
+
     call InitDisk
     call CheckBootFile                ; Check whether the boot file (us) is intact or not.
-
-.Exit:			
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.

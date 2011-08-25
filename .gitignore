@@ -1,4 +1,6 @@
 *.iso
+*.flp
+*.todo
 *.o
 
 .bochsrc
@@ -10,6 +12,7 @@ bochsout.txt
 Source/System/Boot/BIOS/CD/Stage1
 Source/System/Boot/BIOS/PXE/Stage1
 Source/System/Boot/BIOS/BIOS/BIOS
+Source/System/Boot/BIOS/Floppy/Stage1
 
 Utilities/*.util
 *.util

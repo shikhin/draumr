@@ -22,6 +22,12 @@ SECTIONS
         *(.data)                                                                                                                                                                                                            
     }
 
+    .pad 0x8BF8 :
+    {
+        pad = .;
+        *(.pad)
+    }
+
     end = .;
 }
 

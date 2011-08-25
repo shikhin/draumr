@@ -46,6 +46,8 @@ InitScreen:
     ret
 
 
+SECTION .base
+
 ; Prints a message on the screen using the BIOS.
 ;     @si         Should contain the address of the null terminated string.
 Print:
