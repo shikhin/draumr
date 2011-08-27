@@ -305,7 +305,7 @@ ReadFromDiskM:
    
     jc .Single                        ; If we failed, try the single by single method.
 
-    mov ecx, [LBAPacket.Sectors]      ; Let's check if the sectors read is zero - if zero, move to single.
+    movzx ecx, word [LBAPacket.Sectors]; Let's check if the sectors read is zero - if zero, move to single.
     test ecx, ecx
     jz .Single                        ; If zero, move to single.
 

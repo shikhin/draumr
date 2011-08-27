@@ -339,11 +339,11 @@ ReadFile:
 .Loop:
     call ReadFromFloppyM              ; Do the CALL!
 
+    add eax, ecx                      ; Advance the LBA by read sectors count.
+
     sub edx, ecx                      ; EDX more sectors left to do.
     test edx, edx
     jz .Return                        ; Read all sectors, return.
-
-    add eax, ecx                      ; Advance the LBA by read sectors count.
    
     ; Now need to advance EDI.
     push eax                          ; Save EAX - and restore it later.
@@ -358,6 +358,8 @@ ReadFile:
     
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
+
+    mov [Open.LBA], eax               ; Store the next LBA in Open.LBA
 
 .Return:
     popad

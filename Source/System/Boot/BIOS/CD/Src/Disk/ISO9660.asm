@@ -254,13 +254,35 @@ ReadFile:
     add ecx, 0x7FF
     shr ecx, 11                       ; And the number of sectors to read in ECX.
 
-    or edi, 0x80000000                ; Do advanced error checking.
+    mov edx, ecx                      ; Keep that for internal count.
 
-    mov edx, ebx                      ; Get the LBA in EDX.
-    add edx, ecx                      ; Add the sectors reading to LBA.
-    mov [Open.LBA], edx               ; Store the new LBA.
+; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
+.Loop:
+    call ReadFromDiskM                ; Do the CALL!
+
+    add ebx, ecx                      ; Advance the LBA by read sectors count.
+   
+    sub edx, ecx                      ; EDX more sectors left to do.
+    test edx, edx
+    jz .Return                        ; Read all sectors, return.
+  
+    ; Now need to advance EDI.
+    push eax                          ; Save EAX - and restore it later.
+    push edx
+
+    mov eax, ecx                      ; Get the sectors read count in ECX.
+    mov edx, 2048
+    mul edx                           ; And multiply it by 2048, and advance EDI by it.
+
+    add edi, eax
+
+    pop edx
+    pop eax
     
-    call ReadFromDiskM
+    mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
+    jmp .Loop
+
+    mov [Open.LBA], ebx               ; Store the new LBA.
 
 .Return:
     popad
