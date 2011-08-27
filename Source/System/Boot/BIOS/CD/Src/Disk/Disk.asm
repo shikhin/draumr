@@ -240,9 +240,8 @@ ReadFromDisk:
     mov eax, 0x4200
     mov dl, [BootDrive]               ; We just know about one drive as of now - so read that only.
     int 0x13
-    
-    test ah, ah                       ; If AH is zero, call successful. Return.
-    je .Success
+   
+    jnc .Success
 
 .Error:
     push ebx
@@ -253,6 +252,7 @@ ReadFromDisk:
     pop ebx
     je .Abort
 
+    clc
     jmp .Retry
 
 .Abort:
@@ -274,19 +274,56 @@ ReadFromDisk:
 
 SECTION .text
 
+; The sectors read - used to return from ReadFromDiskM.
+SectorRead:       dd 0
 
 ; Reads multiple sectors from disk.
 ; Expects same arguments as that for the above.
 ; M stands for Multiple (sectors).
+;     @rc
+;                 @ecx Returns the sector actually read.
 ReadFromDiskM:
     pushad
    
-    ; Save the count of sectors to read in EAX. 
-    mov eax, ecx
-    ; And read on sector at a time - reading more sectors cause a lot of problems usually.
-    mov ecx, 1
+    cmp ecx, 0x7F                     ; 0x7F is the maximum sectors we can read, so, let's minimize this number.
+    jbe .Multiple                     ; If below or equal, do multiple sector reads.
+
+    mov ecx, 0x7F                     ; If count is > 0x7F, then count = 0x7F;
+
+.Multiple:
+    mov byte [LBAPacket.Size], 0x10   ; Size of the Packet - 0x10 if you specify Segment:Offset and not a 64-bit linear address.
+    mov word [LBAPacket.Sectors], cx  ; Number of sectors to read.
+    mov [LBAPacket.BufferOff], di     ; Offset - Since we use 0x0000 as segment offset must be the address of the buffer - @di.
+    mov word [LBAPacket.BufferSeg], 0 ; The segment is zero. 
+    mov [LBAPacket.LBALow], ebx       ; Lower 32-bits of the LBA address.
+    mov [LBAPacket.LBAHigh], dword 0  ; Higher 32-bits of the LBA address - useful for 48-bit LBA.
+     
+    mov si, LBAPacket
+    mov eax, 0x4200
+    mov dl, [BootDrive]               ; We just know about one drive as of now - so read that only.
+    int 0x13
+   
+    jc .Single                        ; If we failed, try the single by single method.
+
+    mov ecx, [LBAPacket.Sectors]      ; Let's check if the sectors read is zero - if zero, move to single.
+    test ecx, ecx
+    jz .Single                        ; If zero, move to single.
+
+    mov [SectorRead], ecx             ; Let's store the number of sectors read in SectorRead.
+
+    jmp .Return
 
 .Single:
+    mov [SectorRead], ecx             ; Sectors read would be ECX in any case - since we'd read all sectors anyway (single-single)
+
+    ; Save the count of sectors to read in EAX. 
+    mov eax, ecx
+    ; And read one sector at a time - the recommended method.
+    mov ecx, 1
+
+    or edi, 0x80000000                ; Or EDI with 0x80000000 to enable advanced error checking.
+
+.Loop:
     call ReadFromDisk
     
     ; Decrease the count of sectors to read.
@@ -297,10 +334,11 @@ ReadFromDiskM:
     
     inc ebx                           ; Increase the LBA.
     add di, 0x800                     ; And the destination buffer.
-    jmp .Single 
+    jmp .Loop
 
 .Return:
     popad
+    mov ecx, [SectorRead]             ; We are going to return the sectors read in ECX - so get it!
     ret
 
 
