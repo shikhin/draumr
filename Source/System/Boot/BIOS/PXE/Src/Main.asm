@@ -122,9 +122,9 @@ Main:
     push edx
 
 .LoadRestFile:
-    add edi, 0x9000 + 512
+    add edi, 512
     pop ecx
-    mov edx, ecx
+    
     cmp ecx, 512
     jb .Finish
 
@@ -159,13 +159,13 @@ Main:
     rep stosb                         ; Clear out the BSS section.
  
 .JmpToBIOS:
-    ; TODO: Jump to the common BIOS specification here.
-    mov si, Finish
-    call Print
-
-.Die:
-    hlt
-    jmp .Die
+    mov eax, OpenFile
+    mov ebx, ReadFile
+    mov ecx, CloseFile
+   
+    mov esp, 0x7C00
+    mov dx, [0x9004]
+    jmp dx
 
 .Error:
     xor ax, ax

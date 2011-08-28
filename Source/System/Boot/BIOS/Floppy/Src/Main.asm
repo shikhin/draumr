@@ -96,7 +96,7 @@ ExtMain:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     call OpenFile                     ; Open the File.
     jc .Error
-
+    
     ; ECX contains size of file we are opening.
     push ecx
     mov ecx, 0x200                    ; Read only 0x200 bytes.
@@ -119,24 +119,27 @@ ExtMain:
     add edx, 0x1FF
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
 
+    cmp ecx, edx
+    jne .Error2                       ; If not equal, error.
+
 .LoadRestFile:
-    add edi, 0x9200
+    add edi, 0x200
     pop ecx
-    mov edx, ecx
+    
     cmp ecx, 0x200
     jb .Finish
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
     
     call ReadFile                     ; Read the rest of the file.
-    
+
 .Finish:
     call CloseFile                    ; And then close the file.
 
 .CheckCommonBIOS2:
     mov ecx, [0x9000 + 10]            ; Get the end of the file in ECX.
     sub ecx, 0x9000 + 18              ; Subtract 0x9000 (address of start) + 18 (size of header) from it, to get the size.
-
+    
     mov esi, 0x9000 + 18              ; Calculate CRC from above byte 18.    
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
@@ -157,13 +160,13 @@ ExtMain:
     rep stosb                         ; Clear out the BSS section.
  
 .JmpToBIOS:
-    ; TODO: Jump to the common BIOS specification here.
-    mov si, Finish
-    call Print
-
-.Die:
-    hlt
-    jmp .Die
+    mov eax, OpenFile
+    mov ebx, ReadFile
+    mov ecx, CloseFile
+   
+    mov esp, 0x7C00
+    mov dx, [0x9004]
+    jmp dx
 
 .Error:
     xor ax, ax
@@ -174,10 +177,6 @@ ExtMain:
     xor ax, ax
     mov si, ErrorBIOSFile
     call AbortBoot
-
-.Hlt:
-    hlt
-    jmp .Hlt
 
 SECTION .pad
 ; Define DRAUMRSS - so that it can be used to check the sanity of the file.

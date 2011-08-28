@@ -353,7 +353,6 @@ GetErrorMsg:
 
     xor si, si
     movzx ebx, ah
-    xor ax, ax                        ; TODO: This should contain the code for disk error.
 
 .Table1:
     cmp bx, 0x10

@@ -22,21 +22,16 @@ SECTION .base
 
 ; Function for aborting boot.
 ; es:si           Should contain the error message to print. If zero, basic error checking.
-; ax              Should contain the error code for the "type of beep":
-;                 a) If es:si is zero, OR if ax is zero, only one long beep.
-; TODO: Need to add error code for disk access errors.
 AbortBoot:
     cli
-    mov bx, es
-    test bx, bx
-    jnz .Advanced
 
     test si, si
-    jnz .Advanced
+    jz .Beep
 
+    call Print
 
 ; Do the basic error checking. Ignore AX.
-.Base: 
+.Beep: 
     mov al, 10110110b          
 
     out 0x43, al 
@@ -60,29 +55,9 @@ AbortBoot:
     in al, 0x61                  
     or al, 00000011b                  ; Set the Speaker enable (and other required) bit.
     out 0x61, al                      ; SPEAK.                   
-   
-    jmp .Exit
 
-
-.Exit:
     sti
+
 .Halt:
     hlt
     jmp .Halt
-
-
-; Advanced error checking goes above the first 512 bytes!
-SECTION .text
-
-
-; Do advanced error checking. Use AX.
-.Advanced:    
-    ; Print error message on to screen.
-    call Print
-
-    ; If AX is zero, use basic method.
-    test ax, ax
-    jz .Base
-
-    ; Test which beep to produce.
-    jmp .Base

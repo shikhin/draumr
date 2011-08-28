@@ -96,9 +96,6 @@ ReadFromFloppy:
     int 0x13
     jc .Error                         ; If carry is set, error occured.
 
-    test ah, ah
-    jnz .Error                        ; If AH isn't zero, error most probably.
-
 .Success:
     popad
     ret
@@ -116,6 +113,7 @@ ReadFromFloppy:
     mov [Retry], cl                   ; Save the Retry value.
     
     pop ecx                           ; Restore ECX back.
+    clc
     jmp .Retry                        ; And Retry once again.
     
 .AbortWithError:
@@ -358,10 +356,10 @@ ReadFile:
     
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
-
+    
+.Return:
     mov [Open.LBA], eax               ; Store the next LBA in Open.LBA
 
-.Return:
     popad
     ret
 

@@ -47,7 +47,7 @@ if cfg.target == "all":
     Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
 
     floppy = env.Floppy("Draumr.flp", None)
-    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], imag])
+    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], image])
 
     Default([iso, pxe, floppy])
 

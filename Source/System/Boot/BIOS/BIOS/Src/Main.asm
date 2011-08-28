@@ -37,11 +37,32 @@ FILE_END          file_end
 CRC32
 
 
+SECTION .data
+BIT:
+    .OpenFile     dw 0
+    .ReadFile     dw 0
+    .CloseFile    dw 0
+    .HrdwreFlags  db 0                ; The "hardware" flags.
+
+%define A20_DISABLED    (1 << 0)
+
 SECTION .text
 GLOBAL Startup
 
 ; Point where the Stage 1 boot loader handles control.
 ; @ss:sp          Should point to 0x7C00.
+; @eax            Should point to the OpenFile function.
+; @ebx            Should point to the ReadFile function.
+; @ecx            Should point to the CloseFile function.
 Startup:
+    mov [BIT.OpenFile], ax
+    mov [BIT.ReadFile], bx
+    mov [BIT.CloseFile], cx
+
+    call EnableA20
+
+.Die:
     hlt 
-    jmp Startup
+    jmp .Die
+
+%include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"

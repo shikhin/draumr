@@ -22,23 +22,13 @@ SECTION .text
 
 ; Function for aborting boot.
 ; es:si           Should contain the error message to print. 
-; ax              Should contain the error code for the "type of beep":
-;                 a) If ax is zero, only one long beep.
-; TODO: Need to add PXE errors.
 AbortBoot:
     cli
     
     ; Print error message on to screen.
     call Print
 
-    ; If AX is zero, use basic method.
-    test ax, ax
-    jz .Base
-
-    ; Test which beep to produce.
-    jmp .Base
-
-.Base: 
+.Beep: 
     mov al, 10110110b          
 
     out 0x43, al 
@@ -63,10 +53,8 @@ AbortBoot:
     or al, 00000011b                  ; Set the Speaker enable (and other required) bit.
     out 0x61, al                      ; SPEAK.                   
    
-    jmp .Exit
-
-.Exit:
     sti
+
 .Halt:
     hlt
     jmp .Halt
