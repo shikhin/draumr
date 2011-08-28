@@ -147,6 +147,6 @@ int main(int argc, char *argv[])
     fread(FileName, 4, 1, File);
     fclose(File);
     
-    printf("  CRC32 %s -> 0x%X\n", FileName, Seed);
+    printf("  \033[94m[CRC32]\033[0m %s -> 0x%X\n", FileName, Seed);
     return 0;
 }

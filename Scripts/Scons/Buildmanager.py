@@ -17,6 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
+import sys
 
 from Isobuilder import ISOBuilder
 from Pxebuilder import PXEBuilder
@@ -26,13 +27,27 @@ from Imagebuilder import ImageBuilder
 from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
+colors = {}
+colors['cyan']   = '\033[96m'
+colors['purple'] = '\033[95m'
+colors['blue']   = '\033[94m'
+colors['green']  = '\033[92m'
+colors['yellow'] = '\033[93m'
+colors['red']    = '\033[91m'
+colors['end']    = '\033[0m'
+
 class BuildManager :
 
     def __init__(self, config) :
         self.config = config
 
     def create_env(self) :
-        arch = self.config.get_arch()
+       #If the output is not a terminal, remove the colors
+        if not sys.stdout.isatty():
+            for key, value in colors.iteritems():
+               colors[key] = ''     
+	
+	arch = self.config.get_arch()
 
         # Create an environment with our own tools.
         env = Environment()
@@ -54,9 +69,9 @@ class BuildManager :
             env["CPPFLAGS"] += ["-O3"]
 
         # Hide the ugly compiler command lines and display nice messages.
-        env["ASCOMSTR"] = "  AS    $SOURCE"
-        env["CCCOMSTR"] = "  CC    $SOURCE"
-        env["LINKCOMSTR"] = "  LINK  $TARGET"
+        env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (colors['green'], colors['end'])
+        env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (colors ['green'], colors['end'])
+        env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (colors['green'], colors['end'])
 
         # Use LD_LIBRARY_PATH if it is specified in the environment where SCons was executed
         if "LD_LIBRARY_PATH" in os.environ :

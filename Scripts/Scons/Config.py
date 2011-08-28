@@ -27,7 +27,7 @@ class Config :
     def __init__(self) :
         self.arch = "i686"
         self.build = "debug"
-        self.target = "iso"
+        self.target = "all"
 	
     def get_arch(self) :
         return self.arch

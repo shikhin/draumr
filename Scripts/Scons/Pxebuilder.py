@@ -25,6 +25,16 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from Isobuilder import _path
 
+colors = {}
+colors['cyan']   = '\033[96m'
+colors['purple'] = '\033[95m'
+colors['blue']   = '\033[94m'
+colors['green']  = '\033[92m'
+colors['yellow'] = '\033[93m'
+colors['red']    = '\033[91m'
+colors['end']    = '\033[0m'
+
+
 def _pxe_builder(target, source, env) :
     # Create a temporary directory to build the ISO image structure.
     if not os.path.exists('/tftpboot'):
@@ -37,7 +47,7 @@ def _pxe_builder(target, source, env) :
     bios = str(env["BIOS"][0])
     shutil.copy(stage1, s)
     shutil.copy(bios, s)
-
+    print("  %s[PXE]%s   %s" % (colors['blue'], colors['end'], target[0]))
     return 0
 
 PXEBuilder = Builder(action = Action(_pxe_builder, None))

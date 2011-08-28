@@ -74,18 +74,18 @@ EnableA20:
     jc .Return
 
 .FastA20:
-    in 0x92, al                       ; Get the value from 0x92 port. 
-    test 02, al                       ; If the Fast A20 bit is already set, then, Fast A20 can't be relied upon.
+    in al, 0x92                       ; Get the value from 0x92 port. 
+    test al, 02                       ; If the Fast A20 bit is already set, then, Fast A20 can't be relied upon.
     jnz .Disabled
 
-    or 02, al                         ; Enable Fast A20.
-    out al, 0x92      
+    or al, 02                         ; Enable Fast A20.
+    out 0x92, al      
 
     call CheckA20
     jc .Return
 
 .Disabled:
-    or [BIT.HrdwreFlags], A20_DISABLED
+    or byte [BIT.HrdwreFlags], A20_DISABLED
 
 .Return:
     clc

@@ -24,6 +24,15 @@ import glob
 from SCons.Builder import Builder
 from SCons.Action import Action
 
+colors = {}
+colors['cyan']   = '\033[96m'
+colors['purple'] = '\033[95m'
+colors['blue']   = '\033[94m'
+colors['green']  = '\033[92m'
+colors['yellow'] = '\033[93m'
+colors['red']    = '\033[91m'
+colors['end']    = '\033[0m'
+
 def _path(p) :
     return os.path.sep.join(p)
 
@@ -40,7 +49,7 @@ def _iso_builder(target, source, env) :
     shutil.copy(bios, s)
 
     os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 8 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
-
+    print("  %s[ISO]%s   %s" % (colors['blue'], colors['end'], target[0]))
     # Clean up our mess. :)
     shutil.rmtree(d)
 

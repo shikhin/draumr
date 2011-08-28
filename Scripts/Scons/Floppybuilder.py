@@ -25,6 +25,15 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from Isobuilder import _path
 
+colors = {}
+colors['cyan']   = '\033[96m'
+colors['purple'] = '\033[95m'
+colors['blue']   = '\033[94m'
+colors['green']  = '\033[92m'
+colors['yellow'] = '\033[93m'
+colors['red']    = '\033[91m'
+colors['end']    = '\033[0m'
+
 def _floppy_builder(target, source, env) :
     # Create a temporary directory to build the Floppy image structure.
     d = tempfile.mkdtemp()
@@ -34,8 +43,8 @@ def _floppy_builder(target, source, env) :
     combined = _path([d, "Combined"])
     
     os.system("cat %s %s > %s" % (stage1, bios, combined))
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync" % (combined, target[0]))
-   
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (combined, target[0]))
+    print("  %s[FLP]%s   %s" % (colors['blue'], colors['end'], target[0]) ) 
     shutil.rmtree(d)
     return 0
 
