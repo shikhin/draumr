@@ -59,10 +59,13 @@ Startup:
     mov [BIT.ReadFile], bx
     mov [BIT.CloseFile], cx
 
+    ; Enable A20, then try to generate memory map.
     call EnableA20
+    call MMapBuild
 
 .Die:
     hlt 
     jmp .Die
 
+%include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"

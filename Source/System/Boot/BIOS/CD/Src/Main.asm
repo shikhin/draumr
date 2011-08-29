@@ -116,7 +116,7 @@ ExtMain:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
-    movzx ecx, word [0x9000 + 8]      ; Get the end of the BSS section in ECX.
+    movzx ecx, word [0x9000 + 6]      ; Get the starting of the BSS section in ECX - actual file size.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x7FF
     shr ecx, 11                       ; Here we have the number of sectors of the file (according to the header).
@@ -129,7 +129,7 @@ ExtMain:
 
     cmp ecx, edx
     jne .Error2                       ; If they aren't equal, error.
-
+  
 .LoadRestFile:
     add edi, 0x800
     pop ecx
@@ -152,7 +152,7 @@ ExtMain:
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
-    
+
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
     jne .Error2                       ; Not equal? ERROR: Abort boot.
@@ -166,7 +166,7 @@ ExtMain:
 
     xor eax, eax                      ; Zero out EAX, since we want to clear the region.
     rep stosb                         ; Clear out the BSS section.
- 
+
 .JmpToBIOS:
     mov eax, OpenFile
     mov ebx, ReadFile

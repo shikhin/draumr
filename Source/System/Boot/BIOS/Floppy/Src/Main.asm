@@ -108,7 +108,7 @@ ExtMain:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
-    movzx ecx, word [0x9000 + 8]      ; Get the end of the BSS section in ECX.
+    movzx ecx, word [0x9000 + 6]      ; Get the start of the BSS section in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x1FF
     shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
