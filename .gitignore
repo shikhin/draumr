@@ -2,7 +2,7 @@
 *.flp
 *.todo
 *.o
-
+*~
 .bochsrc
 .sconsign.dblite
 debugger.out

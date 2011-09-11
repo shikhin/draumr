@@ -69,3 +69,40 @@ Startup:
 
 %include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
+
+SECTION .data
+; The GDTR, which is loaded in the GDTR register.
+GDTR32:
+    dw (0x08 * 3) - 1                 ; It's the size of all entries, minus 1.
+    dd GDT32
+
+; And the actual GDT here.
+GDT32:
+    dd 0x00000000, 0x00000000         ; The null entry.
+
+    ; The code entry - limit is 0xFFFF, base is 0x0000.
+    dw 0xFFFF, 0x0000                 
+    db 0x00, 0x9A, 0xCF, 0x00         ; The base, access, flags and limit byte.
+
+    ; The data entry.
+    dw 0xFFFF, 0x0000                 
+    db 0x00, 0x92, 0xCF, 0x00         ; The base, access, flags and limit byte.
+
+; The GDTR, which is loaded in the GDTR register.
+GDTR16:
+    dw (0x08 * 3) - 1                 ; It's the size of all entries, minus 1.
+    dd GDT16
+
+; And the actual GDT here.
+GDT16:
+    dd 0x00000000, 0x00000000         ; The null entry.
+
+    ; The code entry - limit is 0xFFFF, base is 0x0000.
+    dw 0xFFFF, 0x0000                 
+    db 0x00, 0x9A, 0x0F, 0x00         ; The base, access, flags and limit byte.
+
+    ; The data entry.
+    dw 0xFFFF, 0x0000                 
+    db 0x00, 0x92, 0x0F, 0x00         ; The base, access, flags and limit byte.
+
+

@@ -23,7 +23,6 @@ MMapBuild:
     pushad
 
 .Prepare:
-    xchg bx, bx
     mov di, MMap
     xor bp, bp                        ; The number of entries in the MMap.
 
@@ -70,7 +69,6 @@ MMapBuild:
     inc bp
 
 .E820:
-    jmp .CMOS
     call E820
     jnc .Clean                        ; If were able to build using E820, then clean the map.
     
@@ -156,6 +154,12 @@ MMapBuild:
 
     ; Increase the "we have that many entries" count.
     inc bp
+    
+    ; If the entry we just added spans below the 16MiB mark, probe for more memory at 16MiB.
+    add eax, 0x100000
+    cmp eax, 0xF00000
+    jb .HigherManual
+
     mov [MMapHeader.Entries], bp
 
     jmp .Clean
@@ -190,6 +194,12 @@ MMapBuild:
 
     ; Increase the "we have that many entries" count.
     inc bp
+
+    ; If the entry we just added spans below the 16MiB mark, probe for more memory at 16MiB.
+    add eax, 0x100000
+    cmp eax, 0xF00000
+    jb .HigherManual
+
     mov [MMapHeader.Entries], bp
 
     jmp .Clean
@@ -217,6 +227,12 @@ MMapBuild:
 
     ; Increase the "we have that many entries" count.
     inc bp
+
+    ; If the entry we just added spans below the 16MiB mark, probe for more memory at 16MiB.
+    add eax, 0x100000
+    cmp eax, 0xF00000
+    jb .HigherManual
+
     mov [MMapHeader.Entries], bp
 
     jmp .Clean
@@ -255,6 +271,12 @@ MMapBuild:
 
     ; Increase the "we have that many entries" count.
     inc bp
+
+    ; If the entry we just added spans below the 16MiB mark, probe for more memory at 16MiB.
+    add eax, 0x100000
+    cmp eax, 0xF00000
+    jb .HigherManual
+
     mov [MMapHeader.Entries], bp
 
     jmp .Clean
@@ -263,7 +285,44 @@ MMapBuild:
 .Manual:
     clc
 
-    jmp .Return
+    ; Probe for RAM at 1MiB till 15MiB (the ISA memory hole).
+    mov esi, 0x100000
+    mov edx, 0xE00000
+    call Probe
+
+    test ecx, ecx
+    jz .ManualEnd                     ; If the probe found no memory - end.
+
+    ; Create an entry for it, and increase the entries count.
+    mov dword [di], 0x100000
+    mov dword [di + 8], ecx
+    mov dword [di + 16], 1            ; It's free RAM - yeah.
+    mov dword [di + 20], 1            ; And a usable entry.
+    add di, 24
+    
+    inc bp                            ; Increase the entries count.
+
+; A probe for memory at the 16MiB mark.
+.HigherManual:
+    ; Let's probe for RAM starting from 0x1000000 (16MiB) to 0xFE000000 (4080MiB).
+    mov esi, 0x1000000
+    mov edx, 0xFE000000 - 0x1000000
+    call Probe
+
+    test ecx, ecx
+    jz .ManualEnd                     ; Same as above.
+
+    ; Create an entry for it, and increase the entries count.
+    mov dword [di], 0x1000000
+    mov dword [di + 8], ecx
+    mov dword [di + 16], 1            ; It's free RAM - and a usable entry.
+    mov dword [di + 20], 1
+    add di, 24
+
+    inc bp                            ; And increase the entries count.
+
+.ManualEnd:
+    mov [MMapHeader.Entries], bp
 
 .Clean:
     mov esi, MMap
@@ -271,6 +330,109 @@ MMapBuild:
 
 .Return:
     popad
+    ret
+
+Dummy:            dd 0
+
+; Probe to see if there's RAM at a certain address (taken and modified from wiki.osdev.org)
+; 
+; @edx            Maximum number of bytes to test.
+; @esi            Starting address of blocks to probe. 
+;     @rc
+;                 @ecx contains the number of bytes of RAM found 
+Probe:
+    pushad
+    
+.SwitchToPM:                          ; Switch to protected mode to probe at higher addresses. 
+    cli
+ 
+    lgdt [GDTR32]                     ; Load the GDT.
+    
+    mov eax, cr0                      ; Or 1 with CR0, to enable the PM bit.
+    or al, 1
+    mov cr0, eax
+
+    jmp 0x08:.Switched                ; Reload the code segment register.
+
+; 32-bit mode here.
+BITS 32
+.Switched:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax 
+    mov ss, ax                        ; Reload all the other segment registers too.
+
+.TestStart:
+    xor ecx, ecx                      ; The "number of bytes" of RAM found.
+    test edx, edx                     ; If @edx is zero, then no need to do anything.
+    jz .Return
+
+    or esi, 0x00003FFC                ; @esi is the address of the last dword in the first block.
+    shr edx, 14                       ; Shift right EDX by 14, to "divide it by 0x4000".
+ 
+.TestBlock:
+    mov eax, [esi]                    ; @eax contains the original value at the address.
+    mov ebx, eax                      ; @ebx contains the original value at the address too.      
+    not eax                           ; Reverse the value in @eax.
+
+    mov [esi], eax                    ; Modify value at address - replace by the reversed value.
+    mov [Dummy], ebx                  ; Do a dummy write - and then flush the cache.     
+    
+    wbinvd                            ; Flush the cache
+    
+    mov ebp, [esi]                    ; Compare the value at the address with the "reversed value".
+    mov [esi], ebx                    ; Restore the original value (even if it's not RAM, in case it's a memory mapped device or something)
+    
+    cmp ebp, eax                      ; Has the value changed over there - if yes, just quit before we make something more bad.  
+    jne .SwitchToRM                   ; Let's return.
+ 
+    ; Increase the bytes found counter, and the "address to test" pointer.
+    add ecx, 0x00004000     
+    add esi, 0x00004000      
+
+    ; Decrease the blocks remaining counter.
+    dec edx              
+    test edx, edx
+    jnz .TestBlock
+
+; Switch to Real mode back for future generations.
+.SwitchToRM:
+    lgdt [GDTR16]                     ; Load the 16-bit GDT.
+
+    jmp 0x08:.Protected16             ; And jump into 16-bit protected mode!
+
+; Now, back to 16-bits.
+BITS 16
+.Protected16:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    mov eax, cr0                      ; Switch off protected mode.
+    and eax, ~1
+    mov cr0, eax 
+
+    jmp 0x00:.RealMode
+
+.RealMode:
+    mov ax, 00
+    mov ds, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    mov ss, ax
+
+    ; Reload the segment registers, and enable interrupts.
+.Return:
+    mov [Dummy], ecx
+    popad
+    mov ecx, [Dummy]
+    sti
     ret
 
 ; Tries to use EAX=0x0000E8X1 method of generating a memory map
