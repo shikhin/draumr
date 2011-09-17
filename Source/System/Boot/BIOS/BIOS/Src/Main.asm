@@ -43,8 +43,10 @@ BIT:
     .ReadFile     dw 0
     .CloseFile    dw 0
     .HrdwreFlags  db 0                ; The "hardware" flags.
+    .VideoFlags   db 0                ; The video card information flags.
 
 %define A20_DISABLED    (1 << 0)
+%define VBE_PRESENT     (1 << 0)      ; Describes whether VBE was present or not.
 
 SECTION .text
 GLOBAL Startup
@@ -62,6 +64,7 @@ Startup:
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
+    call VideoInfoBuild
 
 .Die:
     hlt 
@@ -69,6 +72,7 @@ Startup:
 
 %include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 
 SECTION .data
 ; The GDTR, which is loaded in the GDTR register.
