@@ -340,34 +340,15 @@ Dummy:            dd 0
 ; @esi            Starting address of blocks to probe. 
 ;     @rc
 ;                 @ecx contains the number of bytes of RAM found 
-Probe:
-    pushad
-    
-.SwitchToPM:                          ; Switch to protected mode to probe at higher addresses. 
-    cli
- 
-    lgdt [GDTR32]                     ; Load the GDT.
-    
-    mov eax, cr0                      ; Or 1 with CR0, to enable the PM bit.
-    or al, 1
-    mov cr0, eax
+Probe:  
+    mov ebx, .TestStart
+    jmp SwitchToPM
 
-    jmp 0x08:.Switched                ; Reload the code segment register.
-
-; 32-bit mode here.
 BITS 32
-.Switched:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax 
-    mov ss, ax                        ; Reload all the other segment registers too.
-
 .TestStart:
     xor ecx, ecx                      ; The "number of bytes" of RAM found.
     test edx, edx                     ; If @edx is zero, then no need to do anything.
-    jz .Return
+    jz .SwitchToRM
 
     or esi, 0x00003FFC                ; @esi is the address of the last dword in the first block.
     shr edx, 14                       ; Shift right EDX by 14, to "divide it by 0x4000".
@@ -397,42 +378,13 @@ BITS 32
     test edx, edx
     jnz .TestBlock
 
-; Switch to Real mode back for future generations.
-.SwitchToRM:
-    lgdt [GDTR16]                     ; Load the 16-bit GDT.
+.SwitchToRM:   
+    mov ebx, .Return
+    jmp SwitchToRM
 
-    jmp 0x08:.Protected16             ; And jump into 16-bit protected mode!
-
-; Now, back to 16-bits.
 BITS 16
-.Protected16:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-
-    mov eax, cr0                      ; Switch off protected mode.
-    and eax, ~1
-    mov cr0, eax 
-
-    jmp 0x00:.RealMode
-
-.RealMode:
-    mov ax, 00
-    mov ds, ax
-    mov es, ax
-    mov gs, ax
-    mov fs, ax
-    mov ss, ax
-
     ; Reload the segment registers, and enable interrupts.
-.Return:
-    mov [Dummy], ecx
-    popad
-    mov ecx, [Dummy]
-    sti
+.Return: 
     ret
 
 ; Tries to use EAX=0x0000E8X1 method of generating a memory map

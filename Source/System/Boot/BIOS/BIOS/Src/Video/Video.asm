@@ -72,7 +72,7 @@ VideoInfoBuild:
     inc ecx
 
     ; Move to the next entry.
-    cmp bx, 0xFFE
+    cmp bx, 0xFFFE
     jb .Cont
    
     ; If we are about to cross 0xFFE, move on to the next segment.
@@ -118,7 +118,7 @@ VideoInfoBuild:
     inc ecx
 
     ; Move to the next entry.
-    cmp bx, 0xFFE
+    cmp bx, 0xFFFE
     jb .Cont2
    
     ; If we are about to cross 0xFFE, move on to the next segment.

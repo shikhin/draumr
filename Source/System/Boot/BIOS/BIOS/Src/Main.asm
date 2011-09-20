@@ -39,13 +39,20 @@ CRC32
 
 SECTION .data
 BIT:
-    .OpenFile     dw 0
-    .ReadFile     dw 0
-    .CloseFile    dw 0
+    .OpenFile     dd 0
+    .ReadFile     dd 0
+    .CloseFile    dd 0
     .HrdwreFlags  db 0                ; The "hardware" flags.
     .VideoFlags   db 0                ; The video card information flags.
+  
+    .ACPI         dd 0                ; The 32-bit address of the RSDP.
+    .MPS          dd 0                ; The 32-bit address of the MPS tables.
+    .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
+; Hardware flags.
 %define A20_DISABLED    (1 << 0)
+
+; Video flags.
 %define VBE_PRESENT     (1 << 0)      ; Describes whether VBE was present or not.
 
 SECTION .text
@@ -57,22 +64,95 @@ GLOBAL Startup
 ; @ebx            Should point to the ReadFile function.
 ; @ecx            Should point to the CloseFile function.
 Startup:
-    mov [BIT.OpenFile], ax
-    mov [BIT.ReadFile], bx
-    mov [BIT.CloseFile], cx
+    mov [BIT.OpenFile], eax
+    mov [BIT.ReadFile], ebx
+    mov [BIT.CloseFile], ecx
 
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
     call VideoInfoBuild
+   
+    ; Switch to protected mode, and go to .Protected32 label.
+    mov ebx, .Protected32
+    call SwitchToPM
+    
+BITS 32
+.Protected32:
+    call FindTables
 
 .Die:
     hlt 
     jmp .Die
 
+BITS 16
+
 %include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
+
+SECTION .text
+
+; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
+SwitchToPM:
+    cli
+ 
+    lgdt [GDTR32]                     ; Load the GDT.
+    
+    mov eax, cr0                      ; Or 1 with CR0, to enable the PM bit.
+    or al, 1
+    mov cr0, eax
+
+    jmp 0x08:.Switched                ; Reload the code segment register.
+
+; 32-bit mode here.
+BITS 32
+.Switched:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax 
+    mov ss, ax                        ; Reload all the other segment registers too.
+
+.Return:
+    jmp ebx
+
+; Switch to Real mode back for future generations.
+SwitchToRM:
+    lgdt [GDTR16]                     ; Load the 16-bit GDT.
+
+    jmp 0x08:.Protected16             ; And jump into 16-bit protected mode!
+
+; Now, back to 16-bits.
+BITS 16
+.Protected16:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+
+    mov eax, cr0                      ; Switch off protected mode.
+    and eax, ~1
+    mov cr0, eax 
+
+    jmp 0x00:.RealMode
+
+.RealMode:
+    mov ax, 00
+    mov ds, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    mov ss, ax
+
+    sti
+    
+.Return:
+    jmp ebx
 
 SECTION .data
 ; The GDTR, which is loaded in the GDTR register.

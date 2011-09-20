@@ -282,9 +282,9 @@ ReadFile:
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
 
+.Return:
     mov [Open.LBA], ebx               ; Store the new LBA.
 
-.Return:
     popad
     ret
 

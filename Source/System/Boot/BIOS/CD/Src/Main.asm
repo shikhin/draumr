@@ -147,7 +147,7 @@ ExtMain:
 .CheckCommonBIOS2:
     mov ecx, [0x9000 + 10]            ; Get the end of the file in ECX.
     sub ecx, 0x9000 + 18              ; Subtract 0x9000 (address of start) + 18 (size of header) from it, to get the size.
-    
+        
     mov esi, 0x9000 + 18              ; Calculate CRC from above byte 18.    
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
@@ -155,6 +155,7 @@ ExtMain:
 
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
+    
     jne .Error2                       ; Not equal? ERROR: Abort boot.
 
 .ZeroBSS:

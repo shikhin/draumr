@@ -163,6 +163,9 @@ Main:
     mov ebx, ReadFile
     mov ecx, CloseFile
    
+    xor dx, dx
+    mov ss, dx
+
     mov esp, 0x7C00
     mov dx, [0x9004]
     jmp dx
