@@ -67,7 +67,7 @@ Startup:
     mov [BIT.OpenFile], eax
     mov [BIT.ReadFile], ebx
     mov [BIT.CloseFile], ecx
-
+    
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
@@ -76,10 +76,13 @@ Startup:
     ; Switch to protected mode, and go to .Protected32 label.
     mov ebx, .Protected32
     call SwitchToPM
-    
+   
 BITS 32
 .Protected32:
     call FindTables
+
+    ; Enable paging.
+    call EnablePaging
 
 .Die:
     hlt 
@@ -91,6 +94,7 @@ BITS 16
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Paging.asm"
 
 SECTION .text
 

@@ -28,7 +28,8 @@ src = ["Link.ld",
        "Src/A20.asm",
        "Src/Memory.asm",
        "Src/Video/Video.asm",
-       "Src/Tables/Tables.asm"]
+       "Src/Tables/Tables.asm",
+       "Src/Paging.asm"]
 
 # A target for building the Stage 1 binary.
 BIOSobj = sys_env.Object("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
