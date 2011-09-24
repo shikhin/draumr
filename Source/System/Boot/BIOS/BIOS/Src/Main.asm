@@ -22,7 +22,6 @@ BITS 16
 
 %include "Source/System/Boot/BIOS/BIOS/Format/Format.inc"
 
-
 SECTION .header
 ; Define the Common BIOS File Header
 EXTERN bss
@@ -34,7 +33,7 @@ ENTRY_POINT       Startup
 BSS_START         bss
 BSS_END           end
 FILE_END          file_end
-CRC32
+CRC32_DEFINE
 
 
 SECTION .data
@@ -55,6 +54,12 @@ BIT:
 ; Video flags.
 %define VBE_PRESENT     (1 << 0)      ; Describes whether VBE was present or not.
 
+; Abort boot if can't open file.
+ErrorFile db "ERROR: Error occured while trying to open file.", 0
+
+; Or file is incorrect.
+ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", 0
+
 SECTION .text
 GLOBAL Startup
 
@@ -72,25 +77,112 @@ Startup:
     call EnableA20
     call MMapBuild
     call VideoInfoBuild
+    
+.LoadDBAL:    
+    xor ax, ax                        ; Open File 1, or DBAL file.
+    inc ax
+    
+    call dword [BIT.OpenFile]         ; Open the File.
+    
+    jc .Error
+    
+    ; ECX contains size of file we are opening.
+    push ecx
+    mov ecx, 512                      ; Read only 512 bytes.
+
+    mov edi, 0xD000
+    call [BIT.ReadFile]               ; Read the entire file.
+    
+.CheckDBAL1:
+    cmp dword [0xD000], "DBAL"        ; Check the signature.
+    jne .Error2
+
+    mov ecx, [0xD000 + 10]            ; Get the end of file in ECX - actual file size.
+    sub ecx, 0xD000                   ; Subtract 0xD000 from it to get it's size.
+    add ecx, 0x1FF
+    shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
+    
+    mov edx, [esp]                    ; And again - c'mon, read the previous comments in the same lines. :|
+
+    add edx, 0x1FF
+    shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
+    
+    cmp ecx, edx
+    jne .Error2                       ; If they aren't equal, error.
+  
+.LoadRestFile:
+    add edi, 0x200
+    pop ecx
+    
+    cmp ecx, 0x200
+    jb .Finish
+
+    sub ecx, 0x200                    ; Read the rest 0x200 bytes.
+    
+    call dword [BIT.ReadFile]         ; Read the rest of the file.
+    
+.Finish:
+    call dword [BIT.CloseFile]        ; And then close the file.
+
+.CheckDBAL2:
+    mov ecx, [0xD000 + 10]            ; Get the end of the file in ECX.
+    sub ecx, 0xD000 + 18              ; Subtract 0xD000 (address of start) + 18 (size of header) from it, to get the size.
+        
+    mov esi, 0xD000 + 18              ; Calculate CRC from above byte 18.    
+    mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
+    
+    call CRC32
+    
+    not eax                           ; Inverse the bits to get the CRC value.
+    cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
+        
+    jne .Error2                       ; Not equal? ERROR: Abort boot.
+
+.ZeroBSS:
+    mov esi, 0xD000 
+    movzx edi, word [esi + 6]         ; Move the start of BSS section into EDI.
    
+    movzx ecx, word [esi + 8]
+    sub ecx, edi                      ; Calculate the length, and store it in ECX.
+
+    xor eax, eax                      ; Zero out EAX, since we want to clear the region.
+    rep stosb                         ; Clear out the BSS section.
+
     ; Switch to protected mode, and go to .Protected32 label.
     mov ebx, .Protected32
     call SwitchToPM
    
+.Error:
+    xor ax, ax
+    mov si, ErrorFile
+    call AbortBoot
+
+.Error2:
+    xor ax, ax
+    mov si, ErrorBIOSFile
+    call AbortBoot
+
 BITS 32
 .Protected32:
     call FindTables
 
     ; Enable paging.
     call EnablePaging
-
-.Die:
-    hlt 
-    jmp .Die
+    
+; Jump to the DBAL file here.
+.JmpToDBAL:
+    ; Reset the stack - who needs all the junk anyway?
+    mov esp, 0x7C00
+    call word [0xD004]
 
 BITS 16
 
+SECTION .text
+
+%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
@@ -99,6 +191,7 @@ BITS 16
 SECTION .text
 
 ; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
+; @ebx            Would sound dumb - but found no better way (without messing with the stack) - the return address here.
 SwitchToPM:
     cli
  
@@ -193,4 +286,5 @@ GDT16:
     dw 0xFFFF, 0x0000                 
     db 0x00, 0x92, 0x0F, 0x00         ; The base, access, flags and limit byte.
 
-
+SECTION .pad
+    db "BIOS"

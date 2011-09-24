@@ -27,7 +27,7 @@ from Isobuilder import _path
 
 def _image_builder(target, source, env) :
     os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
-
+    os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
     return 0
 
 ImageBuilder = Builder(action = Action(_image_builder, None))

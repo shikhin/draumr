@@ -21,14 +21,19 @@ SECTIONS
         data = .;
         *(.data)                                                                                                                                                 }
 
-    file_end = .;
-
     .bss 0x9000 + (bss - header) :
     {
         bss = .;
         *(.bss)
     }
-
     end = .;
+
+    .pad 0xAFFC :
+    {
+        pad = .;
+        *(.pad)
+    }
+
+    file_end = .;
 }
 

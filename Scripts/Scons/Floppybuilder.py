@@ -40,10 +40,13 @@ def _floppy_builder(target, source, env) :
 
     stage1 = str(env["FLOPPY_STAGE1"][0])
     bios = str(env["BIOS"][0])
+    dbal = str(env["DBAL"][0])
     combined = _path([d, "Combined"])
-    
+    combined2 = _path([d, "Combined2"])
+
     os.system("cat %s %s > %s" % (stage1, bios, combined))
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (combined, target[0]))
+    os.system("cat %s %s > %s" % (combined, dbal, combined2))
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (combined2, target[0]))
     print("  %s[FLP]%s   %s" % (colors['blue'], colors['end'], target[0]) ) 
     shutil.rmtree(d)
     return 0

@@ -1,4 +1,4 @@
-; Contains macros defined to "define" the Common BIOS File Header.
+; Contains macros defined to "define" the DBAL File Header.
 ;
 ; Copyright (c) 2011 Shikhin Sethi
 ;
@@ -17,7 +17,7 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-; Offset 0        Common BIOS File Identifier.
+; Offset 0        DBAL File Identifier.
 ; Offset 4        Address of entry point.
 ; Offset 6        Starting address of BSS section.
 ; Offset 8        Ending address of BSS section.
@@ -25,7 +25,7 @@
 ; Offset 14       CRC32 remainder.
 
 ; This should just be at offset 0 of the file - identifies the file at Common BIOS File.
-%define COMMON_BIOS db "BIOS"
+%define DBAL db "DBAL"
 
 ; Defines the entry point of the Common BIOS file.
 %macro ENTRY_POINT 1

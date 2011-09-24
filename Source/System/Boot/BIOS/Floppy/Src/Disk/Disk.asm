@@ -135,7 +135,11 @@ Info:
 
 BIOS:
     .LBA      dd 8                    ; The LBA for the starting of the BIOS File.
-    .Size     dd 0                    ; The size of the BIOS File.
+    .Size     dd 0x2000               ; The size of the BIOS File - now we know the exact number.
+
+DBAL:
+    .LBA      dd 24                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
+    .Size     dd 0                    ; The size for the DBAL file is currently unknown - perhaps later it would be known.
 
 SECTION .text
 
@@ -147,15 +151,15 @@ SECTION .text
 InitBootFiles:
     pushad
 
-    mov eax, [BIOS.LBA]               ; Get the LBA into EAX.
+    mov eax, [DBAL.LBA]               ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
     
     call ReadFromFloppyM              ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 10]            ; Offset 10 of the file is the EOF address.
-    sub ecx, 0x9000                   ; Subtract Start of File to get the size of the file.
-    mov [BIOS.Size], ecx              ; And store it!
+    sub ecx, 0xD000                   ; Subtract Start of File to get the size of the file.
+    mov [DBAL.Size], ecx              ; And store it!
 
 .Return:
     popad
@@ -199,8 +203,11 @@ ReadFromFloppyM:
     mov eax, SECTORS_PER_TRACK
     sub eax, [Info.Sector]            ; Subtract the sector (in the track) from SECTORS_PER_TRACK.
                                       ; That's the maximum possible sectors we can read.
-
+  
     pop ecx                           ; Get back the number of sectors to read.
+    test eax, eax                     ; If it's zero, that means we are already on the next track. Read.
+    jz .Read
+    
     cmp ecx, eax                      ; Compare requested sectors to read, with maximum possible sectors.
 
     jbe .Read                         ; If below or equal, read the sectors.
@@ -291,14 +298,28 @@ OpenFile:
     mov byte [Open], 1
 
     cmp al, 0
-    jne .Error                        ; Currently you can only open the Common BIOS FILE!
-   
+    je .BIOS                          ; Code 0 indicates the common BIOS file.
+
+    cmp al, 1                         ; While 1 indicates the DBAL file.
+    je .DBAL
+
+    jmp .Error
+
 .BIOS:
     mov eax, [BIOS.LBA]               ; Get the LBA in EAX.
     mov [Open.LBA], eax
 
     mov eax, [BIOS.Size]              ; Get the Size in EAX.
     mov [Open.Size], eax
+
+    jmp .Return
+
+.DBAL:
+    mov eax, [DBAL.LBA]               ; Get the LBA in EAX.
+    mov [Open.LBA], eax
+
+    mov eax, [DBAL.Size]
+    mov [Open.Size], eax              ; And the size.
 
 .Return:
     popad
@@ -336,7 +357,7 @@ ReadFile:
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
     call ReadFromFloppyM              ; Do the CALL!
-
+   
     add eax, ecx                      ; Advance the LBA by read sectors count.
 
     sub edx, ecx                      ; EDX more sectors left to do.
@@ -345,6 +366,7 @@ ReadFile:
    
     ; Now need to advance EDI.
     push eax                          ; Save EAX - and restore it later.
+    push edx
 
     mov eax, ecx                      ; Get the sectors read count in ECX.
     mov ebx, 512
@@ -352,6 +374,7 @@ ReadFile:
 
     add edi, eax
 
+    pop edx
     pop eax
     
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.

@@ -50,10 +50,13 @@ IsOpen:           db 0
 
 Files:
     .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
+    .DBAL         dw DBALStr          ; And the DBAL string in the table.
 
 BIOSStr db "BIOS", 0
 times 128 - ($ - BIOSStr) db 0
 
+DBALStr db "DBAL", 0
+times 128 - ($ - DBALStr) db 0
 
 SECTION .text
 
@@ -66,6 +69,8 @@ SECTION .text
 OpenFile:
     pushad
 
+    ; Save AX - containing the file code - we will be using it later.
+    push ax
     mov di, PXENV_TFTP_OPEN 
     mov ecx, 71                       ; Store 71-words.
     xor eax, eax                      ; We need to zero out the structure.
@@ -96,8 +101,9 @@ OpenFile:
 
     ; Store the "filename" at PXENV_TFTP_OPEN.Filename
     mov ecx, 32                       ; We need to store 32 dwords, or 128 bytes.
-    xor ebx, ebx
-    mov bl, al
+
+    pop ax                            ; And get back EAX.
+    movzx ebx, al
     add ebx, ebx                      ; Double 'al' to get words.
     add bx, Files                     ; Add address to index.
 
@@ -109,6 +115,7 @@ OpenFile:
     mov si, [bx]
     mov ecx, 32
     mov di, PXENV_TFTP_GET_FSIZE.Filename
+    
     rep movsd                         ; And then get the filename into both the get file size, and open file structures.
 
     mov di, PXENV_TFTP_GET_FSIZE
@@ -132,7 +139,7 @@ OpenFile:
     mov ax, [PXENV_TFTP_OPEN.PacketSize]
     mov [PacketSize], ax
 
-.Return:
+.Return:        
     popad
     mov ecx, [PXENV_TFTP_GET_FSIZE.Filesize]
     ret

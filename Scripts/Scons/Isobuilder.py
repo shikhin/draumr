@@ -45,8 +45,10 @@ def _iso_builder(target, source, env) :
     os.makedirs(s)
     stage1 = str(env["CD_STAGE1"][0])
     bios = str(env["BIOS"][0])
+    dbal = str(env["DBAL"][0])
     shutil.copy(stage1, s)
     shutil.copy(bios, s)
+    shutil.copy(dbal, s)
 
     os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 8 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
     print("  %s[ISO]%s   %s" % (colors['blue'], colors['end'], target[0]))

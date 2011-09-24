@@ -75,6 +75,9 @@ BIOS:
     .LBA          dd 0                ; The LBA of the BIOS file.
     .Size         dd 0                ; The Size of the BIOS file in bytes.
 
+DBAL:
+    .LBA          dd 0                ; The LBA of the DBAL file.
+    .Size         dd 0                ; The Size of the DBAL file in bytes.
 
 ; Is responsible for finding boot files.
 ;     @rc
@@ -127,7 +130,7 @@ FindBootFiles:
     mov [Boot.Size], eax
     
     mov edx, "BIOS"
-    mov ebp, 1                        ; Number of files to load.
+    mov ebp, 2                        ; Number of files to load.
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
@@ -143,6 +146,9 @@ FindBootFiles:
     cmp dword [di + 33], "BIOS"       ; If directory identifier doesn't match, next record.
     je .FoundBIOS
 
+    cmp dword [di + 33], "DBAL"       ; Sigh, how many 4 byte entries do we have?
+    je .FoundDBAL
+
 .NextRecordBD:
     movzx edx, byte [di]              ; Save the size of the directory record into EDX.
     add di, dx                        ; Move to the next directory record.
@@ -156,6 +162,8 @@ FindBootFiles:
     test eax, eax
     jnz .LoadSectorBD                 ; If EAX isn't zero, load next sector and continue.
 
+    jmp .NotFound                     ; If we reached here, we haven't found all the files. Abort.
+
 .FoundBIOS:
     push eax
     push ebx
@@ -166,6 +174,23 @@ FindBootFiles:
     mov [BIOS.LBA], ebx
     mov [BIOS.Size], eax
 
+    pop ebx
+    pop eax
+
+    dec ebp
+
+    jmp .MoveOn
+
+.FoundDBAL:
+    push eax
+    push ebx
+ 
+    mov eax, [di + 10]
+    mov ebx, [di + 2]
+
+    mov [DBAL.LBA], ebx
+    mov [DBAL.Size], eax
+   
     pop ebx
     pop eax
 
@@ -212,13 +237,27 @@ OpenFile:
     mov byte [Open], 1
 
     cmp al, 0
-    jne .Error                        ; Currently you can only open the Common BIOS FILE!
+    je .BIOS                          ; 0 indicates the common BIOS file.
+
+    cmp al, 1                         ; 1 indicates the DBAL file.
+    je .DBAL
+
+    jmp .Error
    
 .BIOS:
     mov eax, [BIOS.LBA]
     mov [Open.LBA], eax
 
     mov eax, [BIOS.Size]
+    mov [Open.Size], eax
+   
+    jmp .Return
+
+.DBAL:
+    mov eax, [DBAL.LBA]
+    mov [Open.LBA], eax
+
+    mov eax, [DBAL.Size]
     mov [Open.Size], eax
 
 .Return:

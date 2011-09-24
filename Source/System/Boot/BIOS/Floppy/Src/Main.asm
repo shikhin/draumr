@@ -77,8 +77,6 @@ ErrorFile db "ERROR: Error occured while trying to open file.", nl, 0
 ; Or file is incorrect.
 ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", nl, 0
 
-Finish db "Finished!", nl, 0
-
 SECTION .text
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
 
@@ -108,13 +106,12 @@ ExtMain:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
-    movzx ecx, word [0x9000 + 6]      ; Get the start of the BSS section in ECX.
+    mov ecx, [0x9000 + 10]            ; Get the end of the file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x1FF
     shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
   
-    pop edx
-    push edx
+    mov edx, [esp]                    ; Get the saved ECX.
 
     add edx, 0x1FF
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
@@ -165,6 +162,7 @@ ExtMain:
     mov ecx, CloseFile
    
     mov esp, 0x7C00
+   
     mov dx, [0x9004]
     jmp dx
 

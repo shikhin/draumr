@@ -40,7 +40,6 @@ Startup:
 SECTION .data
 
 BIOSError db "ERROR: Error occured while trying to read, open or parse common BIOS File.", nl, 0
-Finish db "Finished!", nl, 0
 
 ; Prepare the PXENV_GET_CACHED_INFO structure.
 PXENV_GET_CACHED_INFO:
@@ -103,7 +102,7 @@ Main:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     call OpenFile                     ; Open the File.
     jc .Error
-    
+
     ; ECX contains size of file we are opening.
     push ecx
     mov ecx, 512                      ; Read only 512 bytes.
@@ -118,8 +117,7 @@ Main:
     movzx ecx, word [0x9000 + 8]      ; Get the end of the BSS section in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
       
-    pop edx
-    push edx
+    mov edx, [esp]                    ; Get the saved ECX.
 
 .LoadRestFile:
     add edi, 512

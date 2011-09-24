@@ -20,49 +20,21 @@
 SECTION .text
 
 
-%define           nl 0x0A, 0x0D
-
-
 BITS 16
-
-
-; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
-;     @es         Should contain the segment containing Video Memory.
-InitScreen:
-    pushad                            ; Push all general purpose registers to save them.
-
-    xor ebx, ebx
-    xor edx, edx
-    mov eax, 0x200
-    int 0x10                          ; Set the position of the hardware cursor to 00, 00 so that later BIOS calls
-                                      ; print at the right place.
-    mov ecx, 0x2600
-    mov eax, 0x100
-    int 0x10                          ; Hide the hardware cursor.
-
-    xor di, di
-    mov ecx, 1000                     ; Since we are clearing DWORDs over here, we put the count as Count/4.
-    mov eax, 0x1F201F20               ; Set the value to set the screen to: Blue background, white foreground, blank spaces.
-    rep stosd                         ; Clear the entire screen. 
-    
-    popad                             ; Pop all general registers back to save them.
-    ret
-
 
 ; Prints a message on the screen using the BIOS.
 ;     @si         Should contain the address of the null terminated string.
 Print:
     pushad
-
 .PrintLoop:
     lodsb                             ; Load the value at [@es:@si] in @al.
     test al, al                       ; If AL is the terminator character, stop printing.
-    je .PrintDone                  
-    mov ah, 0x0E
+    je .PrintDone                  	
+    mov ah, 0x0E	
     int 0x10
     jmp .PrintLoop                    ; Loop till the null character not found.
-
+	
 .PrintDone:
     popad                             ; Pop all general purpose registers to save them.
-    ret
+    ret	
 

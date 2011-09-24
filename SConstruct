@@ -41,30 +41,30 @@ Depends(Source, Utils)
 image = env.Image("BootImage.comp", None)
 if cfg.target == "all":
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], image])
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
 
     pxe = env.PXE("/tftpboot/Stage1", None) 
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
 
     floppy = env.Floppy("Draumr.flp", None)
-    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], image])
+    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], env["DBAL"], image])
 
     Default([iso, pxe, floppy])
 
 elif cfg.target == "iso" :
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], image])
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
      
     Default(iso)
 
 elif cfg.target == "pxe" :
     pxe = env.PXE("/tftpboot/Stage1", None)
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], image])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
 
     Default(pxe)
 
 elif cfg.target == "floppy" :
     floppy = env.Floppy("Draumr.flp", None)
-    Depends(floppy, [env["FLOPPY_STAGE1"], env ["BIOS"], image])
+    Depends(floppy, [env["FLOPPY_STAGE1"], env ["BIOS"], env["DBAL"], image])
 
     Default(floppy)
