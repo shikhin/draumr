@@ -28,11 +28,9 @@ src = ["Src/Header.asm",
 
 
 # A target for building the DBAL binary.
-# DBALobj = sys_env.Object("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = "-m32")
-DBAL = sys_env.Program("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = "-m32")
+DBAL = sys_env.Program("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = "-m32 -ISource/System/Boot/DBAL/Include/")
 
-#Depends(DBALobj, src)
-#Depends(DBAL, DBALobj)
 Depends(DBAL, src)
+
 # Save the DBAL target in the environment as we will need it later.
 env["DBAL"] = DBAL

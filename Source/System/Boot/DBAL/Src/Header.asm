@@ -28,12 +28,21 @@ SECTION .header
 EXTERN bss
 EXTERN end
 EXTERN file_end
-EXTERN main
+EXTERN Main
 
 DBAL
-ENTRY_POINT       main
+ENTRY_POINT       Start
 BSS_START         bss
 BSS_END           end
 FILE_END          file_end
 CRC32_DEFINE
 
+BITS 32
+
+; Here, we start.
+; @eax            Contains the starting of the BIT.
+; @esp            This should be equal to 0x7C00 - for clearing.
+GLOBAL Start
+Start:
+    push eax
+    call Main

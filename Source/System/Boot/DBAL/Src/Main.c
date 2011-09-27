@@ -17,7 +17,12 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-int main()
+#include <stdint.h>
+
+int Main(uint32_t *BIT)
 {
-    for(;;);  
+    for(;;)
+        __asm__ __volatile__("hlt");
+    
+    BIT = BIT;
 }

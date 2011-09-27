@@ -165,14 +165,14 @@ Startup:
 BITS 32
 .Protected32:
     call FindTables
-
-    ; Enable paging.
-    call EnablePaging
-    
+   
 ; Jump to the DBAL file here.
 .JmpToDBAL:
     ; Reset the stack - who needs all the junk anyway?
     mov esp, 0x7C00
+    ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
+    mov eax, BIT
+
     call word [0xD004]
 
 BITS 16
@@ -186,7 +186,6 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Paging.asm"
 
 SECTION .text
 
