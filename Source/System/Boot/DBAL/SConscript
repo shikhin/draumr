@@ -24,7 +24,10 @@ Import("env", "sys_env")
 
 
 src = ["Src/Header.asm",
-       "Src/Main.c"]
+       "Src/Main.c",
+       "Src/BIT.c",
+       "Src/String.c",
+       "Src/PMM.c"]
 
 
 # A target for building the DBAL binary.

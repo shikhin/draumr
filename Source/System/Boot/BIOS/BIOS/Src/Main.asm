@@ -48,6 +48,8 @@ BIT:
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
+    .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
+
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
 

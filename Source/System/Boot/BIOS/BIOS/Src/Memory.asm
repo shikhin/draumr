@@ -637,7 +637,7 @@ Finalized:        dw 0                ; The finalized variable.
 ; The Memory Map header.
 MMapHeader:
     .Entries      dw 0                ; The number of entries in the memory map.
-    .Address      dw MMap             ; The starting address of the memory map.
+    .Address      dd MMap             ; The starting address of the memory map.
 
 SECTION .bss
 

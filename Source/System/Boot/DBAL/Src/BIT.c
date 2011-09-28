@@ -1,4 +1,4 @@
-/* Entry point for DBAL file.
+/* General BIT related definitions and structures.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -20,16 +20,14 @@
 #include <stdint.h>
 #include <String.h>
 #include <BIT.h>
-#include <PMM.h>
 
-int Main(uint32_t *BITPointer)
+// Define the BIT structure here.
+BIT_t BIT;
+
+// Initializes the BIT structure, copying it to somewhere appropriate.
+// uint32_t *BITPointer               The pointer to the BIT structure, as passed to us.
+void BITInit(uint32_t *BITPointer)
 {
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
-
-    // Initialize the PMM.
-    PMMInit();
-    
-    for(;;)
-        __asm__ __volatile__("hlt");
+    memcpy(&BIT, BITPointer, sizeof(BIT_t));
+    return; 
 }

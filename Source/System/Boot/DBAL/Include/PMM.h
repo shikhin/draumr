@@ -1,4 +1,4 @@
-/* Entry point for DBAL file.
+/* Contains common PMM definitions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,19 +17,12 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef PMM_H                         /* PMM.h */
+#define PMM_H
+
 #include <stdint.h>
-#include <String.h>
-#include <BIT.h>
-#include <PMM.h>
 
-int Main(uint32_t *BITPointer)
-{
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
+// Initializes the physical memory manager for ourselves.
+void PMMInit();
 
-    // Initialize the PMM.
-    PMMInit();
-    
-    for(;;)
-        __asm__ __volatile__("hlt");
-}
+#endif                                /* PMM.h */
