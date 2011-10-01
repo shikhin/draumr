@@ -1,4 +1,4 @@
-/* Contains common PMM definitions.
+/* Contains structures and definitions for Debug log functions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,31 +17,14 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef LOG_H                         /* Log.h */
+#define LOG_H
+
 #include <stdint.h>
-#include <String.h>
-#include <PMM.h>
-#include <BIT.h>
 
-// Define the pointers to the headers and entries.
-MMapHeader_t *MMapHeader;
-MMapEntry_t  *MMapEntries;
+// Prints to the screen, in text mode.
+// char *Fmt                          Contains the string to print.
+// ...                                And other arguments.
+void DebugPrintText(char *Fmt, ...);
 
-// PMMFixMMap fixes the memory map - only overlapping entries.
-static void PMMFixMMap()
-{
-    // Loop till all the entries.
-    for(uint32_t i = 0; i < MMapHeader->Entries; i++)
-    {
-        // And fix all the shit here.
-    }
-}
-
-// Initializes the physical memory manager for ourselves.
-void PMMInit()
-{
-    // Get the addresses into the right variables.
-    MMapHeader = (MMapHeader_t*)BIT.MMap;
-    MMapEntries = (MMapEntry_t*)MMapHeader->Address;
-    
-    PMMFixMMap();                     // Fix overlapping entries.
-}
+#endif

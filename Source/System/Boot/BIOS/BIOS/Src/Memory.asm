@@ -55,12 +55,8 @@ MMapBuild:
 .BootCode:
     ; Set the boot code, as 0x7C00->End of our file, of type 2, Boot Code.
     mov dword [di + 0], 0x7C00
-    mov ecx, [0x9000 + 10]            ; Offset 10 contains the end of the file.
+    mov ecx, 0x10000                  ; Let's assume the area till 0x10000 is used by Boot Code.
     sub ecx, 0x7C00                   ; Get the length.
-    
-    ; Round it to the nearest page boundary.
-    add ecx, 0xFFF
-    and ecx, ~0xFFF
     
     mov dword [di + 8], ecx
     mov dword [di + 16], 2

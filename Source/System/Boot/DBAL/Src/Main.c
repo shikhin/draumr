@@ -21,6 +21,7 @@
 #include <String.h>
 #include <BIT.h>
 #include <PMM.h>
+#include <Log.h>
 
 int Main(uint32_t *BITPointer)
 {

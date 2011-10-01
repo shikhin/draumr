@@ -60,3 +60,11 @@ void *memmove(void *dest, void *src, uint32_t count)
     // Return the destination.
     return dest;
 }
+
+// Write a specified byte to the specified port.
+// uint16_t port                      The port at which to write the value.
+// uint8_t  value                     The byte which is to be written at the port.
+void outb(uint16_t port, uint8_t value)
+{
+    __asm__ __volatile__("outb %1, %0" :: "dN"(port), "a"(value));
+}
