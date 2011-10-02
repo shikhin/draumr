@@ -60,7 +60,7 @@ BIT:
 ErrorFile db "ERROR: Error occured while trying to open file.", 0
 
 ; Or file is incorrect.
-ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", 0
+ErrorBIOSFile db "ERROR: Error occured while trying to parse the DBAL file.", 0
 
 SECTION .text
 GLOBAL Startup
@@ -97,6 +97,7 @@ Startup:
     
 .CheckDBAL1:
     cmp dword [0xD000], "DBAL"        ; Check the signature.
+
     jne .Error2
 
     mov ecx, [0xD000 + 10]            ; Get the end of file in ECX - actual file size.
@@ -110,6 +111,7 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
     
     cmp ecx, edx
+
     jne .Error2                       ; If they aren't equal, error.
   
 .LoadRestFile:
@@ -120,7 +122,7 @@ Startup:
     jb .Finish
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
-    
+  
     call dword [BIT.ReadFile]         ; Read the rest of the file.
     
 .Finish:
@@ -129,7 +131,7 @@ Startup:
 .CheckDBAL2:
     mov ecx, [0xD000 + 10]            ; Get the end of the file in ECX.
     sub ecx, 0xD000 + 18              ; Subtract 0xD000 (address of start) + 18 (size of header) from it, to get the size.
-        
+    
     mov esi, 0xD000 + 18              ; Calculate CRC from above byte 18.    
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     

@@ -30,7 +30,7 @@ int Main(uint32_t *BITPointer)
 
     // Initialize the PMM.
     PMMInit();
-    
+    DebugPrintText("Hello World");
     for(;;)
         __asm__ __volatile__("hlt");
 }

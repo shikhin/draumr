@@ -279,11 +279,17 @@ OpenFile:
 ReadFile:
     pushad
 
+    add ecx, 0x7FF
+    and ecx, ~0x7FF                   ; Get it to the nearest rounded 0x800 byte thingy.
+
     cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
 
     jbe .Cont
   
     mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
+    mov ebx, [Open.LBA]               ; If we jbe .Return, then we need the LBA in EBX.
+    cmp ecx, 0
+    jbe .Return
 
 .Cont:
     sub [Open.Size], ecx              ; Subtract bytes read from bytes we can read.

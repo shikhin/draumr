@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     FILE *File;
     uint8_t *Buf;
     uint32_t Status = 0, BytesRead, i, Seed = 0xFFFFFFFF;
-
+    
     File = fopen(argv[1], "r+b");
     if(File == NULL)
          return -1;    
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
     {
         Status = fread(Buf, 1, GOOD_LENGTH, File);
         if(Status > 0) 
-        {
+        {  
             BytesRead = Status;
             Seed = CRC(Seed, BytesRead, Buf);
         }
