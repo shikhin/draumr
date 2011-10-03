@@ -103,7 +103,9 @@ ExtMain:
     jc .Error
     
     ; ECX contains size of file we are opening.
+
     push ecx
+    
     mov ecx, 0x800                    ; Read only 0x800 bytes.
 
     mov edi, 0x9000

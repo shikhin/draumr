@@ -218,6 +218,7 @@ Open:
     .IsOpen db 0                      ; Set to 1 is a file is open.
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
+    .Read   dd 0                      ; The number of "extra" bytes read in the last "transaction".
 
 SECTION .text
 
@@ -235,6 +236,7 @@ OpenFile:
     jnz .Error
 
     mov byte [Open], 1
+    mov dword [Open.Read], 0          ; Last transaction - 0 extra read.
 
     cmp al, 0
     je .BIOS                          ; 0 indicates the common BIOS file.
@@ -279,22 +281,27 @@ OpenFile:
 ReadFile:
     pushad
 
+    mov edx, ecx                      ; Get the original number of bytes in EDX.
     add ecx, 0x7FF
     and ecx, ~0x7FF                   ; Get it to the nearest rounded 0x800 byte thingy.
+
+    mov eax, ecx                      ; Get the new number of bytes in EAX.
+    sub eax, edx                      ; And now, get the extra in EAX.
+    push eax                          ; Push it.
 
     cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
 
     jbe .Cont
   
     mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
-    mov ebx, [Open.LBA]               ; If we jbe .Return, then we need the LBA in EBX.
     cmp ecx, 0
-    jbe .Return
+    jbe .ZeroLeft
 
 .Cont:
     sub [Open.Size], ecx              ; Subtract bytes read from bytes we can read.
 
 .Read:
+    add edi, [Open.Read]
     mov ebx, [Open.LBA]               ; Get the LBA to read in EBX.
     add ecx, 0x7FF
     shr ecx, 11                       ; And the number of sectors to read in ECX.
@@ -304,7 +311,7 @@ ReadFile:
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
     call ReadFromDiskM                ; Do the CALL!
-
+  
     add ebx, ecx                      ; Advance the LBA by read sectors count.
    
     sub edx, ecx                      ; EDX more sectors left to do.
@@ -330,6 +337,14 @@ ReadFile:
 .Return:
     mov [Open.LBA], ebx               ; Store the new LBA.
 
+    pop eax
+    mov [Open.Read], eax              ; Store the read into EAX.
+
+    popad
+    ret
+
+.ZeroLeft:
+    pop eax
     popad
     ret
 

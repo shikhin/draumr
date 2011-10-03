@@ -23,14 +23,14 @@
 #include <stdint.h>
 
 // The Header structure for the MMap.
-typedef struct
+struct MMapHeader
 {
     uint16_t Entries;                 // The number of entries in the memory map.
     uint32_t Address;                 // The starting address of the memory map.
-} MMapHeader_t;
+} __attribute__((packed));
 
 // The Entry structure for the MMap.
-typedef struct
+struct MMapEntry
 {
     // The Start of the entry, and it's length.
     uint64_t Start;
@@ -39,7 +39,10 @@ typedef struct
     // The Type of the entry, and it's Length.
     uint32_t Type;
     uint32_t Flags;
-} MMapEntry_t;
+} __attribute__((packed));
+
+typedef struct MMapHeader MMapHeader_t;
+typedef struct MMapEntry MMapEntry_t;
 
 /* The RAM Types - in case I forget before I write the docs :P */
 // Type 1 - Free RAM

@@ -22,6 +22,8 @@ SECTION .text
 MMapBuild:
     pushad
 
+    mov dword [BIT.MMap], MMapHeader
+
 .Prepare:
     mov di, MMap
     xor bp, bp                        ; The number of entries in the MMap.
@@ -46,7 +48,7 @@ MMapBuild:
 
     ; And then the real BIOS rom, 0xFE000000->0xFFFFFFFF of type 4, unusable RAM.
     mov dword [di + 0], 0xFE000000
-    mov dword [di + 8], 0x1FFFFFF 
+    mov dword [di + 8], 0x2000000 
     mov dword [di + 16], 4
     mov dword [di + 20], 1
     add di, 24

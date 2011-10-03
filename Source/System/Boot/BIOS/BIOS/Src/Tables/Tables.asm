@@ -210,7 +210,7 @@ FindTables:
 
     ; If we completed all entries - end.
     test ecx, ecx
-    jz .Cont2
+    jz .Return
 
     ; If ACPI is zero, loop.
     mov eax, [BIT.ACPI]
@@ -224,65 +224,6 @@ FindTables:
     mov eax, [BIT.SMBIOS]
     test eax, eax
     jz .BIOS
-
-.Cont2:
-    ; If MPS is not zero, then return - else try the last kilobyte of lower memory.
-    mov eax, [BIT.MPS]
-    test eax, eax
-    jnz .Return
-
-    ; Get the lower memory into EAX - kilobytes.
-    xor eax, eax
-    int 0x12
-
-    ; Now multiply it by 0x400.
-    mov ecx, 0x400
-    mul ecx
-
-    ; Check 0x400 bytes (kilobyte) from the last kilobyte of lower memory.
-    sub eax, 0x400
-    mov ecx, 0x400
-    
-; We have the starting address in ESI, and the size to check in ECX.
-.Lower:
-; Check if we found the MPS tables.
-.LowerMPS:    
-    cmp [esi], dword "_MP_"
-    jne .LowerNext
-
-; The checksum of the MPS tables.
-.ChecksumMPSLower:
-    push ecx                          ; Save ECX - since it's used in the Checksum process.
-
-    ; The length is at offset 8 - in 16 byte units.
-    movzx eax, byte [esi + 8]
-    mov ecx, 0x10                     ; Multiple it by 0x10.
-    mul ecx                           ; And get the result in ECX.
-
-    mov ecx, eax                      ; And use it to calculate the checksum.
-    call Checksum
-
-    pop ecx
-
-    ; A zero in AL means that we got clean.
-    test al, al
-    jnz .LowerNext
-    
-    mov [BIT.MPS], esi
-
-; Move on to the next entry.
-.LowerNext:
-    ; Move on 16 byte boundaries.
-    sub ecx, 0x10
-    add esi, 0x10
-
-    test ecx, ecx
-    jz .Return
-
-    ; If MPS is zero - retry.    
-    mov eax, [BIT.MPS]
-    test eax, eax
-    jz .Lower
 
 .Return:
     popad

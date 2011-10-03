@@ -48,7 +48,7 @@ BIT:
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
-    .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
+    .MMap         dd 0                ; The 32-bit address of the MMap.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -91,7 +91,7 @@ Startup:
     ; ECX contains size of file we are opening.
     push ecx
     mov ecx, 512                      ; Read only 512 bytes.
-
+   
     mov edi, 0xD000
     call [BIT.ReadFile]               ; Read the entire file.
     
@@ -122,7 +122,7 @@ Startup:
     jb .Finish
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
-  
+    
     call dword [BIT.ReadFile]         ; Read the rest of the file.
     
 .Finish:
@@ -154,6 +154,7 @@ Startup:
 
     ; Switch to protected mode, and go to .Protected32 label.
     mov ebx, .Protected32
+    
     call SwitchToPM
    
 .Error:
@@ -176,7 +177,7 @@ BITS 32
     mov esp, 0x7C00
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
-
+    
     call word [0xD004]
 
 BITS 16

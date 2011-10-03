@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <String.h>
 #include <BIT.h>
+#include <Log.h>
 
 // Define the BIT structure here.
 BIT_t BIT;

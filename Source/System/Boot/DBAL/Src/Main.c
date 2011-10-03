@@ -27,10 +27,10 @@ int Main(uint32_t *BITPointer)
 {
     // Initialize the BIT - especially copy it to our side.
     BITInit(BITPointer);
-
+    
     // Initialize the PMM.
     PMMInit();
-    DebugPrintText("Hello World");
+    
     for(;;)
         __asm__ __volatile__("hlt");
 }

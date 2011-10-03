@@ -28,7 +28,7 @@
 // Video flags.
 #define VBE_PRESENT     (1 << 0)      // Describes whether VBE was present or not.
 
-typedef struct
+struct BIT
 {
     uint32_t OpenFile;
     uint32_t ReadFile;
@@ -42,7 +42,9 @@ typedef struct
     uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
-} BIT_t;
+} __attribute__((packed));
+
+typedef struct BIT BIT_t;
 
 // The BIT structure defined in BIT.c - where we back this up.
 extern BIT_t BIT;
