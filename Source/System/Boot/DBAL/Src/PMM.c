@@ -22,6 +22,7 @@
 #include <PMM.h>
 #include <BIT.h>
 #include <Log.h>
+#include <Abort.h>
 
 // Define the pointers to the headers and entries.
 MMapHeader_t *MMapHeader;
@@ -272,12 +273,7 @@ static uint32_t PMMGetSpace()
     
     // If we reached 0xFE000000, and still need more memory, then some thing is WRONG.
     if(Base == 0xFE000000)
-    {
-        // TODO: Beeping here.
-        DebugPrintText("ERROR: The Boot Abstraction Layer wants too much memory.\n");
-	for(;;)
-	    __asm__ __volatile__("hlt");
-    }
+        AbortBoot("ERROR: The Boot Abstraction Layer wants too much memory.\n");
  
     for(uint32_t i = 0; i < MMapHeader->Entries; i++)
     {

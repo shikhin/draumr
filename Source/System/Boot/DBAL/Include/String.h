@@ -39,8 +39,15 @@ void *memcpy(void *dest, void *src, uint32_t count);
 void *memmove(void *dest, void *src, uint32_t count);
 
 // Write a specified byte to the specified port.
-// uint16_t port                      The port at which to write the value.
-// uint8_t  value                     The byte which is to be written at the port.
-void outb(uint16_t port, uint8_t value);
+// uint16_t Port                      The port at which to write the value.
+// uint8_t  Value                     The byte which is to be written at the port.
+void outb(uint16_t Port, uint8_t Value);
+
+
+// Reads a byte from a specified port.
+// uint16_t Port                      The port from where to read to.
+//     rc
+//                                    uint8_t - the byte to return.
+uint8_t inb(uint16_t Port);
 
 #endif
