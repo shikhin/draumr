@@ -77,4 +77,10 @@ uint32_t PMMAllocFrame();
 // uint32_t Addr                      The address of the frame to free.
 void PMMFreeFrame(uint32_t Addr);            
 
+// Allocates contiguous number of 'Number' frames.
+// uint32_t Number                    The number of frames to allocate.
+//     rc
+//                                    uint32_t - return address of the contiguous frames allocated.
+uint32_t PMMAllocContigFrames(uint32_t Number);
+
 #endif                                /* PMM.h */

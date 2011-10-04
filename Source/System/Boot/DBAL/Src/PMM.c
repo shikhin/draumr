@@ -285,12 +285,24 @@ static uint32_t PMMGetSpace()
 	if((MMapEntries[i].Type != FREE_RAM) ||
 	   (MMapEntries[i].Start < Base))
 	    continue;
-	    
+	 
 	// Start the base, and keep looping till we are in our entry, or till we are behind the 32-MiB mark.
         for(uint32_t Addr = MMapEntries[i].Start; 
 	    (Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < (Base + BASE));
 	    Addr += 0x1000)
 	{
+	    // If we are on a megabyte thingy, and A20 is disabled, skip the megabyte.
+	    if((BIT.HrdwreFlags & A20_DISABLED) &&
+	       (Addr & 0x100000))
+	    {
+	        // Move to the next megabyte in there.
+	        Addr = (Addr + 0x100000) & ~0xFFFFF; 
+		
+		// And since we are continuing, move one entry behind.
+		Addr -= 0x1000;
+		continue;
+	    }
+	    
 	    // If this is the first free entry, then make it the Top.
 	    if(!Top)
 	    {
@@ -354,4 +366,42 @@ void PMMFreeFrame(uint32_t Addr)
     uint32_t Last = (uint32_t)Top;
     Top = (uint32_t*)Addr;
     Top[0] = Last;
+}
+
+// Allocates contiguous number of 'Number' frames.
+// uint32_t Number                    The number of frames to allocate.
+//     rc
+//                                    uint32_t - return address of the contiguous frames allocated.
+uint32_t PMMAllocContigFrames(uint32_t Number)
+{
+    uint32_t FramesFound = 1;
+    
+    // Previous is the top, while current is the one after previous.
+    uint32_t *Previous = Top;
+    uint32_t *Current = (uint32_t*)(*Previous);
+    
+    // If previous is equal to the magic number, we were unable to find any frame.
+    // Abort boot.
+    if(Previous == (uint32_t*)0xAA55AA55)
+        AbortBoot("ERROR: The BAL is requesting too much memory.\n");
+    
+    while(FramesFound < Number)
+    {
+        // If current is equal to the magic number, we were unable to find any frame.
+        if(Current == (uint32_t*)0xAA55AA55)
+	    AbortBoot("ERROR: The BAL is requesting too much memory.\n");
+	
+	// If current is equal to the frame previous to 'Previous',
+	// then increase the FramesFound count.
+	if((uint32_t)Current == ((uint32_t)Previous - 0x1000))
+	    FramesFound++;
+	
+	else
+	    FramesFound = 1;          // We've found one page at "Current", which is guaranteed to be a page.
+	
+	Previous = Current;
+	Current = (uint32_t*)(*Previous);
+    }
+    
+    return (uint32_t)Previous;
 }
