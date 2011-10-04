@@ -31,7 +31,8 @@ MMapEntry_t  *MMapEntries;
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 // The Top of the PMM stack.
-static uint64_t *Top;
+static uint32_t *Top;
+static uint32_t Base = 0x00000000;               // Allocate extra memory starting from here in the mmap.
 
 // PMMFixMMap fixes the memory map - only overlapping entries.
 static void PMMFixMMap()
@@ -262,6 +263,62 @@ static void PMMFixMMap()
     }
 }
 
+// Allocates some extra memory from the memory map, in the provided region.
+//     rc
+//                                    uint32_t - the number of frames allocated.
+static uint32_t PMMGetSpace()
+{
+    uint32_t Allocated = 0;
+    
+    // If we reached 0xFE000000, and still need more memory, then some thing is WRONG.
+    if(Base == 0xFE000000)
+    {
+        // TODO: Beeping here.
+        DebugPrintText("ERROR: The Boot Abstraction Layer wants too much memory.\n");
+	for(;;)
+	    __asm__ __volatile__("hlt");
+    }
+ 
+    for(uint32_t i = 0; i < MMapHeader->Entries; i++)
+    {
+        // If we have gone farther than Base + BASE (size), then just break.
+        if(MMapEntries[i].Start > (Base + BASE))
+	    break;
+	
+	// If we are below than Base, or type isn't Free, then just continue to the next entry.
+	if((MMapEntries[i].Type != FREE_RAM) ||
+	   (MMapEntries[i].Start < Base))
+	    continue;
+	    
+	// Start the base, and keep looping till we are in our entry, or till we are behind the 32-MiB mark.
+        for(uint32_t Addr = MMapEntries[i].Start; 
+	    (Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < (Base + BASE));
+	    Addr += 0x1000)
+	{
+	    // If this is the first free entry, then make it the Top.
+	    if(!Top)
+	    {
+		Top = (uint32_t*)Addr;
+		Top[0] = 0xAA55AA55;                                                     // 10101010... in binary - marker for end.
+		Allocated++;
+	    }
+		
+	    else
+	    {
+	        // The first dword of each page is the 'next' entry.
+	        uint32_t Last = (uint32_t)Top;
+	        Top = (uint32_t*)Addr;
+		Top[0] = Last;
+		Allocated++;                                                             // Increase the frames allocated count.
+	    }
+	}
+    }
+    
+    // Increase the base counter, and return with Allocated.
+    Base += BASE;
+    return Allocated;
+}
+
 // Initializes the physical memory manager for ourselves.
 void PMMInit()
 {    
@@ -270,40 +327,35 @@ void PMMInit()
     MMapEntries = (MMapEntry_t*)MMapHeader->Address;
 
     PMMFixMMap();                     // Fix overlapping entries. 
-        
-    for(uint32_t i = 0; i < MMapHeader->Entries; i++)
+    
+    // Keep looping till PMMGetSpace returns something. 
+    while(!(PMMGetSpace()));
+}
+
+// Allocates a frame in the PMM, and returns it's address.
+//     rc
+//                                    uint32_t - returns the address of the frame allocated.
+uint32_t PMMAllocFrame()
+{
+    // If we have reached at the end of the stack:
+    if(Top == (uint32_t*)0xAA55AA55)
     {
-        // We just make a memory map for the first 32MiB.
-        if(MMapEntries[i].Start >= BASE)
-	    break;
-	
-	// 1 indicates free ram, and if it isn't free ram, continue to the next entry.
-	if(MMapEntries[i].Type != FREE_RAM)
-	    continue;
-	
-	// Start the base, and keep looping till we are in our entry, or till we are behind the 32-MiB mark.
-        for(uint32_t Addr = MMapEntries[i].Start; 
-	    (Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < BASE);
-	    Addr += 0x1000)
-	{
-	    // If this is the first free entry, then make it the Top.
-	    if(!Top)
-	    {
-		Top = (uint64_t*)Addr;
-		Top[0] = 0x00000000;
-	    }
-		
-	    else
-	    {
-	        // The second qword of each page is the 'last' entry.
-	        Top[1] = Addr;
-		
-	        // The first qword of each page is the 'next' entry.
-	        uint64_t Last = (uint32_t)Top;
-	        Top = (uint64_t*)Addr;
-		Top[0] = Last;
-		Top[1] = 0x00000000;                                                               // And previous is none.
-	    }
-	}
+        Top = (uint32_t*)0x00000000;                                                               // Clear out Top.
+        while(!(PMMGetSpace()));                                                                   // And keep looping till we get somehing
     }
+    
+    uint32_t Frame = (uint32_t)Top;                                                                // Pop the top entry.
+    Top = (uint32_t*)Top[0];                                                                       // Top[0] contains the last free frame. 
+    
+    return Frame;
+}
+
+// Frees a frame in the PMM.
+// uint32_t Addr                      The address of the frame to free.
+void PMMFreeFrame(uint32_t Addr)
+{
+    // The first dword of each page is the 'next' entry.
+    uint32_t Last = (uint32_t)Top;
+    Top = (uint32_t*)Addr;
+    Top[0] = Last;
 }

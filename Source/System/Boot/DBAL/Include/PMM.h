@@ -68,4 +68,13 @@ extern MMapEntry_t  *MMapEntries;
 // Initializes the physical memory manager for ourselves.
 void PMMInit();
 
+// Allocates a frame in the PMM, and returns it's address.
+//     rc
+//                                    uint32_t - returns the address of the frame allocated.
+uint32_t PMMAllocFrame();
+
+// Frees a frame in the PMM.
+// uint32_t Addr                      The address of the frame to free.
+void PMMFreeFrame(uint32_t Addr);            
+
 #endif                                /* PMM.h */
