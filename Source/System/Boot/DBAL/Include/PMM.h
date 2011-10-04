@@ -55,6 +55,12 @@ typedef struct MMapEntry MMapEntry_t;
 // The USABLE flag - is the first bit.
 #define USABLE    (1 << 0)
 
+// We'll be checking till here only.
+#define BASE      0x2000000
+
+// The types - some macros to make it easy and more beautiful :-)
+#define FREE_RAM  1
+
 // Define the pointers to the headers and entries.
 extern MMapHeader_t *MMapHeader;
 extern MMapEntry_t  *MMapEntries;
