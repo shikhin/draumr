@@ -42,6 +42,9 @@ struct BIT
     uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
+    uint32_t VideoInfo;               // The 32-bit address of the Video Information.
+    
+    void (*VBEGetModeInfo)(uint32_t Buffer);         // Pointer to VBEGetModeInfo function.
 } __attribute__((packed));
 
 typedef struct BIT BIT_t;

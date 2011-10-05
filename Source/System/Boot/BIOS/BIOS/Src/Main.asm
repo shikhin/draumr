@@ -49,6 +49,9 @@ BIT:
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
     .MMap         dd 0                ; The 32-bit address of the MMap.
+    .VideoInfo    dd 0                ; The 32-bit address of the Video Information.
+
+    .VBEGetModeInfo dd VBEGetModeInfoWrapper    ; The 32-bit address of the GetModeInfo wrapper.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -194,6 +197,32 @@ SECTION .text
 
 SECTION .text
 
+; Some common wrappers defined here.
+AllocatedBuffer dd 0                   ; Temporarily store the address of the buffer.
+
+BITS 32
+; A wrapper to the VBEGetModeInfo function - to be done from 32-bit code.
+; Argument pushed                     A page aligned allocated area as the output buffer.
+VBEGetModeInfoWrapper:
+    push ebx
+   
+    mov ebx, .GetInfo
+    jmp SwitchToRM                    ; Switch to Real mode, and return to GetInfo.
+
+BITS 16
+.GetInfo:
+    mov eax, [esp + 8]                ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
+    call VBEGetModeInfo               ; Get the mode information.
+
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop ebx
+    ret
+
+BITS 16
 ; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
 ; @ebx            Would sound dumb - but found no better way (without messing with the stack) - the return address here.
 SwitchToPM:

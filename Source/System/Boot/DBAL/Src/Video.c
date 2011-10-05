@@ -1,4 +1,4 @@
-/* Entry point for DBAL file.
+/* Contains common Video definitions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -18,23 +18,31 @@
 */
 
 #include <stdint.h>
-#include <String.h>
+#include <Video.h>
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
-#include <Video.h>
 
-int Main(uint32_t *BITPointer)
+// A pointer to video information by VBE. 
+VideoInfoVBE_t *VideoInfoVBE;
+ModeInfoVBE_t *ModeInfoVBE;
+
+// Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
+void VideoInit()
 {
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
-    
-    // Initialize the PMM.
-    PMMInit();
-    
-    // Initialize video thingy.
-    VideoInit();
-    
-    for(;;)
-        __asm__ __volatile__("hlt");
+    // If VBE was present, use a VBE mode.
+    if(BIT.VideoFlags & VBE_PRESENT)    
+    {
+        VideoInfoVBE = (VideoInfoVBE_t*)BIT.VideoInfo;
+	 
+	// Get an approximate size of the buffer.
+	uint32_t BufferSize = VideoInfoVBE->Entries * sizeof(ModeInfoVBE_t);
+	BufferSize = (BufferSize + 0xFFF) & 0xFFF;
+	 
+	// And allocate pages for it - and get the mode information into the buffer.
+	uint32_t Buffer = PMMAllocContigFrames(BufferSize/0x1000);
+
+	BIT.VBEGetModeInfo(Buffer);
+        ModeInfoVBE = (ModeInfoVBE_t*)Buffer;
+    }
 }

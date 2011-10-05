@@ -16,27 +16,6 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-; TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-; TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT   
-; TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT   
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;              TTTT
-;
-;
-; THAT WAS MEANT TO BE A BIG BIG TODO, BUT WHO HAS TO TIME TO DO "ODO"?
-
 SECTION .text
 
 ; Builds the Controller information - and the required things to get Video Mode Information List.
@@ -90,6 +69,9 @@ VideoInfoBuild:
     test ecx, ecx
     jz .Return                        ; TODO: See whether we can go with VGA or anything else here.
 
+    or byte [BIT.VideoFlags], VBE_PRESENT   ; So VBE is present, and we know that much.
+    mov dword [BIT.VideoInfo], VideoInfo    ; Get it's address.
+
     mov [VideoInfo.Entries], ecx      ; Store the number of video mode entries into VideoInfo.Entries
   
     mov cx, [ControllerInfo + 0x04]   ; Get the version number - if less than 2.0, no accelerated.
@@ -138,6 +120,89 @@ VideoInfoBuild:
     popad
     ret
 
+; Get's the information of all video modes from VBE.
+; @eax            The 32-bit address (below 1MiB) of a buffer long enough to contain all entries.
+;                 Should be page aligned.
+VBEGetModeInfo:
+    pushad
+    
+    ; Get the offset into DI.
+    xor edi, edi 
+    mov di, ax
+
+    ; And then, clear the offset part from EAX.
+    sub eax, edi
+
+    ; Clear out EDX. 
+    xor edx, edx
+
+    ; And then, divide EDX:EAX by 0x10 - and get the quotient in EAX.
+    mov ecx, 0x10
+    div ecx
+
+    ; And finally, get the segment in ES.
+    mov es, ax
+
+    mov eax, [ControllerInfo + 0x0E]  ; Get the segment offset pair into EAX.
+    mov ebx, eax                      ; Get the segment offset pair into EBX.
+    shr eax, 16                       ; And now, get the segment in EAX.
+  
+    ; Now, fs:bx points to the VESA Video mode list.
+    mov fs, ax 
+    
+; Gather video mode information for all video modes.
+.Loop:
+    xchg bx, bx
+    ; 0xFFFF signifies the end of the list - if yes, go to the Finish part.
+    cmp word [fs:bx], 0xFFFF
+    je .Return
+
+    add di, 2
+
+    ; Try to get information for this video mode.
+    mov ax, 0x4F01
+    mov cx, [fs:bx]
+    int 0x10
+
+    sub di, 2
+
+    test ah, ah
+    jnz .NextVideoModeList            ; If AH isn't zero, then something failed. Go to next video mode entry.
+
+    ; Store whatever the mode identifier is in the first word of [es:di].
+    mov ax, [fs:bx]
+    mov [es:di], ax
+
+.NextOutputBuffer:
+    ; Move to the next entry in the output buffer.
+    cmp di, (0xFFFF - (256 + 4 + 2)) + 1
+    jb .ContOutputBuffer
+
+    ; If we are about to cross (0xFFFF - (256 + 4 + 2)) + 1, then next segment.
+    mov ax, es
+    inc ax
+    mov es, ax
+
+.ContOutputBuffer:
+    add di, 256 + 4 + 2
+
+.NextVideoModeList:
+    ; Move to the next entry in the video mode list.
+    cmp bx, 0xFFFE
+    jb .Cont
+   
+    ; If we are about to cross 0xFFE, move on to the next segment.
+    mov ax, fs
+    inc ax
+    mov fs, ax
+
+.Cont:
+    add bx, 2
+    jmp .Loop
+
+.Return:
+    popad
+    ret
 
 SECTION .bss
 ; The Video Info structure, directly followed by ControllerInfo structure.
