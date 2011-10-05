@@ -37,12 +37,15 @@ void VideoInit()
 	 
 	// Get an approximate size of the buffer.
 	uint32_t BufferSize = VideoInfoVBE->Entries * sizeof(ModeInfoVBE_t);
-	BufferSize = (BufferSize + 0xFFF) & 0xFFF;
-	 
+	BufferSize = (BufferSize + 0xFFF) & ~0xFFF;
+	
 	// And allocate pages for it - and get the mode information into the buffer.
 	uint32_t Buffer = PMMAllocContigFrames(BufferSize/0x1000);
 
 	BIT.VBEGetModeInfo(Buffer);
         ModeInfoVBE = (ModeInfoVBE_t*)Buffer;
+	
+	for(uint32_t i = 0; i < VideoInfoVBE->Entries; i++)
+	    DebugPrintText("%x %d*%d\n", ModeInfoVBE[i].Mode, ModeInfoVBE[i].XRes, ModeInfoVBE[i].YRes);
     }
 }

@@ -56,7 +56,7 @@ VideoInfoBuild:
    
     ; If we are about to cross 0xFFE, move on to the next segment.
     mov ax, es
-    inc ax
+    add ax, 0x1000
     mov es, ax
 
 .Cont:
@@ -105,7 +105,7 @@ VideoInfoBuild:
    
     ; If we are about to cross 0xFFE, move on to the next segment.
     mov ax, es
-    inc ax
+    add ax, 0x1000
     mov es, ax
 
 .Cont2:
@@ -152,10 +152,13 @@ VBEGetModeInfo:
     
 ; Gather video mode information for all video modes.
 .Loop:
-    xchg bx, bx
     ; 0xFFFF signifies the end of the list - if yes, go to the Finish part.
     cmp word [fs:bx], 0xFFFF
     je .Return
+
+    ; Store whatever the mode identifier is in the first word of [es:di].
+    mov ax, [fs:bx]
+    mov [es:di], ax
 
     add di, 2
 
@@ -169,18 +172,14 @@ VBEGetModeInfo:
     test ah, ah
     jnz .NextVideoModeList            ; If AH isn't zero, then something failed. Go to next video mode entry.
 
-    ; Store whatever the mode identifier is in the first word of [es:di].
-    mov ax, [fs:bx]
-    mov [es:di], ax
-
 .NextOutputBuffer:
     ; Move to the next entry in the output buffer.
     cmp di, (0xFFFF - (256 + 4 + 2)) + 1
     jb .ContOutputBuffer
-
+    
     ; If we are about to cross (0xFFFF - (256 + 4 + 2)) + 1, then next segment.
     mov ax, es
-    inc ax
+    add ax, 0x1000
     mov es, ax
 
 .ContOutputBuffer:
@@ -193,7 +192,7 @@ VBEGetModeInfo:
    
     ; If we are about to cross 0xFFE, move on to the next segment.
     mov ax, fs
-    inc ax
+    add ax, 0x1000
     mov fs, ax
 
 .Cont:

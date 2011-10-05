@@ -403,5 +403,7 @@ uint32_t PMMAllocContigFrames(uint32_t Number)
 	Current = (uint32_t*)(*Previous);
     }
     
+    // And set a new top, as the current one.
+    Top = Current;
     return (uint32_t)Previous;
 }
