@@ -38,16 +38,29 @@ static uint32_t Base = 0x00000000;               // Allocate extra memory starti
 // PMMFixMMap fixes the memory map - only overlapping entries.
 static void PMMFixMMap()
 {
-    // Loop till all the entries.
-    for(uint16_t i = 0; i < (MMapHeader->Entries - 1); i++)
+    // Fix all entries not starting on page boundaries.
+    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
     {
         // And the length and the start address to the below page boundary.
-        MMapEntries[i].Start &= ~0xFFF;
-	MMapEntries[i].Length = (MMapEntries[i].Length + 0xFFF) & ~0xFFF;
+        MMapEntries[i].Start = (MMapEntries[i].Start + 0xFFF) & ~0xFFF;
+	MMapEntries[i].Length &= ~0xFFF;
 	
-	MMapEntries[i + 1].Start &= ~0xFFF;
-	MMapEntries[i + 1].Length = (MMapEntries[i + 1].Length + 0xFFF) & ~0xFFF;
-	
+        if((MMapEntries[i].Start > (MMapEntries[i].Start + MMapEntries[i].Length)) ||
+           (MMapEntries[i].Length == 0))
+        {
+             // Move the required number of entries from i + 1 to i.
+	    memmove(&MMapEntries[i], &MMapEntries[i + 1], 
+		    sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
+	    MMapHeader->Entries--;
+	    
+	    // Here, we don't know about the current entry, so, move to previous, and continue.
+	    i--;
+	    continue; 
+        }
+    }
+        
+    for(uint16_t i = 0; i < (MMapHeader->Entries - 1); i++)
+    {
         // And fix all the shit here.
         // If the flags field isn't equal, then just continue - the flags can virtually make different entries.
         if(MMapEntries[i].Flags != MMapEntries[i + 1].Flags)

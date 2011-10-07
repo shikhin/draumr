@@ -18,34 +18,66 @@
 */
 
 #include <stdint.h>
+#include <String.h>
 #include <Video.h>
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
 
-// A pointer to video information by VBE. 
-VideoInfoVBE_t *VideoInfoVBE;
-ModeInfoVBE_t *ModeInfoVBE;
+// Switches to a video mode.
+// uint32_t X                         The X resolution.
+// uint32_t Y                         The Y resolution.
+// uint32_t BPP                       Bits per pixel.
+static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
+{
+    // If the mode is 640 * 480 * 16 colors, then switch to mode 0x12 defined by VGA.
+    if((X == 640) &&
+       (Y == 480) &&
+       (BPP = 4))
+    {
+        BIT.Video.SwitchVGA(0x12);
+        outw(0x03CE, 0xFF08);
+    }      
+}
+
+uint8_t Buffer[] = 
+{
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+
+
+// Gives a buffer, of bpp being what we require, to be outputted to the screen.
+// uint8_t *Buffer                    The address of the buffer to print.
+// uint32_t X                         The X size for the buffer.
+// uint32_t Y                         The Y size for the buffer.
+void BufferOutput(uint8_t *Buffer, uint32_t X, uint32_t Y);
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 void VideoInit()
 {
-    // If VBE was present, use a VBE mode.
-    if(BIT.VideoFlags & VBE_PRESENT)    
-    {
-        VideoInfoVBE = (VideoInfoVBE_t*)BIT.VideoInfo;
-	 
-	// Get an approximate size of the buffer.
-	uint32_t BufferSize = VideoInfoVBE->Entries * sizeof(ModeInfoVBE_t);
-	BufferSize = (BufferSize + 0xFFF) & ~0xFFF;
-	
-	// And allocate pages for it - and get the mode information into the buffer.
-	uint32_t Buffer = PMMAllocContigFrames(BufferSize/0x1000);
-
-	BIT.VBEGetModeInfo(Buffer);
-        ModeInfoVBE = (ModeInfoVBE_t*)Buffer;
-	
-	for(uint32_t i = 0; i < VideoInfoVBE->Entries; i++)
-	    DebugPrintText("%x %d*%d\n", ModeInfoVBE[i].Mode, ModeInfoVBE[i].XRes, ModeInfoVBE[i].YRes);
-    }
+    // Currently, switch to 640 * 480 * 4BPP.
+    SwitchToMode(640, 480, 4);
+    BIT.Video.Address = (uint8_t*)0xA0000;
+    BIT.Video.XRes = 640;
+    BIT.Video.YRes = 480;
+    BIT.Video.BPP = 4;
+    BIT.Video.BytesBetweenLines = 0;
+    
+    for(uint32_t i = 0; i < 10; i++)
+        BufferOutput((uint8_t*)&Buffer, 8, 16);  
 }

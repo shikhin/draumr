@@ -30,7 +30,9 @@ src = ["Src/Header.asm",
        "Src/PMM.c",
        "Src/Log/Debug.c",
        "Src/Abort.c",
-       "Src/Video.c"]
+       "Src/Video.c",
+       "Src/Output/Output.c",
+       "Src/Output/Output4BPP.c"]
 
 
 # A target for building the DBAL binary.

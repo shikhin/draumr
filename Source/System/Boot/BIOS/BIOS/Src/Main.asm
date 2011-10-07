@@ -42,22 +42,18 @@ BIT:
     .ReadFile     dd 0
     .CloseFile    dd 0
     .HrdwreFlags  db 0                ; The "hardware" flags.
-    .VideoFlags   db 0                ; The video card information flags.
   
     .ACPI         dd 0                ; The 32-bit address of the RSDP.
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
     .MMap         dd 0                ; The 32-bit address of the MMap.
-    .VideoInfo    dd 0                ; The 32-bit address of the Video Information.
 
-    .VBEGetModeInfo dd VBEGetModeInfoWrapper    ; The 32-bit address of the GetModeInfo wrapper.
+    ; BIT Video stuff here.
+    .SwitchVGA    dd 0                ; The 32-bit address of the function to switch to a VGA mode.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
-
-; Video flags.
-%define VBE_PRESENT     (1 << 0)      ; Describes whether VBE was present or not.
 
 ; Abort boot if can't open file.
 ErrorFile db "ERROR: Error occured while trying to open file.", 0
@@ -77,11 +73,11 @@ Startup:
     mov [BIT.OpenFile], eax
     mov [BIT.ReadFile], ebx
     mov [BIT.CloseFile], ecx
+    mov dword [BIT.SwitchVGA], SwitchVGAWrapper
     
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
-    call VideoInfoBuild
     
 .LoadDBAL:    
     xor ax, ax                        ; Open File 1, or DBAL file.
@@ -197,13 +193,10 @@ SECTION .text
 
 SECTION .text
 
-; Some common wrappers defined here.
-AllocatedBuffer dd 0                   ; Temporarily store the address of the buffer.
-
 BITS 32
-; A wrapper to the VBEGetModeInfo function - to be done from 32-bit code.
-; Argument pushed                     A page aligned allocated area as the output buffer.
-VBEGetModeInfoWrapper:
+; A wrapper to the SwitchVGA function - to be done from 32-bit code.
+; Argument pushed                     A 16-byte word, defining the mode to switch to.
+SwitchVGAWrapper:
     push ebx
    
     mov ebx, .GetInfo
@@ -211,8 +204,8 @@ VBEGetModeInfoWrapper:
 
 BITS 16
 .GetInfo:
-    mov eax, [esp + 8]                ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
-    call VBEGetModeInfo               ; Get the mode information.
+    mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
+    call SwitchVGA                    ; Switch to the VGA mode defined.
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.

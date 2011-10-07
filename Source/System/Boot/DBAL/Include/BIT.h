@@ -25,9 +25,6 @@
 // Hardware flags.
 #define A20_DISABLED    (1 << 0)
 
-// Video flags.
-#define VBE_PRESENT     (1 << 0)      // Describes whether VBE was present or not.
-
 struct BIT
 {
     uint32_t OpenFile;
@@ -35,23 +32,30 @@ struct BIT
     uint32_t CloseFile;
     
     uint8_t  HrdwreFlags;             // The "hardware" flags.
-    uint8_t  VideoFlags;              // The video card information flags.
   
     uint32_t ACPI;                    // The 32-bit address of the RSDP.
     uint32_t MPS;                     // The 32-bit address of the MPS tables.
     uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
-    uint32_t VideoInfo;               // The 32-bit address of the Video Information.
     
-    void (*VBEGetModeInfo)(uint32_t Buffer);         // Pointer to VBEGetModeInfo function.
+    // Define the Video related things here.
+    struct
+    {
+        void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
+	
+	uint8_t *Address;                        // The address of the video display.
+	uint32_t XRes;                           // X resolution.
+	uint32_t YRes;                           // Y resolution.
+	uint32_t BPP;                            // Bytes per pixel.
+	uint32_t BytesBetweenLines;              // Bytes between lines.
+    } __attribute__((packed)) Video;
 } __attribute__((packed));
 
 typedef struct BIT BIT_t;
 
 // The BIT structure defined in BIT.c - where we back this up.
 extern BIT_t BIT;
-
 
 // Initializes the BIT structure, copying it to somewhere appropriate.
 // uint32_t *BITPointer               The pointer to the BIT structure, as passed to us.

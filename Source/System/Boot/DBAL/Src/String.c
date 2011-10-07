@@ -69,6 +69,15 @@ void outb(uint16_t Port, uint8_t Value)
     __asm__ __volatile__("outb %1, %0" :: "dN"(Port), "a"(Value));
 }
 
+// Write a specified wordto the specified port.
+// uint16_t Port                      The port at which to write the value.
+// uint16_t Value                     The word which is to be written at the port.
+void outw(uint16_t Port, uint16_t Value)
+{
+    __asm__ __volatile__("outw %1, %0" :: "dN"(Port), "a"(Value));
+}
+
+
 // Reads a byte from a specified port.
 // uint16_t Port                      The port from where to read to.
 //     rc
