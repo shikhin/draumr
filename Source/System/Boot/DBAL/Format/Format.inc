@@ -16,30 +16,31 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+BITS 32
 
 ; Offset 0        DBAL File Identifier.
 ; Offset 4        Address of entry point.
-; Offset 6        Starting address of BSS section.
-; Offset 8        Ending address of BSS section.
-; Offset 10       End of file.
-; Offset 14       CRC32 remainder.
+; Offset 8        Starting address of BSS section.
+; Offset 12       Ending address of BSS section.
+; Offset 16       End of file.
+; Offset 20       CRC32 remainder.
 
 ; This should just be at offset 0 of the file - identifies the file at Common BIOS File.
 %define DBAL db "DBAL"
 
 ; Defines the entry point of the Common BIOS file.
 %macro ENTRY_POINT 1
-    dw %1
+    dd %1
 %endmacro 
 
 ; Defines the starting address of BSS section.
 %macro BSS_START 1
-    dw %1
+    dd %1
 %endmacro
 
 ; Defines the ending address of BSS section.
 %macro BSS_END 1
-    dw %1
+    dd %1
 %endmacro
 
 ; Defines the end of the file.

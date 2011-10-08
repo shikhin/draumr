@@ -3,20 +3,20 @@ ENTRY(Start)
 
 SECTIONS
 {
-    .header 0xD000 : AT(0xD000)
+    .header 0xD000 :
     {
         header = .;
         *(.header)
     }
 
-    .text 0xD000 + (code - header) :
+    .text :
     {
         code = .; _code = .; __code = .;
         *(.text)
         *(.rodata)
     }
 
-    .data 0xD000 + (data - header) :
+    .data :
     {
         data = .; _data = .; __data = .;
         *(.data)                                                                                                                                                                                                            
@@ -24,7 +24,7 @@ SECTIONS
 
     file_end = .; _file_end = .; __file_end = .;
 
-    .bss 0xD000 + (bss - header) :
+    .bss :
     {
         bss = .;
         *(.bss)

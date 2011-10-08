@@ -99,7 +99,7 @@ Startup:
 
     jne .Error2
 
-    mov ecx, [0xD000 + 10]            ; Get the end of file in ECX - actual file size.
+    mov ecx, [0xD000 + 16]            ; Get the end of file in ECX - actual file size.
     sub ecx, 0xD000                   ; Subtract 0xD000 from it to get it's size.
     add ecx, 0x1FF
     shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
@@ -127,11 +127,16 @@ Startup:
 .Finish:
     call dword [BIT.CloseFile]        ; And then close the file.
 
+    ; Switch to protected mode - since we might be crossing our boundary here.
+    mov ebx, .CheckDBAL2
+    call SwitchToPM
+
+BITS 32
 .CheckDBAL2:
-    mov ecx, [0xD000 + 10]            ; Get the end of the file in ECX.
-    sub ecx, 0xD000 + 18              ; Subtract 0xD000 (address of start) + 18 (size of header) from it, to get the size.
+    mov ecx, [0xD000 + 16]            ; Get the end of the file in ECX.
+    sub ecx, 0xD000 + 24              ; Subtract 0xD000 (address of start) + 24 (size of header) from it, to get the size.
     
-    mov esi, 0xD000 + 18              ; Calculate CRC from above byte 18.    
+    mov esi, 0xD000 + 24              ; Calculate CRC from above byte 18.    
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
@@ -139,22 +144,25 @@ Startup:
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
         
-    jne .Error2                       ; Not equal? ERROR: Abort boot.
+    je .ZeroBSS
+    
+    ; If error occured, switch to Real Modee
+    mov ebx, .Error2
+    call SwitchToRM
 
 .ZeroBSS:
     mov esi, 0xD000 
-    movzx edi, word [esi + 6]         ; Move the start of BSS section into EDI.
+    mov edi, [esi + 8]                ; Move the start of BSS section into EDI.
    
-    movzx ecx, word [esi + 8]
+    mov ecx, [esi + 12]
     sub ecx, edi                      ; Calculate the length, and store it in ECX.
 
     xor eax, eax                      ; Zero out EAX, since we want to clear the region.
     rep stosb                         ; Clear out the BSS section.
 
-    ; Switch to protected mode, and go to .Protected32 label.
-    mov ebx, .Protected32
-    
-    call SwitchToPM
+    jmp .Protected32
+
+BITS 16
    
 .Error:
     xor ax, ax
@@ -177,13 +185,15 @@ BITS 32
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
     
-    call word [0xD004]
+    call dword [0xD004]
 
 BITS 16
 
 SECTION .text
 
+BITS 32
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+BITS 16
 %include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"

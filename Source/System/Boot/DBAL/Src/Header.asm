@@ -16,12 +16,9 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-BITS 16
-
+BITS 32
 
 %include "Source/System/Boot/DBAL/Format/Format.inc"
-
 
 SECTION .header
 ; Define the Common BIOS File Header
@@ -36,8 +33,6 @@ BSS_START         bss
 BSS_END           end
 FILE_END          file_end
 CRC32_DEFINE
-
-BITS 32
 
 ; Here, we start.
 ; @eax            Contains the starting of the BIT.

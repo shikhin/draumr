@@ -115,38 +115,69 @@ int main(int argc, char *argv[])
     if(File == NULL)
          return -1;    
 
-    Status = fseek(File, 18, SEEK_SET);          // Got to beginning + 18 (after header).
-    if(Status)
-         return -1;
-
-    Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
-    if(!Buf)
-        return -1;
-
-    do 
-    {
-        Status = fread(Buf, 1, GOOD_LENGTH, File);
-        if(Status > 0) 
-        {  
-            BytesRead = Status;
-            Seed = CRC(Seed, BytesRead, Buf);
-        }
-    } while(Status > 0);
-
-    if(Status < 0) 
-        return -1;
-    
-    Seed ^= 0xFFFFFFFF;
-    fseek(File, 14, SEEK_SET);
-    fwrite(&Seed, 1, sizeof(uint32_t), File);
-
     char FileName[5];
     FileName[4] = '\0';
 
     fseek(File, 0, SEEK_SET);
     fread(FileName, 4, 1, File);
-    fclose(File);
     
+    if(strcmp("BIOS", FileName) == 0)
+    {
+        Status = fseek(File, 18, SEEK_SET);          // Got to beginning + 18 (after header).
+        if(Status)
+            return -1;
+
+        Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
+        if(!Buf)
+            return -1;
+
+        do 
+        {
+            Status = fread(Buf, 1, GOOD_LENGTH, File);
+            if(Status > 0) 
+            {  
+                BytesRead = Status;
+                Seed = CRC(Seed, BytesRead, Buf);
+            }
+        } while(Status > 0);
+
+        if(Status < 0) 
+            return -1;
+    
+        Seed ^= 0xFFFFFFFF;
+        fseek(File, 14, SEEK_SET);
+        fwrite(&Seed, 1, sizeof(uint32_t), File);
+    }
+    
+    else
+    {
+        Status = fseek(File, 24, SEEK_SET);          // Got to beginning + 24 (after header).
+        if(Status)
+            return -1;
+
+        Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
+        if(!Buf)
+            return -1;
+
+        do 
+        {
+            Status = fread(Buf, 1, GOOD_LENGTH, File);
+            if(Status > 0) 
+            {  
+                BytesRead = Status;
+                Seed = CRC(Seed, BytesRead, Buf);
+            }
+        } while(Status > 0);
+
+        if(Status < 0) 
+            return -1;
+    
+        Seed ^= 0xFFFFFFFF;
+        fseek(File, 20, SEEK_SET);
+        fwrite(&Seed, 1, sizeof(uint32_t), File);
+    }
+    
+    fclose(File);
     printf("  \033[94m[CRC32]\033[0m %s -> 0x%X\n", FileName, Seed);
     return 0;
 }

@@ -18,7 +18,7 @@
 */
 
 #include <stdint.h>
-//#include <Output.h>
+#include <Output/Output.h>
 #include <BIT.h>
 #include <String.h>
 #include <Log.h>
@@ -37,133 +37,46 @@ void BufferOutput4BPP(uint8_t *Buffer, uint32_t X, uint32_t Y)
     
     // Define the Offset, Bit offset, mask, data.
     uint32_t Offset, Bit, Mask, Data;
+    uint8_t PlaneBit, PlaneShift;
     
-    // Switch to plane 0, for handling color bit 1.
-    outw(0x03C4, 0x0102);
-    // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
-    for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX)
-    {
-        // Loop through the X axis for the buffer.
-        for(uint32_t j = 0; j < X; j++)
-	{
-	    // Calculate the Offset and the bit from the starting of the display uffer.
-	    // The offset is equal to:
-            Offset = ((ScreenX +                                                          // The X axis.
-                      (ScreenY * BIT.Video.XRes)) / 8) +                                  // Y * X Resolution of screen, get in bytes.
-		      (ScreenY * BIT.Video.BytesBetweenLines);                            // And the extra bytes between lines.
-            Bit = 7 - (ScreenX +
-                      (ScreenY * BIT.Video.XRes) + 
-		      (ScreenY * (BIT.Video.BytesBetweenLines * 8))) % 8;                 // Get the bit offset.
-            Mask = 0xFF - (0x01 << Bit);                                                  // And then, the mask.
-	    
-	    Data = BIT.Video.Address[Offset] & Mask;                                      // Get the data at that area, so that we don't destroy it.
-	    BIT.Video.Address[Offset] = Data | ((Buffer[j + (i * X)] & 1) << Bit);        // And finally, write t that address.
-	    
-	    // Increase X on the screen.
-	    ScreenX++;
-	}
-	// Increase the Y on the screen.
-	ScreenY++;
-    }
+    // Set the address register to a) The Write Map Select Register b) The Read Map Select Register.
+    outb(0x03C4, 0x02);
+    outb(0x03CE, 0x04);
     
-    // Reset the ScreenX and ScreenY values.
-    ScreenX = CurrentX;
-    ScreenY = CurrentY;
-    
-    // Switch to plane 1, for handling color bit 2.
-    outw(0x03C4, 0x0202);
-    // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
-    for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX)
-    {
-        // Loop through the X axis for the buffer.
-        for(uint32_t j = 0; j < X; j++)
-	{
-	    // Calculate the Offset and the bit from the starting of the display uffer.
-	    // The offset is equal to:
-            Offset = ((ScreenX +                                                          // The X axis.
-                      (ScreenY * BIT.Video.XRes)) / 8) +                                  // Y * X Resolution of screen, get in bytes.
-		      (ScreenY * BIT.Video.BytesBetweenLines);                            // And the extra bytes between lines.
-            Bit = 7 - (ScreenX +
-                      (ScreenY * BIT.Video.XRes) + 
-		      (ScreenY * (BIT.Video.BytesBetweenLines * 8))) % 8;                 // Get the bit offset.
-            Mask = 0xFF - (0x01 << Bit);                                                  // And then, the mask.
-	    
-	    Data = BIT.Video.Address[Offset] & Mask;                                      // Get the data at that area, so that we don't destroy it.
-	    BIT.Video.Address[Offset] = Data | (((Buffer[j + (i * X)] & 2) >> 1) << Bit); // And finally, write t that address.
-	    
-	    // Increase X on the screen.
-	    ScreenX++;
-	}
-	// Increase the Y on the screen.
-	ScreenY++;
-    }
-    
-    // Reset the ScreenX and ScreenY values.
-    ScreenX = CurrentX;
-    ScreenY = CurrentY;
-    
-    // Switch to plane 2, for handling color bit 3.
-    outw(0x03C4, 0x0402);
-    // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
-    for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX)
-    {
-        // Loop through the X axis for the buffer.
-        for(uint32_t j = 0; j < X; j++)
-	{
-	    // Calculate the Offset and the bit from the starting of the display uffer.
-	    // The offset is equal to:
-            Offset = ((ScreenX +                                                          // The X axis.
-                      (ScreenY * BIT.Video.XRes)) / 8) +                                  // Y * X Resolution of screen, get in bytes.
-		      (ScreenY * BIT.Video.BytesBetweenLines);                            // And the extra bytes between lines.
-            Bit = 7 - (ScreenX +
-                      (ScreenY * BIT.Video.XRes) + 
-		      (ScreenY * (BIT.Video.BytesBetweenLines * 8))) % 8;                 // Get the bit offset.
-            Mask = 0xFF - (0x01 << Bit);                                                  // And then, the mask.
-	    
-	    Data = BIT.Video.Address[Offset] & Mask;                                      // Get the data at that area, so that we don't destroy it.
-	    BIT.Video.Address[Offset] = Data | (((Buffer[j + (i * X)] & 4) >> 2) << Bit); // And finally, write t that address.
-	    
-	    // Increase X on the screen.
-	    ScreenX++;
-	}
-	// Increase the Y on the screen.
-	ScreenY++;
-    }
-    
-    // Reset the ScreenX and ScreenY values.
-    ScreenX = CurrentX;
-    ScreenY = CurrentY;
-    
-    // Switch to plane 3, for handling color bit 4.
-    outw(0x03C4, 0x0802);
-    // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
-    for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX)
-    {
-        // Loop through the X axis for the buffer.
-        for(uint32_t j = 0; j < X; j++)
-	{
-	    // Calculate the Offset and the bit from the starting of the display uffer.
-	    // The offset is equal to:
-            Offset = ((ScreenX +                                                          // The X axis.
-                      (ScreenY * BIT.Video.XRes)) / 8) +                                  // Y * X Resolution of screen, get in bytes.
-		      (ScreenY * BIT.Video.BytesBetweenLines);                            // And the extra bytes between lines.
-            Bit = 7 - (ScreenX +
-                      (ScreenY * BIT.Video.XRes) + 
-		      (ScreenY * (BIT.Video.BytesBetweenLines * 8))) % 8;                 // Get the bit offset.
-            Mask = 0xFF - (0x01 << Bit);                                                  // And then, the mask.
-	    
-	    Data = BIT.Video.Address[Offset] & Mask;                                      // Get the data at that area, so that we don't destroy it.
-	    BIT.Video.Address[Offset] = Data | (((Buffer[j + (i * X)] & 8) >> 3) << Bit); // And finally, write t that address.
-	    
-	    // Increase X on the screen.
-	    ScreenX++;
-	}
-	// Increase the Y on the screen.
-	ScreenY++;
+    for(PlaneBit = 1, PlaneShift = 0; 
+	PlaneBit <= 8; 
+        PlaneBit <<= 1, PlaneShift++) 
+    { 
+        outb(0x03C5, PlaneBit); 
+	outb(0x03CF, PlaneShift);
+        // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
+        for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX, ScreenY++)
+        {
+            // Loop through the X axis for the buffer.
+            for(uint32_t j = 0; j < X; j++, ScreenX++)
+	    {
+	        // Calculate the Offset and the bit from the starting of the display uffer.
+	        // The offset is equal to:
+                Offset = ((ScreenX +                                                           // The X axis.
+                          (ScreenY * BIT.Video.XRes)) / 8) +                                   // Y * X Resolution of screen, get in bytes.
+		          (ScreenY * BIT.Video.BytesBetweenLines);                             // And the extra bytes between lines.
+                Bit = 7 - ((ScreenX +
+                           (ScreenY * BIT.Video.XRes) + 
+		           (ScreenY * (BIT.Video.BytesBetweenLines * 8))) & 7);                // Get the bit offset.
+                Mask = 0xFF & ~(0x01 << Bit);                                                   // And then, the mask.
+	       
+	        Data = BIT.Video.Address[Offset] & Mask;                                       // Get the data at that area, so that we don't destroy it.
+	        BIT.Video.Address[Offset] = Data | (((Buffer[j + (i * X)] >> PlaneShift) & 1) << Bit);    // And finally, write t that address.
+	    }
+        }
+        
+        // Reset ScreenX and ScreenY for next plane.
+        ScreenX = CurrentX;
+	ScreenY = CurrentY;
     }
     
     // Move the current x forward.
-    CurrentX += X + 1;
+    CurrentX += X;
     
     // If we have crossed the resolution of the monitor, move on to next Y.
     if(CurrentX >= BIT.Video.XRes)

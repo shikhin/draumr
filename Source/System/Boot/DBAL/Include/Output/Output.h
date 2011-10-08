@@ -21,7 +21,6 @@
 #define OUTPUT_H
 
 #include <stdint.h>
-#include <Output.h>
 #include <BIT.h>
 
 // Gives a buffer, of bpp being what we require, to be outputted to the screen.
@@ -31,9 +30,9 @@
 void BufferOutput(uint32_t *Buffer, uint32_t X, uint32_t Y);
 
 // Prints a buffer of 4bpp to the screen.
-// uint32_t *Buffer                   The address of the buffer to print.
+// uint8_t *Buffer                    The address of the buffer to print.
 // uint32_t X                         The X size for the buffer.
 // uint32_t Y                         The Y size for the buffer.
-void BufferOutput4BPP(uint32_t *Buffer, uint32_t X, uint32_t Y);
+void BufferOutput4BPP(uint8_t *Buffer, uint32_t X, uint32_t Y);
 
 #endif

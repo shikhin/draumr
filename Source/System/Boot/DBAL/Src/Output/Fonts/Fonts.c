@@ -1,4 +1,4 @@
-/* Contains common definitions to output to the screen.
+/* Contains definitions to handle fonts - all generic stuff.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,19 +17,20 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#include <stdint.h>
+//#include <Output/Fonts/Fonts.h>
 #include <Output/Output.h>
-#include <BIT.h>
+#include <stdint.h>
+#include <String.h>
 
-// Store the current X and Y here.
-uint32_t CurrentX = 0, CurrentY = 0;
-
-// Gives a buffer, of bpp being what we require, to be outputted to the screen.
-// uint32_t *Buffer                   The address of the buffer to print.
-// uint32_t X                         The X size for the buffer.
-// uint32_t Y                         The Y size for the buffer.
-void BufferOutput(uint32_t *Buffer, uint32_t X, uint32_t Y)
+uint8_t FontDataA[] = 
 {
-    if(BIT.Video.BPP == 4)
-        BufferOutput4BPP((uint8_t*)Buffer, X, Y);
+    0x07, 0x07, 0x07, 0x07,
+    0x07, 0x07, 0x07, 0x07,
+    0x07, 0x07, 0x07, 0x07,
+    0x07, 0x07, 0x07, 0x07
+};
+
+void Blah()
+{
+    BufferOutput((uint32_t*)&FontDataA, 4, 4); 
 }
