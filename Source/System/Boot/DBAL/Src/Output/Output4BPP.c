@@ -24,6 +24,7 @@
 #include <Log.h>
 
 extern uint32_t CurrentX, CurrentY;
+uint32_t TimestampA, TimestampB;
 
 // Prints a buffer of 4bpp to the screen.
 // uint8_t *Buffer                    The address of the buffer to print.
@@ -31,48 +32,114 @@ extern uint32_t CurrentX, CurrentY;
 // uint32_t Y                         The Y size for the buffer.
 void BufferOutput4BPP(uint8_t *Buffer, uint32_t X, uint32_t Y)
 {
-    // Use ScreenX and ScreenY for all arithmetic later.
-    uint32_t ScreenX = CurrentX;
-    uint32_t ScreenY = CurrentY;
-    
+    __asm__ __volatile__("cpuid" ::: "%eax", "%ebx", "%ecx", "%edx");
+    __asm__ __volatile__("rdtsc" : "=a"(TimestampA) :: "%edx");
+
     // Define the Offset, Bit offset, mask, data.
-    uint32_t Offset, Bit, Mask, Data;
-    uint8_t PlaneBit, PlaneShift;
-    
-    // Set the address register to a) The Write Map Select Register b) The Read Map Select Register.
-    outb(0x03C4, 0x02);
-    outb(0x03CE, 0x04);
-    
+    uint32_t Offset, BufferOffset, WriteData, TempOffset;                 
+    uint8_t Bit, PlaneBit, PlaneShift;
+    uint8_t *TempAddress;
+   
     for(PlaneBit = 1, PlaneShift = 0; 
 	PlaneBit <= 8; 
         PlaneBit <<= 1, PlaneShift++) 
-    { 
+    {    
+        // Calculate the Offset from the starting of the display buffer.
+        // The offset is equal to:
+        Offset = ((CurrentX +                                                              // The X axis.
+                  (CurrentY * BIT.Video.XRes)) / 32) +                                     // Y * X Resolution of screen, get in bytes.
+	          ((CurrentY * BIT.Video.BytesBetweenLines) / 4);                          // And the extra bytes between lines.
+    
         outb(0x03C5, PlaneBit); 
 	outb(0x03CF, PlaneShift);
-        // The outerloop for going through the Y axis - reset X at the end of every loop, while increasing Y.
-        for(uint32_t i = 0; i < Y; i++, ScreenX = CurrentX, ScreenY++)
-        {
-            // Loop through the X axis for the buffer.
-            for(uint32_t j = 0; j < X; j++, ScreenX++)
+     
+	// The outerloop for going through the Y axis.
+        for(uint32_t i = 0; i < Y; i++, Offset += (BIT.Video.XRes) / 32)
+        { 
+	    uint32_t j = 0;
+	    
+	    // Do till we reach a 32-bit boundary on the video buffer.
+	    for(j = 0, BufferOffset = j + (i * X);
+		(j < X) && (j < (CurrentX % 32));
+		j++, BufferOffset++)
 	    {
-	        // Calculate the Offset and the bit from the starting of the display uffer.
-	        // The offset is equal to:
-                Offset = ((ScreenX +                                                           // The X axis.
-                          (ScreenY * BIT.Video.XRes)) / 8) +                                   // Y * X Resolution of screen, get in bytes.
-		          (ScreenY * BIT.Video.BytesBetweenLines);                             // And the extra bytes between lines.
-                Bit = 7 - ((ScreenX +
-                           (ScreenY * BIT.Video.XRes) + 
-		           (ScreenY * (BIT.Video.BytesBetweenLines * 8))) & 7);                // Get the bit offset.
-                Mask = 0xFF & ~(0x01 << Bit);                                                   // And then, the mask.
-	       
-	        Data = BIT.Video.Address[Offset] & Mask;                                       // Get the data at that area, so that we don't destroy it.
-	        BIT.Video.Address[Offset] = Data | (((Buffer[j + (i * X)] >> PlaneShift) & 1) << Bit);    // And finally, write t that address.
+	        // If WriteData is empty, loop through this one - never overwrite things.
+	        WriteData = ((Buffer[BufferOffset] >> PlaneShift) & 1);
+		if(!WriteData)
+		    continue;
+		
+		Bit = 31 - (j % 32);                                                           // Get the bit offset.
+
+		BIT.Video.Address[Offset] |= (WriteData << Bit);                               // And finally, write t that address.
+	    }
+	    
+	    if(j > 0)
+	        Offset++;
+            
+	    // Don't trash the original offset.
+	    TempOffset = Offset;
+            // Do all 32-bit things, so we don't have to read from the video memory.
+            for(BufferOffset = j + (i * X);
+		(j + 32) <= X;
+	        j += 32, BufferOffset += 32, TempOffset++)
+	    {
+	        WriteData = (Buffer[BufferOffset] >> PlaneShift) & 1;
+	        for(uint32_t k = 1; k < 31; k += 5)
+		{
+		    // Unroll the loop a bit - improves performance.
+		    WriteData <<= 5;
+		    WriteData |= ((Buffer[BufferOffset + k] >> PlaneShift) & 1);
+		    WriteData |= ((Buffer[BufferOffset + k + 1] >> PlaneShift) & 1) << 1;
+		    WriteData |= ((Buffer[BufferOffset + k + 2] >> PlaneShift) & 1) << 2;
+		    WriteData |= ((Buffer[BufferOffset + k + 3] >> PlaneShift) & 1) << 3;
+		    WriteData |= ((Buffer[BufferOffset + k + 4] >> PlaneShift) & 1) << 4;
+		}
+		WriteData = (WriteData << 1) | ((Buffer[BufferOffset + 31] >> PlaneShift) & 1);
+		
+		if(!WriteData)
+		    continue;
+		
+		// And simply write the WriteData.
+	        BIT.Video.Address[TempOffset] = WriteData; 
+	    }
+            
+	    // Don't trash the original offset.
+	    TempOffset = Offset * 4;
+	    TempAddress = (uint8_t*)BIT.Video.Address;
+            // Do all 8-bit things, so we don't have to read from the video memory.
+            for(BufferOffset = j + (i * X);
+		(j + 8) <= X;
+	        j += 8, BufferOffset += 8, TempOffset++)
+	    {
+	        WriteData = (Buffer[BufferOffset] >> PlaneShift) & 1;
+	        for(uint32_t k = 1; k < 7; k += 2)
+		{
+		    WriteData <<= 2;
+		    WriteData |= ((Buffer[BufferOffset + k] >> PlaneShift) & 1);
+		    WriteData |= ((Buffer[BufferOffset + k + 1] >> PlaneShift) & 1);
+		}
+		WriteData = (WriteData << 1) | ((Buffer[BufferOffset + 7] >> PlaneShift) & 1);
+		
+		if(!WriteData)
+		    continue;
+		
+		// And simply write the WriteData at the correct byte.
+		TempAddress[TempOffset] = (uint8_t)WriteData; 
+	    }
+            
+            // Loop through the X axis for the buffer - finishing the last left bits.
+            for(BufferOffset = j + (i * X); j < X; j++, BufferOffset++)
+	    {
+	        // If WriteData is a zero, loop through it. We assume that we never overwrite things.
+	        WriteData = ((Buffer[BufferOffset] >> PlaneShift) & 1);
+		if(!WriteData)
+		    continue;
+		
+                Bit = 31 - (j % 32);                                                           // Get the bit offset.
+                
+		BIT.Video.Address[Offset] |= (WriteData << Bit);                               // And finally, write to that address.
 	    }
         }
-        
-        // Reset ScreenX and ScreenY for next plane.
-        ScreenX = CurrentX;
-	ScreenY = CurrentY;
     }
     
     // Move the current x forward.
@@ -85,4 +152,5 @@ void BufferOutput4BPP(uint8_t *Buffer, uint32_t X, uint32_t Y)
         CurrentX -= BIT.Video.XRes;
 	CurrentY += Y;
     }
+    __asm__ __volatile__("rdtsc" : "=a"(TimestampB) :: "%edx");
 }

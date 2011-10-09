@@ -24,7 +24,7 @@
 #include <PMM.h>
 #include <Log.h>
 
-void Blah();
+uint32_t Blah();
 
 // Switches to a video mode.
 // uint32_t X                         The X resolution.
@@ -41,7 +41,14 @@ static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
         // Set the bit mask - 0xFF - we except everything!
 	outb(0x03CE, 0x08);
 	outb(0x03CF, 0xFF);
+	
+        // Set the address register to a) The Write Map Select Register b) The Read Map Select Register.
+        outb(0x03C4, 0x02);
+        outb(0x03CE, 0x04);
     }      
+    
+    else
+        BIT.Video.SwitchVGA(0x03);
 }
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
@@ -49,11 +56,14 @@ void VideoInit()
 {
     // Currently, switch to 640 * 480 * 4BPP.
     SwitchToMode(640, 480, 4);
-    BIT.Video.Address = (uint8_t*)0xA0000;
+    BIT.Video.Address = (uint32_t*)0xA0000;
     BIT.Video.XRes = 640;
     BIT.Video.YRes = 480;
     BIT.Video.BPP = 4;
     BIT.Video.BytesBetweenLines = 0;
     
-    Blah();
+    uint32_t Timestamp = Blah();
+    Timestamp = Timestamp;
+    SwitchToMode(0, 0, 0);
+    DebugPrintText("%d\n", Timestamp);
 }

@@ -44,7 +44,7 @@ struct BIT
     {
         void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
 	
-	uint8_t *Address;                        // The address of the video display.
+	uint32_t *Address;                       // The address of the video display.
 	uint32_t XRes;                           // X resolution.
 	uint32_t YRes;                           // Y resolution.
 	uint32_t BPP;                            // Bytes per pixel.

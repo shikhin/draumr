@@ -184,20 +184,26 @@ CloseFile:
 ReadFile:
     pushad
 
-    xor edx, edx
-   
 .ReadFile: 
+    mov edx, edi
+    and edx, ~0xFFFF
+    shr edx, 8
+    ; Get the segment in EDX.
+
     mov [PXENV_TFTP_READ.BufferOff], di
+    mov [PXENV_TFTP_READ.BufferSeg], dx
+    xor edx, edx
+
     mov word [PXENV_TFTP_READ.Status], 0
     mov word [PXENV_TFTP_READ.BufferSize], 0
 
-    push di                           ; Save DI for the moment (destination buffer address).
+    push edi                          ; Save DI for the moment (destination buffer address).
 
     mov di, PXENV_TFTP_READ
     mov bx, TFTP_READ
     call UsePXEAPI                    ; Use the API to read.
 
-    pop di                            ; And restore DI back again.
+    pop edi                           ; And restore DI back again.
     
     cmp word [PXENV_TFTP_READ], 0x3B  ; If status is 0x3B - then FILE_NOT_FOUND error, which implies reading AFTER EOF.
     jne .Cont
