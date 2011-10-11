@@ -33,7 +33,6 @@ void *memcpy(void *dest, void *src, uint32_t count)
     return dest; 
 }
 
-
 // Memmove - moves count bytes from source to destination - as if it is using a buffer to do so..
 // void *dest                         The destination to where to copy to.
 // void *src                          The source from where to copy to.
@@ -59,6 +58,19 @@ void *memmove(void *dest, void *src, uint32_t count)
     
     // Return the destination.
     return dest;
+}
+
+// Memset - sets the destination to a specified value - count many times.
+// void *dest                         The destination to which we set.
+// uint8_t value                      The value by which we clear.
+// uint32_t count                     The count we clear.
+//     rc
+//                                    void * - the destination.
+void *memset(void *dest, uint8_t value, uint32_t count)
+{
+    // Just do a simple rep stosb - good enough for now.
+    __asm__ __volatile__("rep stosb" :: "c"(count), "D"(dest), "a"((uint32_t)value));
+    return dest; 
 }
 
 // Write a specified byte to the specified port.

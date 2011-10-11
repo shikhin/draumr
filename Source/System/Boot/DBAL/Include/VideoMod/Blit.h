@@ -17,19 +17,18 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef OUTPUT_H                      /* Output.h */
+#define OUTPUT_H
+
 #include <stdint.h>
-#include <Output/Output.h>
 #include <BIT.h>
 
-// Store the current X and Y here.
-uint32_t CurrentX = 0, CurrentY = 0;
-
-// Gives a buffer, of bpp being what we require, to be outputted to the screen.
+// Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
-// uint32_t X                         The X size for the buffer.
-// uint32_t Y                         The Y size for the buffer.
-void BufferOutput(uint32_t *Buffer, uint32_t X, uint32_t Y)
-{
-    if(BIT.Video.BPP == 4)
-        BufferOutput4BPP((uint8_t*)Buffer, X, Y);
-}
+void BlitBuffer(uint32_t *Buffer);
+
+// Blits a buffer of 4bpp to the screen.
+// uint32_t *Buffer                   The address of the buffer to print.
+void BlitBuffer4BPP(uint32_t *Buffer);
+
+#endif

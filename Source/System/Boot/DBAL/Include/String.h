@@ -38,6 +38,14 @@ void *memcpy(void *dest, void *src, uint32_t count);
 //                                    void * - the destination.
 void *memmove(void *dest, void *src, uint32_t count);
 
+// Memset - sets the destination to a specified value - count many times.
+// void *dest                         The destination to which we set.
+// uint8_t value                      The value by which we clear.
+// uint32_t count                     The count we clear.
+//     rc
+//                                    void * - the destination.
+void *memset(void *dest, uint8_t value, uint32_t count);
+
 // Write a specified byte to the specified port.
 // uint16_t Port                      The port at which to write the value.
 // uint8_t  Value                     The byte which is to be written at the port.

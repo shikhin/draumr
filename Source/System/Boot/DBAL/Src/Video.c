@@ -24,8 +24,6 @@
 #include <PMM.h>
 #include <Log.h>
 
-uint32_t Blah();
-
 // Switches to a video mode.
 // uint32_t X                         The X resolution.
 // uint32_t Y                         The Y resolution.
@@ -35,7 +33,7 @@ static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
     // If the mode is 640 * 480 * 16 colors, then switch to mode 0x12 defined by VGA.
     if((X == 640) &&
        (Y == 480) &&
-       (BPP = 4))
+       (BPP == 4))
     {
         BIT.Video.SwitchVGA(0x12);
         // Set the bit mask - 0xFF - we except everything!
@@ -46,9 +44,6 @@ static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
         outb(0x03C4, 0x02);
         outb(0x03CE, 0x04);
     }      
-    
-    else
-        BIT.Video.SwitchVGA(0x03);
 }
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
@@ -61,9 +56,4 @@ void VideoInit()
     BIT.Video.YRes = 480;
     BIT.Video.BPP = 4;
     BIT.Video.BytesBetweenLines = 0;
-    
-    uint32_t Timestamp = Blah();
-    Timestamp = Timestamp;
-    SwitchToMode(0, 0, 0);
-    DebugPrintText("%d\n", Timestamp);
 }

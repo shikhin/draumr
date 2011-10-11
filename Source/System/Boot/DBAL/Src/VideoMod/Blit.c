@@ -17,22 +17,14 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef OUTPUT_H                      /* Output.h */
-#define OUTPUT_H
-
 #include <stdint.h>
+#include <VideoMod/Blit.h>
 #include <BIT.h>
 
-// Gives a buffer, of bpp being what we require, to be outputted to the screen.
+// Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
-// uint32_t X                         The X size for the buffer.
-// uint32_t Y                         The Y size for the buffer.
-void BufferOutput(uint32_t *Buffer, uint32_t X, uint32_t Y);
-
-// Prints a buffer of 4bpp to the screen.
-// uint8_t *Buffer                    The address of the buffer to print.
-// uint32_t X                         The X size for the buffer.
-// uint32_t Y                         The Y size for the buffer.
-void BufferOutput4BPP(uint8_t *Buffer, uint32_t X, uint32_t Y);
-
-#endif
+void BlitBuffer(uint32_t *Buffer)
+{
+    if(BIT.Video.BPP == 4)
+        BlitBuffer4BPP(Buffer);
+}
