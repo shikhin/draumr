@@ -20,6 +20,10 @@
 #include <stdint.h>
 #include <VideoMod/Blit.h>
 #include <BIT.h>
+#include <PMM.h>
+#include <String.h>
+
+extern uint32_t *OldBuffer;
 
 // Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
@@ -28,3 +32,10 @@ void BlitBuffer(uint32_t *Buffer)
     if(BIT.Video.BPP == 4)
         BlitBuffer4BPP(Buffer);
 }
+
+/*
+void Init()
+{
+    OldBuffer = (uint32_t*)PMMAllocContigFrames(38);
+    memset(OldBuffer, 0, 38 * 0x1000);   
+} */

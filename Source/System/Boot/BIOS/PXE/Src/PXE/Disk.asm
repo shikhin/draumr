@@ -186,8 +186,8 @@ ReadFile:
 
 .ReadFile: 
     mov edx, edi
-    and edx, ~0xFFFF
-    shr edx, 8
+    and edx, 0xFFFF0000
+    shr edx, 4
     ; Get the segment in EDX.
 
     mov [PXENV_TFTP_READ.BufferOff], di
@@ -217,11 +217,11 @@ ReadFile:
     test ax, ax
     jnz .Error                        ; If any error occured, abort boot.
     
-    mov dx, [PXENV_TFTP_READ.BufferSize]
+    movzx edx, word [PXENV_TFTP_READ.BufferSize]
     test dx, dx                       ; If size read is zero, then EOF reached.
     jz .Return
 
-    add di, dx
+    add edi, edx
     
     cmp ecx, edx
     jb .Return

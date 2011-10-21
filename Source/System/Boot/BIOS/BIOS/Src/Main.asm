@@ -93,7 +93,7 @@ Startup:
    
     mov edi, 0xD000
     call [BIT.ReadFile]               ; Read the entire file.
-    
+
 .CheckDBAL1:
     cmp dword [0xD000], "DBAL"        ; Check the signature.
 
@@ -147,8 +147,8 @@ BITS 32
     je .ZeroBSS
     
     ; If error occured, switch to Real Modee
-    mov ebx, .Error2
-    call SwitchToRM
+    ;mov ebx, .Error2
+    ;call SwitchToRM
 
 .ZeroBSS:
     mov esi, 0xD000 

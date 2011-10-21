@@ -42,4 +42,3 @@ CRC32 = our_env.Program("CRC32.util", "CRC32.c")
 
 # Save the CRC32 target in the environment as we will need it later.
 env["CRC32"] = CRC32
-

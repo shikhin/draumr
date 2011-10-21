@@ -74,7 +74,7 @@ GetBootFile:
     call AbortBoot
 
 ; Read a sector from the disk to a buffer.
-;     @di         The buffer to where to read the disk sector to.
+;     @edi        The buffer to where to read the disk sector to.
 
 ;     @al         The number of sectors to read.
 ;     @ch         The cylinder number.
@@ -86,8 +86,18 @@ GetBootFile:
 ReadFromFloppy:
     mov byte [Retry], 3
     pushad
-    
+    push es
+
+    ; Get the segment in ES.
     mov bx, di
+    and edi, 0xFFFF0000
+    shr edi, 4
+
+    push ax
+    mov ax, di
+    mov es, ax
+    pop ax
+    
 ; It is usually recommended to try 3 times - floppy controller can have many errors.
 .Retry:
     mov ah, 0x02                    
@@ -97,6 +107,7 @@ ReadFromFloppy:
     jc .Error                         ; If carry is set, error occured.
 
 .Success:
+    pop es
     popad
     ret
 
@@ -120,6 +131,7 @@ ReadFromFloppy:
     pop ecx
 
     stc
+    pop es
     popad
     ret
 
@@ -157,8 +169,11 @@ InitBootFiles:
     
     call ReadFromFloppyM              ; Read from the floppy - multiple sectors, with advanced error checking.
     
-    mov ecx, [0x9000 + 10]            ; Offset 10 of the file is the EOF address.
+    mov ecx, [0x9000 + 16]            ; Offset 10 of the file is the EOF address.
     sub ecx, 0xD000                   ; Subtract Start of File to get the size of the file.
+
+    add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
+    and ecx, ~0x1FF
     mov [DBAL.Size], ecx              ; And store it!
 
 .Return:
@@ -168,7 +183,7 @@ InitBootFiles:
 ; Reads multiple sectors from floppy.
 ; @eax            Expects the LBA from where to read in EAX.
 ; @ecx            Expects the number of sectors to read in ECX.
-; @di             The buffer to where to read the floppy sector(s) to.
+; @edi            The buffer to where to read the floppy sector(s) to.
 
 ; @rc
 ;                 @ecx contains the number of sectors actually read.
@@ -176,7 +191,8 @@ InitBootFiles:
 ; M stands for Multiple (sectors).
 ReadFromFloppyM:
     pushad
-    push ecx                          ; Save the number of sectors to read.
+
+    mov [Info.Read], ecx              ; And if we take the single path soon, put it here.
 
 ; Convert the LBA into CHS.
 .Convert:
@@ -197,57 +213,47 @@ ReadFromFloppyM:
 
     mov [Info.Head], edx              ; The head number if the remainder.
     mov [Info.Cylinder], eax          ; The quotient is the Cylinder - put it into Info.Cylinder.
-
+    
 ; Checks out the maximum number of sectors we can possibly read.
 .FindMax:
-    mov eax, SECTORS_PER_TRACK
+    mov eax, SECTORS_PER_TRACK + 1
     sub eax, [Info.Sector]            ; Subtract the sector (in the track) from SECTORS_PER_TRACK.
                                       ; That's the maximum possible sectors we can read.
   
-    pop ecx                           ; Get back the number of sectors to read.
-    test eax, eax                     ; If it's zero, that means we are already on the next track. Read.
-    jz .Read
-    
-    cmp ecx, eax                      ; Compare requested sectors to read, with maximum possible sectors.
+    mov ecx, [Info.Read]              ; Get back the number of sectors to read.
 
+    cmp ecx, eax                      ; Compare requested sectors to read, with maximum possible sectors.
     jbe .Read                         ; If below or equal, read the sectors.
 
     mov ecx, eax                      ; Else read maximum possible sectors.
+    mov [Info.Read], ecx
 
 ; Here we read the sectors from disk - ECX should be the number of sectors we can possibly read this time.
 .Read:
-    mov [Info.Read], ecx
     cmp byte [Info.Failure], 3        ; If we have failed more than/equal to three times, do one sector at a time reads.
     jae .Single
 
 .Multiple:
     mov al, cl                        ; How many sectors should we read?
     
-    mov edx, [Info.Cylinder]
-    mov ch, dl                        ; Since Info.Cylinder is a DWORD, and we only want the byte part, we do + 3 (from EDX).
-    
-    mov edx, [Info.Sector]
-    mov cl, dl                       ; ABOVE.
-    
-    mov ebx, [Info.Head]
-    mov dh, bl                        ; ABOVE.
-    
-    mov dl, [BootDrive]               ; Nothing surprising here.
-    
+    mov ch, [Info.Cylinder]           ; Since Info.Cylinder is a DWORD, and we only want the byte part, we do + 3 (from EDX).
+    mov dh, [Info.Head]
+    mov cl, [Info.Sector]
+
     call ReadFromFloppy
     jnc .Return                       ; If the carry flag wasn't set, return.
 
+.Fail:
     inc byte [Info.Failure]           ; Increase the failure byte.
 
 .Single:
     mov ebx, [Info.Read]              ; How many sectors to read - get into EBX.
 
     mov al, 1                         ; We only read 1 sector - SINGLE (c'mon READ).
-    mov ch, [Info.Cylinder + 3]       ; Since Info.Cylinder is a DWORD, and we only want the byte part, we do + 3.
-    mov cl, [Info.Sector + 3]         ; ABOVE.
-    mov dh, [Info.Head + 3]           ; ABOVE.
-    mov dl, [BootDrive]               ; Nothing surprising here.
-
+    mov ch, [Info.Cylinder]           ; Since Info.Cylinder is a DWORD, and we only want the byte part, we do so.
+    mov cl, [Info.Sector]             ; ABOVE.
+    mov dh, [Info.Head]               ; ABOVE.
+    
 ; The single loop, reading EBX times.
 .LoopSingle:
     call ReadFromFloppy
@@ -255,12 +261,13 @@ ReadFromFloppyM:
 
     ; Decrease the count of sectors to read.
     dec ebx
+ 
     ; If read all sectors, end.
     test ebx, ebx
     jz .Return
     
     inc cl                            ; Increase the sector (which we are reading).
-    add di, 0x200                     ; Add 512 to the destination buffer.
+    add edi, 0x200                    ; Add 512 to the destination buffer.
     jmp .LoopSingle
 
 .Return:
@@ -338,8 +345,10 @@ OpenFile:
 ;                 Aborts boot if any error occured (during read, that is).
 ReadFile:
     pushad
+    add ecx, 0x1FF
+    and ecx, ~0x1FF                   ; Pad it to the nearest 1FF byte boundary (512).
     cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
-
+    
     jbe .Cont
   
     mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
@@ -351,7 +360,7 @@ ReadFile:
     mov eax, [Open.LBA]               ; Get the LBA to read in EBX.
     add ecx, 0x1FF
     shr ecx, 9                        ; And the number of sectors to read in ECX.
-
+    
     mov edx, ecx                      ; Keep that for internal count.
 
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
