@@ -31,6 +31,9 @@ void BlitBuffer(uint32_t *Buffer)
 {
     if(BIT.Video.BPP == 4)
         BlitBuffer4BPP(Buffer);
+    
+    else if(BIT.Video.BPP == 8)
+        BlitBuffer8BPP(Buffer);
 }
 
 /*
@@ -38,4 +41,5 @@ void Init()
 {
     OldBuffer = (uint32_t*)PMMAllocContigFrames(38);
     memset(OldBuffer, 0, 38 * 0x1000);   
+    BlitBuffer((uint32_t*)Image);    
 } */

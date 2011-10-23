@@ -57,6 +57,9 @@ void BlitBuffer4BPP(uint32_t *Buffer)
 		    BIT.Video.Address[VideoOffset] = Buffer[Offset];
 		}
 	    }
+	    
+	    // Skip the bytes between lines thingy.
+	    VideoOffset += BIT.Video.BytesBetweenLines / 4;
         }
     }
 }

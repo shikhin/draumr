@@ -43,17 +43,29 @@ static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
         // Set the address register to a) The Write Map Select Register b) The Read Map Select Register.
         outb(0x03C4, 0x02);
         outb(0x03CE, 0x04);
-    }      
+    }
+    
+    // If the mode is 320 * 200 * 256 colors, then switch to mode 0x13 defined by VGA.
+    else if((X == 320) &&
+            (Y == 200) &&
+            (BPP == 8))
+    {
+        BIT.Video.SwitchVGA(0x13); 
+       
+	// Setup the palette to a RGB thingy.
+	BIT.Video.SetupPaletteVGA();
+    }
 }
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 void VideoInit()
 {
-    // Currently, switch to 640 * 480 * 4BPP.
-    SwitchToMode(640, 480, 4);
+    SwitchToMode(320, 200, 8);
+    
+    // Fill in some general details of the video mode.
     BIT.Video.Address = (uint32_t*)0xA0000;
-    BIT.Video.XRes = 640;
-    BIT.Video.YRes = 480;
-    BIT.Video.BPP = 4;
+    BIT.Video.XRes = 320;
+    BIT.Video.YRes = 200;
+    BIT.Video.BPP = 8;
     BIT.Video.BytesBetweenLines = 0;
 }

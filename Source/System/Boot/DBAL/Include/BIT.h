@@ -43,6 +43,7 @@ struct BIT
     struct
     {
         void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
+	void (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
 	
 	uint32_t *Address;                       // The address of the video display.
 	uint32_t XRes;                           // X resolution.

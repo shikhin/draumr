@@ -245,10 +245,12 @@ ReadFromDisk:
 
 .Error:
     push ebx
+    
     mov bl, [Retry]
     dec bl
     mov [Retry], bl
     test bl, bl
+    
     pop ebx
     je .Abort
 

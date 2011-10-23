@@ -1,4 +1,4 @@
-/* Contains common definitions to output to the screen.
+/* Contains definitions to output to the screen, in 8BPP mode.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,22 +17,36 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef OUTPUT_H                      /* Output.h */
-#define OUTPUT_H
-
 #include <stdint.h>
+#include <VideoMod/Blit.h>
 #include <BIT.h>
+#include <String.h>
 
-// Gives a buffer, of bpp being what we require, to be blitted to the screen.
-// uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer(uint32_t *Buffer);
-
-// Blits a buffer of 4bpp to the screen.
-// uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer4BPP(uint32_t *Buffer);
+uint32_t *OldBuffer;
 
 // Blits a buffer of 8bpp to the screen.
 // uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer8BPP(uint32_t *Buffer);
-
-#endif
+void BlitBuffer8BPP(uint32_t *Buffer)
+{
+    // Define the Offset, Bit offset, mask, data.
+    uint32_t Offset, VideoOffset;                 
+    
+    VideoOffset = Offset = 0;
+	
+    // The outerloop for going through the Y axis.
+    for(uint32_t i = 0; i < BIT.Video.YRes; i++)
+    { 
+	// Loop through the X axis for the buffer - blitting the input buffer into a buffer.
+        for(uint32_t j = 0; j < BIT.Video.XRes; j += 4, Offset++, VideoOffset++)
+	{
+	    if(Buffer[Offset] != OldBuffer[Offset])
+	    {
+	        OldBuffer[Offset] = Buffer[Offset];
+		BIT.Video.Address[VideoOffset] = Buffer[Offset];
+	    }
+	}
+	    
+	// Skip the bytes between lines thingy.
+	VideoOffset += BIT.Video.BytesBetweenLines / 4;
+    }
+}

@@ -32,7 +32,8 @@ src = ["Src/Header.asm",
        "Src/Abort.c",
        "Src/Video.c",
        "Src/VideoMod/Blit.c",
-       "Src/VideoMod/Blit4BPP.c"]
+       "Src/VideoMod/Blit4BPP.c",
+       "Src/VideoMod/Blit8BPP.c"]
 
 
 # A target for building the DBAL binary.

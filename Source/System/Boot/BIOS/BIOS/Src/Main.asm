@@ -51,6 +51,7 @@ BIT:
 
     ; BIT Video stuff here.
     .SwitchVGA    dd 0                ; The 32-bit address of the function to switch to a VGA mode.
+    .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -74,6 +75,7 @@ Startup:
     mov [BIT.ReadFile], ebx
     mov [BIT.CloseFile], ecx
     mov dword [BIT.SwitchVGA], SwitchVGAWrapper
+    mov dword [BIT.SetupPaletteVGA], SetupPaletteVGAWrapper
     
     ; Enable A20, then try to generate memory map.
     call EnableA20
@@ -216,6 +218,25 @@ BITS 16
 .GetInfo:
     mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
     call SwitchVGA                    ; Switch to the VGA mode defined.
+
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop ebx
+    ret
+
+; A wrapper to the SetupPaletteVGA function - to be done from 32-bit code.
+SetupPaletteVGAWrapper:
+    push ebx
+   
+    mov ebx, .SetupPalette
+    jmp SwitchToRM                    ; Switch to Real mode, and return to SetupPalette.
+
+BITS 16
+.SetupPalette:
+    call SetupPaletteVGA              ; Set up the palette.
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.

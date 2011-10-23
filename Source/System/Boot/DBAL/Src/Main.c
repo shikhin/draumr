@@ -24,6 +24,8 @@
 #include <Log.h>
 #include <Video.h>
 
+extern void Init();
+
 int Main(uint32_t *BITPointer)
 {
     // Initialize the BIT - especially copy it to our side.
@@ -34,7 +36,7 @@ int Main(uint32_t *BITPointer)
     
     // Initialize video thingy.
     VideoInit();
-    
+    //Init();
     for(;;)
         __asm__ __volatile__("hlt");
 }

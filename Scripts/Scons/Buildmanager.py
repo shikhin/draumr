@@ -53,7 +53,7 @@ class BuildManager :
         env = Environment()
         env["AS"] = "nasm"
         env["CC"] = "gcc"
-        env["CPPFLAGS"] = ["-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+        env["CPPFLAGS"] = ["-Wno-attributes", "-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
         env["LINK"] = "ld" 
         env["BUILDERS"]["ISO"] = ISOBuilder
         env["BUILDERS"]["PXE"] = PXEBuilder
