@@ -39,7 +39,7 @@ void BlitBuffer(uint32_t *Buffer)
 /*
 void Init()
 {
-    OldBuffer = (uint32_t*)PMMAllocContigFrames(38);
+    OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, 38);
     memset(OldBuffer, 0, 38 * 0x1000);   
     BlitBuffer((uint32_t*)Image);    
 } */

@@ -24,7 +24,7 @@
 #include <Log.h>
 #include <Video.h>
 
-extern void Init();
+//extern void Init();
 
 int Main(uint32_t *BITPointer)
 {
