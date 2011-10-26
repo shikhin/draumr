@@ -25,20 +25,8 @@
 // Declare some space for few common things.
 uint8_t *VGAFrameBuffer = (uint8_t*)0xB8000;
 
-// Cursor positions would be required to set the hardware cursor, and
-// print at the right place.
+// Cursor positions would be required to print at the right place.
 uint8_t CursorX = 0, CursorY = 0;
-
-// Updates the hardware cursor.
-static void SetHardwareCursor()
-{
-   // Use the saved cursor locations to set the right cursor position.
-   uint16_t CursorLinear = (CursorY * 80) + CursorX;
-   outb(0x3D4, 14);                   
-   outb(0x3D5, (uint8_t)(CursorLinear >> 8));              // The VGA board wants us to first send the higher byte.
-   outb(0x3D4, 15);                   
-   outb(0x3D5, (uint8_t)CursorLinear);                     // And then the lower byte.
-}
 
 // Scrolls the text on the screen up by one line, in text mode.
 static void ScrollText()
@@ -92,8 +80,7 @@ static void DebugPrintCharText(char C)
         CursorY++;
     }
 
-    // Perform some cleanup - by setting the hardware cursor, and scrolling if neccessary.
-    SetHardwareCursor();
+    // Perform some cleanup - by scrolling if neccessary.
     ScrollText();
 }
 

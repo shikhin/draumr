@@ -25,6 +25,10 @@
 // Hardware flags.
 #define A20_DISABLED    (1 << 0)
 
+// Video flags.
+#define VGA_PRESENT     (1 << 0)
+#define VBE_PRESENT     (1 << 1)
+
 struct BIT
 {
     uint32_t OpenFile;
@@ -42,6 +46,7 @@ struct BIT
     // Define the Video related things here.
     struct
     {
+        uint8_t VideoFlags;                      // The video flags.
         void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
 	void (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
 	

@@ -26,6 +26,7 @@ PaletteLookup3BITS    db 0,  9, 18, 27, 36, 45, 54, 63
 PaletteLookup2BITS    db 0, 21, 42, 63
 
 SECTION .text
+BITS 16
 
 ; Performs a switch to a VGA mode, using the BIOS.
 ; @ax             The mode to switch to.
@@ -37,6 +38,7 @@ SwitchVGA:
 .Return:
     popad
     ret
+
 
 ; Set ups the palette for a 8bpp mode, using the BIOS.
 SetupPaletteVGA:
@@ -78,6 +80,56 @@ SetupPaletteVGA:
     mov dx, Palette
 
     int 0x10
+
+.Return:
+    popad
+    ret
+
+
+; Checks for VGA, VBE, and if VBE supported, also gets the VBE information.
+VideoInit:
+    pushad
+
+.VGACheck:
+    ; AX=0x1A00, int 0x10 returns the display combination code.
+    mov ax, 0x1A00
+
+    ; Quoting Ralf Brown's interrupt list:
+    ; Notes: This function is commonly used to check for the presence of a VGA. 
+    ; This function is supported on the ATI EGA Wonder with certain undocumented configuration switch settings,
+    ; even though the EGA Wonder does not support VGA graphics; 
+    ; to distinguish this case, call AX=1C00h with CX nonzero, which the EGA Wonder does not support.
+
+    xor cx, cx
+    not cx
+
+    int 0x10
+
+    ; If AL isn't 0x1A, it failed. Go the VBE check.
+    cmp al, 0x1A
+    jne .VBECheck
+    
+    ; 0xFF indicated unknown display type.
+    cmp bl, 0xFF
+    je .VGAPresent
+
+    ; 0x07 indicates VGA w/ monochrome display
+    cmp bl, 0x07
+    je .VGAPresent
+ 
+    ; 0x08 indicates VGA w/ color analogue display.
+    cmp bl, 0x08
+    je .VGAPresent
+
+    ; No - no VGA; check for VBE.
+    jmp .VBECheck
+
+; So VGA is present - set the right flag.
+.VGAPresent:
+    or byte [BIT.VideoFlags], VGA_PRESENT
+
+; Check whether VBE is present or not.
+.VBECheck:
 
 .Return:
     popad

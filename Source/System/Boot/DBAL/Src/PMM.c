@@ -382,7 +382,7 @@ static uint32_t PMMGetSpace(uint32_t Type)
 
 // Initializes the physical memory manager for ourselves.
 void PMMInit()
-{    
+{   
     // Get the addresses into the right variables.
     MMapHeader = (MMapHeader_t*)BIT.MMap;
     MMapEntries = (MMapEntry_t*)MMapHeader->Address;
@@ -392,7 +392,7 @@ void PMMInit()
     PMMGetSpace(BASE_STACK);
     
     // Keep looping till PMMGetSpace returns something. 
-    while(!(PMMGetSpace(POOL_STACK)));
+    while(!(PMMGetSpace(POOL_STACK))); 
 }
 
 // Allocates a frame in the PMM, and returns it's address.

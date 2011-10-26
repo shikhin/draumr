@@ -35,7 +35,7 @@ int Main(uint32_t *BITPointer)
     PMMInit();
     
     // Initialize video thingy.
-    VideoInit();
+    VideoInit(); 
     //Init();
     for(;;)
         __asm__ __volatile__("hlt");

@@ -50,11 +50,16 @@ BIT:
     .MMap         dd 0                ; The 32-bit address of the MMap.
 
     ; BIT Video stuff here.
+    .VideoFlags   db 0                ; The "video" flags.
     .SwitchVGA    dd 0                ; The 32-bit address of the function to switch to a VGA mode.
     .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
+
+; Video flags.
+%define VGA_PRESENT     (1 << 0)
+%define VBE_PRESENT     (1 << 1)
 
 ; Abort boot if can't open file.
 ErrorFile db "ERROR: Error occured while trying to open file.", 0
@@ -80,7 +85,8 @@ Startup:
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
-    
+    call VideoInit
+
 .LoadDBAL:    
     xor ax, ax                        ; Open File 1, or DBAL file.
     inc ax

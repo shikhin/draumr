@@ -60,12 +60,43 @@ static void SwitchToMode(uint32_t X, uint32_t Y, uint32_t BPP)
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 void VideoInit()
 {
-    SwitchToMode(320, 200, 8);
+    // If VBE is present, find the best VBE mode, and use it.
+    if(BIT.Video.VideoFlags & VBE_PRESENT)
+    {
+      
+    }
     
-    // Fill in some general details of the video mode.
-    BIT.Video.Address = (uint32_t*)0xA0000;
-    BIT.Video.XRes = 320;
-    BIT.Video.YRes = 200;
-    BIT.Video.BPP = 8;
-    BIT.Video.BytesBetweenLines = 0;
+    // If VGA is present, then use 320*200*256 color mode (or 640*480*16 colors).
+    else if(BIT.Video.VideoFlags & VGA_PRESENT)
+    {
+        // If high resolution is set, then switch to 640*480*16 colors mode.
+        #ifdef HIGH_RESOLUTION
+        SwitchToMode(640, 480, 4);
+	
+	// Fill in some general details of the video mode.
+	BIT.Video.Address = (uint32_t*)0xA0000;
+	BIT.Video.XRes = 640;
+	BIT.Video.YRes = 480;
+	BIT.Video.BPP = 4;
+	BIT.Video.BytesBetweenLines = 0;
+	
+	// Else, go to the 320*200*256 colors mode.
+        #else  
+        SwitchToMode(320, 200, 8);
+    
+        // Fill in some general details of the video mode.
+        BIT.Video.Address = (uint32_t*)0xA0000;
+        BIT.Video.XRes = 320;
+        BIT.Video.YRes = 200;
+        BIT.Video.BPP = 8;
+        BIT.Video.BytesBetweenLines = 0;
+        
+	#endif    /* HIGH_RESOLUTION */ 
+    }
+
+    // Initialize the serial port thingy.
+    else
+    {
+      
+    }
 }

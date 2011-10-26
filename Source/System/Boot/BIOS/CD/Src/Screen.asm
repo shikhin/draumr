@@ -28,6 +28,13 @@ BITS 16
 InitScreen:
     pushad                            ; Push all general purpose registers to save them.
 
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ah, 0x00
+    mov al, 0x03
+   
+    ; SWITCH! 
+    int 0x10
+
     xor ebx, ebx
     xor edx, edx
     mov eax, 0x200
