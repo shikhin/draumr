@@ -22,8 +22,8 @@
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
-#include <Video.h>
-
+#include <Output.h>
+#include <OutputMod/Serial.h>
 //extern void Init();
 
 int Main(uint32_t *BITPointer)
@@ -34,9 +34,12 @@ int Main(uint32_t *BITPointer)
     // Initialize the PMM.
     PMMInit();
     
-    // Initialize video thingy.
-    VideoInit(); 
+    // Initialize 'output' thingy.
+    OutputInit(); 
+    
+    // Just a temporary thingy to init the OutputMod.
     //Init();
+
     for(;;)
         __asm__ __volatile__("hlt");
 }

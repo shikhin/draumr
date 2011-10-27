@@ -1,4 +1,4 @@
-/* General BIT related definitions and structures.
+/* Contains common definitions to output to the screen.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -18,18 +18,28 @@
 */
 
 #include <stdint.h>
-#include <String.h>
+#include <OutputMod/Blit.h>
 #include <BIT.h>
-#include <Log.h>
+#include <PMM.h>
+#include <String.h>
 
-// Define the BIT structure here.
-BIT_t BIT;
+uint32_t *OldBuffer;
 
-// Initializes the BIT structure, copying it to somewhere appropriate.
-// uint32_t *BITPointer               The pointer to the BIT structure, as passed to us.
-void BITInit(uint32_t *BITPointer)
+// Gives a buffer, of bpp being what we require, to be blitted to the screen.
+// uint32_t *Buffer                   The address of the buffer to print.
+void BlitBuffer(uint32_t *Buffer)
 {
-    memcpy(&BIT, BITPointer, sizeof(BIT_t));
+    if(BIT.Video.BPP == 4)
+        BlitBuffer4BPP(Buffer);
     
-    return; 
+    else if(BIT.Video.BPP == 8)
+        BlitBuffer8BPP(Buffer);
 }
+
+/*
+void Init()
+{
+    OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, 38);
+    memset(OldBuffer, 0, 38 * 0x1000);   
+    BlitBuffer((uint32_t*)Image);    
+} */

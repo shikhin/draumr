@@ -29,6 +29,10 @@
 #define VGA_PRESENT     (1 << 0)
 #define VBE_PRESENT     (1 << 1)
 
+// Serial flags.
+#define SERIAL_PRESENT  (1 << 0)
+
+// The BIT structure.
 struct BIT
 {
     uint32_t OpenFile;
@@ -56,6 +60,14 @@ struct BIT
 	uint32_t BPP;                            // Bytes per pixel.
 	uint32_t BytesBetweenLines;              // Bytes between lines.
     } __attribute__((packed)) Video;
+    
+    // And the serial port related things here.
+    struct
+    {
+        uint8_t  SerialFlags;                    // The serial port flags.
+        uint32_t Port;                           // The port which we are going to use.
+    } __attribute__((packed)) Serial;
+    
 } __attribute__((packed));
 
 typedef struct BIT BIT_t;

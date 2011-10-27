@@ -18,11 +18,11 @@
 */
 
 #include <stdint.h>
-#include <VideoMod/Blit.h>
+#include <OutputMod/Blit.h>
 #include <BIT.h>
 #include <String.h>
 
-uint32_t *OldBuffer;
+extern uint32_t *OldBuffer;
 
 // Blits a buffer of 8bpp to the screen.
 // uint32_t *Buffer                   The address of the buffer to blit.

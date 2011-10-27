@@ -1,4 +1,4 @@
-/* Contains common definitions to output to the screen.
+/* Contains common Output definitions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,29 +17,16 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
+#ifndef VIDEO_H                       /* Video.h */
+#define VIDEO_H
+
 #include <stdint.h>
-#include <VideoMod/Blit.h>
-#include <BIT.h>
-#include <PMM.h>
-#include <String.h>
 
-extern uint32_t *OldBuffer;
+// Define the timeout for now - and fix it later to use the PIT or something.
+#define MIN_TIMEOUT 100000
 
-// Gives a buffer, of bpp being what we require, to be blitted to the screen.
-// uint32_t *Buffer                   The address of the buffer to print.
-void BlitBuffer(uint32_t *Buffer)
-{
-    if(BIT.Video.BPP == 4)
-        BlitBuffer4BPP(Buffer);
-    
-    else if(BIT.Video.BPP == 8)
-        BlitBuffer8BPP(Buffer);
-}
+// Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
+// If no video card, initializes the serial port.
+void OutputInit();
 
-/*
-void Init()
-{
-    OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, 38);
-    memset(OldBuffer, 0, 38 * 0x1000);   
-    BlitBuffer((uint32_t*)Image);    
-} */
+#endif                                /* Video.h */

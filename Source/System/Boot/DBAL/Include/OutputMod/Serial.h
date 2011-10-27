@@ -1,4 +1,4 @@
-/* Contains common Video definitions.
+/* Contains common Serial port functions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -17,12 +17,17 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef VIDEO_H                       /* Video.h */
-#define VIDEO_H
+#ifndef SERIAL_H                      /* Serial.h */
+#define SERIAL_H
 
 #include <stdint.h>
 
-// Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
-void VideoInit();
+// Define the timeout for now - and fix it later to use the PIT.
+#define MIN_TIMEOUT 100000
 
-#endif                                /* Video.h */
+// Outputs some text via the serial port interface.
+// char *Fmt                          Contains the string to output.
+// ...                                And other arguments.
+void OutputSerial(char *Fmt, ...);
+
+#endif                                /* Serial.h */
