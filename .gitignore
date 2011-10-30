@@ -17,4 +17,4 @@ Source/System/Boot/DBAL/DBAL
 
 Utilities/*.util
 *.util
-Test.sh
+*.sh

@@ -170,7 +170,7 @@ InitBootFiles:
     call ReadFromFloppyM              ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 16]            ; Offset 10 of the file is the EOF address.
-    sub ecx, 0xD000                   ; Subtract Start of File to get the size of the file.
+    sub ecx, 0xE000                   ; Subtract Start of File to get the size of the file.
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF

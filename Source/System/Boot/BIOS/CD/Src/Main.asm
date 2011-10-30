@@ -59,6 +59,7 @@ Main:
 
     mov ss, ax
     mov sp, Startup                   ; Set the stack to start from Startup (0x7C00) and continue below.
+    
     sti
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.

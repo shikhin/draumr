@@ -3,7 +3,7 @@ ENTRY(Start)
 
 SECTIONS
 {
-    .header 0xD000 :
+    .header 0xE000 :
     {
         header = .;
         *(.header)

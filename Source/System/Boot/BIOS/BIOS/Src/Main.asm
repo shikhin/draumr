@@ -50,9 +50,12 @@ BIT:
     .MMap         dd 0                ; The 32-bit address of the MMap.
 
     ; BIT Video stuff here.
-    .VideoFlags   db 0                ; The "video" flags.
-    .SwitchVGA    dd 0                ; The 32-bit address of the function to switch to a VGA mode.
+    .VideoFlags      db 0             ; The "video" flags.
+    .VBECntrlrInfo   dd 0             ; The 32-bit address of the VBE Controller Info block.
+    .VBEModeInfo     dd 0             ; The 32-bit address of the VBE Mode Info block.
+    .SwitchVGA       dd 0             ; The 32-bit address of the function to switch to a VGA mode.
     .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
+    .GetModeInfoVBE  dd 0             ; The 32-bit address of the function to get mode information from VBE.
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -79,9 +82,12 @@ Startup:
     mov [BIT.OpenFile], eax
     mov [BIT.ReadFile], ebx
     mov [BIT.CloseFile], ecx
+
+    ; I might do this statically, but, I may change this in the future from here - better idea (and doesn't take THAT much time).
     mov dword [BIT.SwitchVGA], SwitchVGAWrapper
     mov dword [BIT.SetupPaletteVGA], SetupPaletteVGAWrapper
-    
+    mov dword [BIT.GetModeInfoVBE], GetModeInfoVBEWrapper
+
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
@@ -99,16 +105,16 @@ Startup:
     push ecx
     mov ecx, 512                      ; Read only 512 bytes.
    
-    mov edi, 0xD000
+    mov edi, 0xE000
     call [BIT.ReadFile]               ; Read the entire file.
 
 .CheckDBAL1:
-    cmp dword [0xD000], "DBAL"        ; Check the signature.
+    cmp dword [0xE000], "DBAL"        ; Check the signature.
 
     jne .Error2
 
-    mov ecx, [0xD000 + 16]            ; Get the end of file in ECX - actual file size.
-    sub ecx, 0xD000                   ; Subtract 0xD000 from it to get it's size.
+    mov ecx, [0xE000 + 16]            ; Get the end of file in ECX - actual file size.
+    sub ecx, 0xE000                   ; Subtract 0xE000 from it to get it's size.
     add ecx, 0x1FF
     shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
     
@@ -118,7 +124,7 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
     
     cmp ecx, edx
-
+    
     jne .Error2                       ; If they aren't equal, error.
   
 .LoadRestFile:
@@ -141,10 +147,10 @@ Startup:
 
 BITS 32
 .CheckDBAL2:
-    mov ecx, [0xD000 + 16]            ; Get the end of the file in ECX.
-    sub ecx, 0xD000 + 24              ; Subtract 0xD000 (address of start) + 24 (size of header) from it, to get the size.
+    mov ecx, [0xE000 + 16]            ; Get the end of the file in ECX.
+    sub ecx, 0xE000 + 24              ; Subtract 0xE000 (address of start) + 24 (size of header) from it, to get the size.
     
-    mov esi, 0xD000 + 24              ; Calculate CRC from above byte 18.    
+    mov esi, 0xE000 + 24              ; Calculate CRC from above byte 18.    
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
@@ -155,11 +161,11 @@ BITS 32
     je .ZeroBSS
     
     ; If error occured, switch to Real Modee
-    ;mov ebx, .Error2
-    ;call SwitchToRM
+    mov ebx, .Error2
+    call SwitchToRM
 
 .ZeroBSS:
-    mov esi, 0xD000 
+    mov esi, 0xE000 
     mov edi, [esi + 8]                ; Move the start of BSS section into EDI.
    
     mov ecx, [esi + 12]
@@ -193,7 +199,7 @@ BITS 32
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
     
-    call dword [0xD004]
+    call dword [0xE004]
 
 BITS 16
 
@@ -243,6 +249,25 @@ SetupPaletteVGAWrapper:
 BITS 16
 .SetupPalette:
     call SetupPaletteVGA              ; Set up the palette.
+
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop ebx
+    ret
+
+; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
+GetModeInfoVBEWrapper:
+    push ebx
+   
+    mov ebx, .GetModeInfoVBE
+    jmp SwitchToRM                    ; Switch to Real mode, and return to GetModeInfoVBE.
+
+BITS 16
+.GetModeInfoVBE:
+    call GetModeInfoVBE               ; Get mode information from VBE.
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.

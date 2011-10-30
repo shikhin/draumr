@@ -30,7 +30,7 @@ static void SwitchToMode(uint32_t Mode)
 {
     if(BIT.Video.VideoFlags & VBE_PRESENT)
     {
-      
+
     }
     
     else 
@@ -153,7 +153,29 @@ void OutputInit()
     // If VBE is present, find the best VBE mode, and use it.
     if(BIT.Video.VideoFlags & VBE_PRESENT)
     {
-      
+        // Get the segment and the offset.
+        uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
+	uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
+	
+	// Flat pointer, from segment and offset = (segment * 0x10) + offset;
+	uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
+	uint16_t Mode = *VideoModesFlat++;
+	uint32_t Entries = 0;
+	
+	// Keep looping till we reach the End of Entries thingy.
+	do
+	{
+	    // So we got one more entry.
+	    Entries++;
+	    // Get the mode into Mode, and move on to the next video mode thingy.
+	    Mode = *VideoModesFlat++;
+	} while(Mode != 0xFFFF);
+	
+	// Allocate some memory from the Base Stack to hold all the mode information.
+	VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
+    
+        // Get mode information from VBE.
+	BIT.Video.GetModeInfoVBE();
     }
     
     // If VGA is present, then use 320*200*256 color mode (or 640*480*16 colors).

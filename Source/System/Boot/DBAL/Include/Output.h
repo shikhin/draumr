@@ -25,6 +25,36 @@
 // Define the timeout for now - and fix it later to use the PIT or something.
 #define MIN_TIMEOUT 100000
 
+struct VBECntrlrInfo
+{
+    /* Introduced in VBE 1.0 */
+    // Should contain VESA.
+    uint8_t  Signature[4];
+    uint16_t Version;                            // The version of the VBE implementation.
+    uint32_t OEMStringFar;                       // Far pointer to OEM String.
+    uint8_t  Capabilities[4];                    // The capabilities of the graphics controller.
+    uint32_t VideoModesFar;                      // Far pointer to video modes.
+    uint16_t TotalMemory;                        // Number of 64KiB memory blocks.
+    
+    /* Introduced in VBE 2.0 */
+    uint16_t OEMSoftwareRevision;                // VBE Implementation software revision.
+    // Some OEM specific thingy - the name tells it all.
+    uint32_t OEMVendorNameFar;
+    uint32_t OEMProductNameFar;
+    uint32_t OEMProductRevFar;
+    
+    // Some reserved area for VBE Implementation scratch, and some OEM area for the data stings.
+    uint8_t  Reserved[222];
+    uint8_t  OEMData[256];
+} __attribute__((packed));
+
+struct VBEModeInfo
+{
+    uint8_t  Data[256];
+} __attribute__((packed));
+
+typedef struct VBECntrlrInfo VBECntrlrInfo_t;
+typedef struct VBEModeInfo   VBEModeInfo_t;
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 // If no video card, initializes the serial port.
 void OutputInit();

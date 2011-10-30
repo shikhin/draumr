@@ -16,11 +16,16 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-SECTION .data
-
+SECTION .bss
 ; Reserve space for the palette - where we store it.
 Palette:
-    times (4 * 256) db 0x00
+    resb (3 * 256)
+
+; Get the controller information by VBE here.
+ControllerInfo:
+    resb 512
+
+SECTION .data
 
 PaletteLookup3BITS    db 0,  9, 18, 27, 36, 45, 54, 63
 PaletteLookup2BITS    db 0, 21, 42, 63
@@ -130,6 +135,49 @@ VideoInit:
 
 ; Check whether VBE is present or not.
 .VBECheck:
+    ; Ask for VBE2 info, if it's present.
+    mov [ControllerInfo], dword 'VBE2'
+    mov di, ControllerInfo
+    mov ax, 0x4F00
+
+    ; Get VBE Controller Mode Info.
+    int 0x10
+
+    ; If 0x004F (successful) wasn't returned, return.
+    cmp ax, 0x004F
+    jne .Return
+
+    ; It fills the signature with VESA.
+    cmp [ControllerInfo], dword 'VESA'
+    jne .Return
+
+    push es
+    ; If it is a dummy VBE installation, i.e. no entries, then return.
+    mov ax, [ControllerInfo + 16]     ; Get the segment into AX.
+    mov es, ax                        ; And then into ES.
+    mov bx, [ControllerInfo + 14]     ; Get the offset into BX.
+ 
+    mov ax, [es:bx]                   ; And the first entry into AX.
+    
+    pop es                            ; Restore ES.
+
+    cmp ax, 0xFFFF
+    je .Return                        ; If first entry is "end of list", return.
+
+    ; So, we support VBE.
+    or byte [BIT.VideoFlags], VBE_PRESENT  ; We do.
+    
+    ; And store the address of the Controler Info into the BIT.
+    mov dword [BIT.VBECntrlrInfo], ControllerInfo
+ 
+.Return:
+    popad
+    ret
+
+
+; Get's video modes information from VBE and store it at VBEModeInfo.
+GetModeInfoVBE:
+    pushad
 
 .Return:
     popad
