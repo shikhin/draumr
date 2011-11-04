@@ -23,13 +23,13 @@
 #include <Log.h>
 
 // Define the BIT structure here.
-BIT_t BIT;
+volatile BIT_t BIT;
 
 // Initializes the BIT structure, copying it to somewhere appropriate.
 // uint32_t *BITPointer               The pointer to the BIT structure, as passed to us.
 void BITInit(uint32_t *BITPointer)
 {
-    memcpy(&BIT, BITPointer, sizeof(BIT_t));
+    memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
     
     return; 
 }

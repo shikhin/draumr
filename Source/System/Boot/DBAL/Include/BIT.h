@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <Output.h>
+
 // Hardware flags.
 #define A20_DISABLED    (1 << 0)
 
@@ -55,7 +56,7 @@ struct BIT
         VBEModeInfo_t *VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
         void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
 	void (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
-	void (*GetModeInfoVBE)();                // The function which gets Video mode information from VBE.
+	void (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
 	uint32_t *Address;                       // The address of the video display.
 	uint32_t XRes;                           // X resolution.
 	uint32_t YRes;                           // Y resolution.
@@ -75,7 +76,7 @@ struct BIT
 typedef struct BIT BIT_t;
 
 // The BIT structure defined in BIT.c - where we back this up.
-extern BIT_t BIT;
+extern volatile BIT_t BIT;
 
 // Initializes the BIT structure, copying it to somewhere appropriate.
 // uint32_t *BITPointer               The pointer to the BIT structure, as passed to us.

@@ -25,6 +25,7 @@
 // Define the timeout for now - and fix it later to use the PIT or something.
 #define MIN_TIMEOUT 100000
 
+// VBE Controller Info - given by VBE.
 struct VBECntrlrInfo
 {
     /* Introduced in VBE 1.0 */
@@ -48,9 +49,16 @@ struct VBECntrlrInfo
     uint8_t  OEMData[256];
 } __attribute__((packed));
 
+// VBE Mode Info array - given by VBE.
 struct VBEModeInfo
 {
+    // And that's given by the VBE call.
     uint8_t  Data[256];
+    
+    // That's data used by me.
+    // Well, technically, I could reduce it by *a lot*.
+    // But I don't. To maintain alignment.
+    uint16_t HeaderData[128];
 } __attribute__((packed));
 
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;

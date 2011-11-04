@@ -172,10 +172,20 @@ void OutputInit()
 	} while(Mode != 0xFFFF);
 	
 	// Allocate some memory from the Base Stack to hold all the mode information.
-	VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
-    
-        // Get mode information from VBE.
-	BIT.Video.GetModeInfoVBE();
+	BIT.Video.VBEModeInfo = 
+	    (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
+						 ((sizeof(VBEModeInfo_t) * (Entries + 1)) + 0xFFF) / 0x1000);
+	
+	// Get mode information from VBE.
+	BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
+	
+	// Just for checking atm.
+	for(VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
+	    Modes->HeaderData[0] != 0xFFFF;
+	    Modes++)
+	{
+	    DebugPrintText("%x\t", Modes->HeaderData[0]);
+	}
     }
     
     // If VGA is present, then use 320*200*256 color mode (or 640*480*16 colors).

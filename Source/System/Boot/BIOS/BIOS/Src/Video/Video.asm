@@ -17,13 +17,10 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 SECTION .bss
-; Reserve space for the palette - where we store it.
+; Reserve space for the palette AND the VBE controller information, since we only do it one t a time - where we store it.
 Palette:
-    resb (3 * 256)
-
-; Get the controller information by VBE here.
 ControllerInfo:
-    resb 512
+    resb (4 * 256)
 
 SECTION .data
 
@@ -178,7 +175,90 @@ VideoInit:
 ; Get's video modes information from VBE and store it at VBEModeInfo.
 GetModeInfoVBE:
     pushad
+    ; Save es and fs.
+    push es
+    push fs
+
+    ; GET THE ADDRESS OF THE OUTPUT BUFFER.
+    ; Get the offset into EDI.
+    mov edi, [BIT.VBEModeInfo]
+
+    ; Get the segment into EAX.
+    mov eax, edi
+    and eax, ~0xFFFF
+
+    ; Shift it right, equivalent to dividing by 2^4, or 16 (0x10).
+    shr eax, 4
+    ; And get it into EAX.
+    mov es, ax
+
+    ; AND INPUT BUFFER.
+    ; Get segment into FS, and offset into SI.
+    mov ax, [ControllerInfo + 16]     ; Get the segment into AX.
+    mov fs, ax                        ; And then into FS.
+    mov si, [ControllerInfo + 14]     ; Get the offset into SI.
+
+; For every mode, get the information.
+.LoopModeInfo:
+    ; So, if we are on the end of the list, then exit gracefully.
+    mov cx, [fs:si]
+    cmp cx, 0xFFFF
+    je .Return
+
+    ; Get the mode information, for whatever mode is in CX.
+    mov ax, 0x4F01
+    int 0x10
+
+    ; If 0x004F (successful) wasn't returned, then simply try for the next entry.
+    cmp ax, 0x004F
+    jne .MoveNextInputBuf
+
+.MoveNextOutputBuf:
+    ; Write the mode over the "mode" field, if we passed.
+    add di, 256
+    mov [es:di], cx
+
+    ; Compare DI with the beginning of the last entry in the segment.
+    cmp di, (0x10000 - 256)
+    jb .MoveNextOutputBufOff
+
+    ; Increase the segment, if we need to.
+    mov ax, es
+    add ax, 0x10
+    mov es, ax
+
+; Bad naming - but it conveys the point.
+; Increment the offset of the output buffer.
+.MoveNextOutputBufOff:
+    ; So, it could also "overflow", and we'd already be on the next segment if it was to overflow.
+    add edi, 256
+
+; Move to the next thingy in the input buffer.
+.MoveNextInputBuf:
+    ; Compare SI with the beginning of the last entry in the segment.
+    cmp si, (0x10000 - 2)
+    jb .MoveNextInputBufOff
+
+    ; Increase the segment, if we need to.
+    mov ax, fs
+    add ax, 0x10
+    mov fs, ax
+
+; Bad naming - as always - but it conveys the point - increment offset in input buffer.
+.MoveNextInputBufOff:
+    ; So it could overflow, as descibed above.
+    add esi, 2
+
+    jmp .LoopModeInfo
 
 .Return:
+    ; Signify that this is the end of the "thingy".
+    ; By keeping the "Mode No" as -1 or 0xFFFF.
+    add di, 256
+    mov word [es:di], 0xFFFF
+
+    ; Restore fs and es.
+    pop fs
+    pop es
     popad
     ret

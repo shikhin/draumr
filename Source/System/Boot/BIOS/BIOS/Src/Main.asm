@@ -259,6 +259,7 @@ BITS 32
     ret
 
 ; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
+; Argument pushed                     A 32-bit dword, defining the address where to write.
 GetModeInfoVBEWrapper:
     push ebx
    
@@ -267,6 +268,9 @@ GetModeInfoVBEWrapper:
 
 BITS 16
 .GetModeInfoVBE:
+    mov eax, [esp + 8]                ; Get the address into EAX.
+    mov [BIT.VBEModeInfo], eax
+
     call GetModeInfoVBE               ; Get mode information from VBE.
 
     mov ebx, .Return

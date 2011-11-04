@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
     FILE *File;
     uint8_t *Buf;
-    uint32_t Status = 0, BytesRead, i, Seed = 0xFFFFFFFF;
+    uint32_t Old = 0, Status = 0, BytesRead, i, Seed = 0xFFFFFFFF;
     
     File = fopen(argv[1], "r+b");
     if(File == NULL)
@@ -146,7 +146,13 @@ int main(int argc, char *argv[])
     
         Seed ^= 0xFFFFFFFF;
         fseek(File, 14, SEEK_SET);
-        fwrite(&Seed, 1, sizeof(uint32_t), File);
+	fread(&Old, 1, sizeof(uint32_t), File);
+	
+	if(Old != Seed)
+	{
+	    fseek(File, 14, SEEK_SET);
+            fwrite(&Seed, 1, sizeof(uint32_t), File);
+	}
     }
     
     else
@@ -174,10 +180,18 @@ int main(int argc, char *argv[])
     
         Seed ^= 0xFFFFFFFF;
         fseek(File, 20, SEEK_SET);
-        fwrite(&Seed, 1, sizeof(uint32_t), File);
+        fread(&Old, 1, sizeof(uint32_t), File);
+	
+	if(Old != Seed)
+	{
+	    fseek(File, 20, SEEK_SET);
+	    fwrite(&Seed, 1, sizeof(uint32_t), File);
+	}
     }
     
     fclose(File);
-    printf("  \033[94m[CRC32]\033[0m %s -> 0x%X\n", FileName, Seed);
+    if(Old != Seed)
+        printf("  \033[94m[CRC32]\033[0m %s -> 0x%X\n", FileName, Seed);
+    
     return 0;
 }
