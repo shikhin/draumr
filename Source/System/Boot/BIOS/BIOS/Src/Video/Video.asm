@@ -173,11 +173,16 @@ VideoInit:
 
 
 ; Get's video modes information from VBE and store it at VBEModeInfo.
+;     rc
+;                                     The number of entries in @eax.
 GetModeInfoVBE:
-    pushad
     ; Save es and fs.
     push es
     push fs
+    push edi
+    push esi
+    push ecx
+    push ebp
 
     ; GET THE ADDRESS OF THE OUTPUT BUFFER.
     ; Get the offset into EDI.
@@ -198,6 +203,9 @@ GetModeInfoVBE:
     mov fs, ax                        ; And then into FS.
     mov si, [ControllerInfo + 14]     ; Get the offset into SI.
 
+    ; Count the entries in EBP.
+    xor ebp, ebp
+ 
 ; For every mode, get the information.
 .LoopModeInfo:
     ; So, if we are on the end of the list, then exit gracefully.
@@ -212,6 +220,9 @@ GetModeInfoVBE:
     ; If 0x004F (successful) wasn't returned, then simply try for the next entry.
     cmp ax, 0x004F
     jne .MoveNextInputBuf
+
+    ; So we got one more entry.
+    inc ebp
 
 .MoveNextOutputBuf:
     ; Write the mode over the "mode" field, if we passed.
@@ -252,13 +263,14 @@ GetModeInfoVBE:
     jmp .LoopModeInfo
 
 .Return:
-    ; Signify that this is the end of the "thingy".
-    ; By keeping the "Mode No" as -1 or 0xFFFF.
-    add di, 256
-    mov word [es:di], 0xFFFF
+    ; Get the number of entries in EAX.
+    mov eax, ebp
 
     ; Restore fs and es.
+    pop ebp
+    pop ecx
+    pop esi
+    pop edi
     pop fs
     pop es
-    popad
     ret

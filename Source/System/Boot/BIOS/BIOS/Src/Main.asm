@@ -53,6 +53,8 @@ BIT:
     .VideoFlags      db 0             ; The "video" flags.
     .VBECntrlrInfo   dd 0             ; The 32-bit address of the VBE Controller Info block.
     .VBEModeInfo     dd 0             ; The 32-bit address of the VBE Mode Info block.
+    .VBEModeInfoN    dd 0             ; The number of entries in the VBE Mode Info block.
+
     .SwitchVGA       dd 0             ; The 32-bit address of the function to switch to a VGA mode.
     .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
     .GetModeInfoVBE  dd 0             ; The 32-bit address of the function to get mode information from VBE.
@@ -260,6 +262,8 @@ BITS 32
 
 ; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
 ; Argument pushed                     A 32-bit dword, defining the address where to write.
+;     rc
+;                                     The number of entries in @eax.
 GetModeInfoVBEWrapper:
     push ebx
    
@@ -272,12 +276,14 @@ BITS 16
     mov [BIT.VBEModeInfo], eax
 
     call GetModeInfoVBE               ; Get mode information from VBE.
+    push eax
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
+    pop eax
     pop ebx
     ret
 

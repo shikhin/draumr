@@ -54,9 +54,12 @@ struct BIT
         uint8_t VideoFlags;                      // The video flags.
         VBECntrlrInfo_t *VBECntrlrInfo;          // The 32-bit adddress of the VBE Controller Mode Info block.
         VBEModeInfo_t *VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
+        uint32_t VBEModeInfoN;                   // The number of entries.
+        
         void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
 	void (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
-	void (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
+	uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
+	
 	uint32_t *Address;                       // The address of the video display.
 	uint32_t XRes;                           // X resolution.
 	uint32_t YRes;                           // Y resolution.

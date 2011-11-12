@@ -174,17 +174,18 @@ void OutputInit()
 	// Allocate some memory from the Base Stack to hold all the mode information.
 	BIT.Video.VBEModeInfo = 
 	    (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
-						 ((sizeof(VBEModeInfo_t) * (Entries + 1)) + 0xFFF) / 0x1000);
+						 ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
 	
-	// Get mode information from VBE.
-	BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
+	// Get mode information from VBE, and the number of entries in VBEModeInfoN.
+	BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
 	
+	VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
 	// Just for checking atm.
-	for(VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
-	    Modes->HeaderData[0] != 0xFFFF;
-	    Modes++)
+	for(uint32_t i = 0;
+	    i < BIT.Video.VBEModeInfoN;
+	    i++)
 	{
-	    DebugPrintText("%x\t", Modes->HeaderData[0]);
+	    DebugPrintText("%x\t", Modes[i].HeaderData[0]);
 	}
     }
     
