@@ -39,6 +39,10 @@ our_env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (colors['green'], colors['end'])
 our_env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (colors['green'], colors['end'])
 
 CRC32 = our_env.Program("CRC32.util", "CRC32.c")
+ToSIF = our_env.Program("ToSIF.util", "ToSIF.c")
+
+Depends(CRC32, ToSIF)
 
 # Save the CRC32 target in the environment as we will need it later.
 env["CRC32"] = CRC32
+env["ToSIF"] = ToSIF

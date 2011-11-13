@@ -46,9 +46,13 @@ def _pxe_builder(target, source, env) :
     stage1 = str(env["PXE_STAGE1"][0])
     bios = str(env["BIOS"][0])
     dbal = str(env["DBAL"][0])
+    background = str(env["BACK"])
     shutil.copy(stage1, s)
     shutil.copy(bios, s)
     shutil.copy(dbal, s)
+    if env["BACK"] != 0:
+        shutil.copy(background, s)
+    
     print("  %s[PXE]%s   %s" % (colors['blue'], colors['end'], target[0]))
     return 0
 

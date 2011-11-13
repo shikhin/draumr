@@ -46,6 +46,7 @@ struct ImageData
 {
     uint32_t XSize, YSize;
     uint32_t ImageSize;
+    uint32_t ScaledX, ScaledY;
 } __attribute__((packed));
 
 typedef struct BMPHeader BMPHeader_t;
@@ -99,7 +100,7 @@ static void BMPToBuf(FILE *InFile)
     }
     
     // Allocate a temporary buffer, where we read from file.
-    uint8_t *TempBuffer = malloc(BMPHeader.ImageSize);
+    uint8_t *TempBuffer = calloc(BMPHeader.ImageSize, 1);
     // Get to the image in the file.
     fseek(InFile, BMPHeader.Offset, SEEK_SET);
     do
@@ -123,12 +124,14 @@ static void BMPToBuf(FILE *InFile)
 }
 
 // Resizes a 24bpp image.
-// uint8_t  *Input
-// uint8_t  *Output
-// uint32_t X
-// uint32_t Y
-// uint32_t NewX
-// uint32_t NewY
+// uint8_t  *Input                    The input buffer, which we are about to resize.
+// uint8_t  *Output                   The output buffer, where we will store the resized buffer.
+// uint32_t X                         The previous X size of the image.
+// uint32_t Y                         The previous Y size of the image.
+// uint32_t NewX                      The X to be resized to.
+// uint32_t NewY                      The Y to be resized to.
+/* NOTE: Credit to this goes to http://tech-algorithm.com/, whose algorithm has just been slightly tweaked
+ * as to work with C, and 3-channel images */
 static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY) 
 {
     uint32_t ARed, ABlue, AGreen, BRed, BBlue, BGreen, CRed, CBlue, CGreen, DRed, DGreen, DBlue;
@@ -188,20 +191,32 @@ static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t
 // FILE *OutFile                      The output file, where we output the final image.
 static void BufToSIF(FILE *OutFile)
 {
+    // So, if we can rescale, we allocate another buffer, or we don't.
     uint8_t *TempBuffer = Buffer;
     
-    Buffer = malloc(1024 * 768 * 3);
-    ResizeBilinear(TempBuffer, Buffer, ImageData.XSize, ImageData.YSize, 1024, 768);
+    if(ImageData.XSize != ImageData.ScaledX ||
+       ImageData.YSize != ImageData.ScaledY)
+    {
+        // If we need to rescale, allocate another buffer, resize, and free the original one.
+        Buffer = calloc(ImageData.ScaledX * ImageData.ScaledY * 3, 1);
+        ResizeBilinear(TempBuffer, Buffer, ImageData.XSize, ImageData.YSize, ImageData.ScaledX, ImageData.ScaledY);
+        free(TempBuffer);
     
-    BMPHeader.XSize = 1024;
-    BMPHeader.YSize = 768;
-    BMPHeader.FileSize = sizeof(BMPHeader_t) + 1024 * 768 * 3;
+        // Get the scaled size.
+        BMPHeader.XSize = ImageData.ScaledX;
+        BMPHeader.YSize = ImageData.ScaledY;
+    }
+       
+    // And other factors.
+    BMPHeader.FileSize = sizeof(BMPHeader_t) + ImageData.ScaledX * ImageData.ScaledY * 3;
     BMPHeader.Offset = sizeof(BMPHeader_t);
     BMPHeader.Compression = 0;
-    BMPHeader.ImageSize = 1024 * 768 * 3;
+    BMPHeader.ImageSize = ImageData.ScaledX * ImageData.ScaledY * 3;
 
+    // Write the header, and the image.
     fwrite(&BMPHeader, sizeof(BMPHeader_t), 1, OutFile);
-    if(fwrite(Buffer, sizeof(uint8_t), 1024 * 768 * 3, OutFile) < 1024 * 768 * 3)
+    if(fwrite(Buffer, sizeof(uint8_t), ImageData.ScaledX * ImageData.ScaledY * 3, OutFile) < 
+       ImageData.ScaledX * ImageData.ScaledY * 3)
     {
         printf("ERROR: Unable to write the image to the output file.\n");
         exit(-1);
@@ -214,22 +229,30 @@ static void BufToSIF(FILE *OutFile)
 int main(int argc, char **argv)
 {
     FILE *InFile, *OutFile;
+    uint32_t i;
     // If usage wasn't correct, gracefully exit.
     if(argc < 3)
     {
-        printf("ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile.\n", argv[0], argv[0]);
+        printf("ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile Flags.\n", argv[0], argv[0]);
         return -1;
     }
     
+    // If we can't find the small flag, the default would be 1024*768.
+    ImageData.ScaledX = 1024;
+    ImageData.ScaledY = 768;
+    // Ok - so I decided: NO BACKGROUND FOR FLOPPIES! :D
+    
     // Open InFile and OutFile with error checking.
+    // In binary mode.
     InFile = fopen(argv[1], "r+b");
-    OutFile = fopen(argv[2], "w+w");
+    OutFile = fopen(argv[2], "w+b");
     if(!InFile)
     {
         printf("ERROR: Unable to open input file %s.\n", argv[1]);
         return -1;
     }
     
+    // OutFile unabled to be opened?
     if(!OutFile)
     {
         printf("ERROR: Unable to open output file %s.\n", argv[2]);
@@ -252,6 +275,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    // Convert the buffer to SIF file format, which is actually just BMP.
     BufToSIF(OutFile);
                 
     // Close the opened files.
@@ -260,4 +284,6 @@ int main(int argc, char **argv)
     
     // Free the buffer.
     free(Buffer);
+    
+    printf("  \033[94m[ToSIF]\033[0m %s -> %s\n", argv[1], argv[2]);
 }

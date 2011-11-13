@@ -3,6 +3,7 @@
 *.todo
 *.o
 *~
+*.sif
 .bochsrc
 .sconsign.dblite
 debugger.out

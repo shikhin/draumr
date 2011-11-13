@@ -24,10 +24,19 @@ import glob
 from SCons.Builder import Builder
 from SCons.Action import Action
 from Isobuilder import _path
+from Config import Config
 
-def _image_builder(target, source, env) :
+def _image_builder(target, source, env) :    
     os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
     os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
+    
+    if os.path.isfile(env["BACK"]) :
+        os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
+        env["BACK"] = "Background.sif"              
+        
+    else :
+        env["BACK"] = 0
+        
     return 0
 
 ImageBuilder = Builder(action = Action(_image_builder, None))

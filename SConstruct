@@ -20,6 +20,7 @@
 
 # Insert our own script path in front of the others.
 import sys
+import os
 sys.path.insert(0, "Scripts/Scons")
 
 # Parse command line parameters.
@@ -32,6 +33,7 @@ cfg.parse(ARGUMENTS)
 from Buildmanager import BuildManager
 bldmgr = BuildManager(cfg)
 env = bldmgr.create_env()
+env["BACK"] = "Background.bmp"
 
 # Run through the SConscript files.
 Utils = SConscript(dirs=["Utilities"], exports=["env"])
@@ -39,32 +41,45 @@ Source = SConscript(dirs=["Source"], exports=["env"])
 Depends(Source, Utils)
 
 image = env.Image("BootImage.comp", None)
+Depends(image, Utils)
 if cfg.target == "all":
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], env["BACK"], image])
 
     pxe = env.PXE("/tftpboot/Stage1", None) 
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], env["BACK"], image])
 
     floppy = env.Floppy("Draumr.flp", None)
     Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], env["DBAL"], image])
-
+    
+    Clean("Draumr.iso", "Background.sif")
+    Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
+    Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
+    Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
+   
     Default([iso, pxe, floppy])
 
 elif cfg.target == "iso" :
     iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
+    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], env["BACK"], image])
      
+    Clean("Draumr.iso", "Background.sif")
     Default(iso)
 
 elif cfg.target == "pxe" :
     pxe = env.PXE("/tftpboot/Stage1", None)
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
+    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], env["BACK"], image])
 
+    Clean("/tftpboot/Stage1", "Background.sif")
+    Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
+    Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
+    Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
+   
     Default(pxe)
 
 elif cfg.target == "floppy" :
     floppy = env.Floppy("Draumr.flp", None)
     Depends(floppy, [env["FLOPPY_STAGE1"], env ["BIOS"], env["DBAL"], image])
 
+    Clean("Draumr.flp", "Background.sif")
     Default(floppy)
