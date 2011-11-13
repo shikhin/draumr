@@ -280,8 +280,9 @@ static void PMMFixMMap()
 // Allocates some extra memory from the memory map, in the provided region.
 // uint32_t Type                      The type of the stack to expand upon.
 //     rc
-//                                    uint32_t - the number of frames allocated.
-static uint32_t PMMGetSpace(uint32_t Type)
+//                                    int32_t - the number of frames allocated.
+//                                    -1 for nothing left.
+static int32_t PMMGetSpace(uint32_t Type)
 {
     uint32_t Allocated = 0;
     
@@ -324,8 +325,8 @@ static uint32_t PMMGetSpace(uint32_t Type)
     {
         // If we reached 0xFE000000, and still need more memory, then some thing is WRONG.
         if(Base == 0xFE000000)
-            AbortBoot("ERROR: The Boot Abstraction Layer wants too much memory.\n");
- 
+            return -1;
+        
         for(uint32_t i = 0; i < MMapHeader->Entries; i++)
         {
             // If we have gone farther than Base + MIN_ALLOC (size), then just break.
@@ -392,29 +393,56 @@ void PMMInit()
     PMMGetSpace(BASE_STACK);
     
     // Keep looping till PMMGetSpace returns something. 
-    while(!(PMMGetSpace(POOL_STACK))); 
+    while(1)
+    {
+        int32_t Status = PMMGetSpace(POOL_STACK);
+        
+        // If we encountered all the blocks till 0xFE000000 without finding any memory, then abort.
+        if(Status < 0)
+             AbortBoot("ERROR: The DBAL is unable to find enough memory to boot.\n");
+        
+        // If found some pages, break.
+        else if(Status)
+             break;
+    }
 }
 
 // Allocates a frame in the PMM, and returns it's address.
 // uint32_t Type                      The type of the frame to allocate - BASE_STACK or POOL_STACK
 //     rc
 //                                    uint32_t - returns the address of the frame allocated.
+//                                    NULL indicates no frame found.
 uint32_t PMMAllocFrame(uint32_t Type)
-{
-    uint32_t *RegionTop = Top[Type];
-    
+{    
     // If we have reached at the end of the stack:
-    if(RegionTop == (uint32_t*)0xAA55AA55)
+    if(Top[Type] == (uint32_t*)0xAA55AA55)
     {
-        RegionTop = Top[Type] = (uint32_t*)0x00000000;                                             // Clear out Top.
-        
+        // If we are allocating for BASE_STACK, then return a NULL (since we can't expand it).
         if(Type == BASE_STACK)
-	    AbortBoot("ERROR: No memory left below the 1MiB mark.");
+            return NULL;
 	
 	else 
-            while(!(PMMGetSpace(POOL_STACK)));                                                     // And keep looping till we get somehing
+        {    
+            Top[Type] = (uint32_t*)0x00000000;
+            // Keep looping till PMMGetSpace returns something. 
+            while(1)
+            {
+                int32_t Status = PMMGetSpace(POOL_STACK);
+                    
+                if(Status < 0)
+                {
+                    Top[Type] = (uint32_t*)0xAA55AA55;
+                    return NULL;
+                }
+                
+                // If expanded something, break.
+                else if(Status)
+                    break;
+            }
+        }
     }
     
+    uint32_t *RegionTop = Top[Type];
     uint32_t Frame = (uint32_t)RegionTop;                                                          // Pop the top entry.
     RegionTop = (uint32_t*)RegionTop[0];                                                           // Top[0] contains the last free frame. 
     Top[Type] = RegionTop;
@@ -442,10 +470,11 @@ void PMMFreeFrame(uint32_t Type, uint32_t Addr)
 // uint32_t Number                    The number of frames to allocate.
 //     rc
 //                                    uint32_t - return address of the contiguous frames allocated.
+//                                    NULL for can't find.
 uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
 {
     uint32_t FramesFound = 1;
-
+    
     uint32_t *RegionTop = Top[Type];
     // Previous is the top, while current is the one after previous.
     uint32_t *Previous = RegionTop;
@@ -456,14 +485,33 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
     if(Previous == (uint32_t*)0xAA55AA55)
     {
         if(Type == BASE_STACK)
-            AbortBoot("ERROR: No more free memory left below the 1MiB mark.\n");
-	
+        {
+            return -1;    
+        }
+        
 	else
 	{
+            // Expand the pool stack a bit.
 	    RegionTop = Top[Type] = (uint32_t*)0x00000000;
 	    uint32_t Expanded = 0;
-	    while((Expanded += PMMGetSpace(POOL_STACK)) < Number);                                                     // And keep looping till we get somehing
-            
+            while(1)
+            {
+                int32_t Status;
+                
+                // If expanded by all the number of pages needed, then break.
+                // Else continue.
+                Expanded += Status = PMMGetSpace(POOL_STACK);
+                
+                if(Status < 0)
+                {
+                    Top[Type] = (uint32_t*)0xAA55AA55;
+                    return NULL;
+                }
+                                
+                else if(Expanded >= Number)
+                    break;
+            }
+                        
             RegionTop = Top[Type];
 	    Previous = RegionTop;
 	    Current = (uint32_t*)(*Previous);
@@ -476,13 +524,29 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
         if(Current == (uint32_t*)0xAA55AA55)
 	{
 	    if(Type == BASE_STACK)
-	        AbortBoot("ERROR: No more free memory left below the 1MiB mark.\n");
-	    
+	        return NULL;
+            
 	    else
 	    {
-	        uint32_t Expanded = 0;
-		while((Expanded += PMMGetSpace(POOL_STACK)) < Number);
-		
+	        uint32_t Expanded = FramesFound;
+                while(1)
+                {
+                    int32_t Status;
+                    
+                    // Keep expanding till we get the nnumber of pages we need.
+                    Expanded += Status = PMMGetSpace(POOL_STACK);
+                    
+                    if(Status < 0)
+                    {
+                        Top[Type] = (uint32_t*)0xAA55AA55;
+                        return NULL;
+                    }
+                                    
+                    else if(Expanded >= Number)
+                        break;
+                }
+                
+                // And start from again.
 		return PMMAllocContigFrames(Type, Number);
 	    }
 	}

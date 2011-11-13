@@ -64,6 +64,8 @@ typedef struct MMapEntry MMapEntry_t;
 #define BASE_STACK                    0
 #define POOL_STACK                    1
 
+#define NULL                          0x00000000
+
 // Define the pointers to the headers and entries.
 extern MMapHeader_t *MMapHeader;
 extern MMapEntry_t  *MMapEntries;

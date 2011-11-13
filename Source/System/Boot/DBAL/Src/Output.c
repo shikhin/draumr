@@ -176,21 +176,31 @@ void OutputInit()
 	    (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
 						 ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
 	
-	// Get mode information from VBE, and the number of entries in VBEModeInfoN.
-	BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
+        if(!BIT.Video.VBEModeInfo)
+        {
+            BIT.Video.VideoFlags &= ~VBE_PRESENT;   
+        }
+            
+        else
+        {
+	    // Get mode information from VBE, and the number of entries in VBEModeInfoN.
+	    BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
 	
-	VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
-	// Just for checking atm.
-	for(uint32_t i = 0;
-	    i < BIT.Video.VBEModeInfoN;
-	    i++)
-	{
-	    DebugPrintText("%x\t", Modes[i].HeaderData[0]);
-	}
+	    VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
+	    // Just for checking atm.
+	    for(uint32_t i = 0;
+	        i < BIT.Video.VBEModeInfoN;
+	        i++)
+	    {
+	        DebugPrintText("%x\t", Modes[i].HeaderData[0]);
+	    }
+        }
     }
     
-    // If VGA is present, then use 320*200*256 color mode (or 640*480*16 colors).
-    else if(BIT.Video.VideoFlags & VGA_PRESENT)
+    // If VGA is present, and VBE is either not present, or we removed the flag.
+    // Then use 320*200*256 color mode (or 640*480*16 colors).
+    if(!(BIT.Video.VideoFlags & VBE_PRESENT) &&
+        (BIT.Video.VideoFlags & VGA_PRESENT))
     {
         // If high resolution is set, then switch to 640*480*16 colors mode.
         #ifdef HIGH_RESOLUTION
