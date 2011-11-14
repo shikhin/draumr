@@ -167,14 +167,12 @@ ExtMain:
     jmp dx
 
 .Error:
-    xor ax, ax
     mov si, ErrorFile
-    call AbortBoot
+    jmp AbortBoot
 
 .Error2:
-    xor ax, ax
     mov si, ErrorBIOSFile
-    call AbortBoot
+    jmp AbortBoot
 
 SECTION .pad
 ; Define DRAUMRSS - so that it can be used to check the sanity of the file.

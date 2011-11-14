@@ -159,7 +159,7 @@ InitPXE:
     mov es, ax
  
     mov si, NoPXE
-    call AbortBoot   
+    jmp AbortBoot   
 
 .Return:
     popad

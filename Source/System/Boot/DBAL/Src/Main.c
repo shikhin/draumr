@@ -22,8 +22,11 @@
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
+#include <BootFiles.h>
 #include <Output.h>
 #include <OutputMod/Serial.h>
+
+// Temporary thingy to init the OutputMod.
 //extern void Init();
 
 int Main(uint32_t *BITPointer)
@@ -33,6 +36,13 @@ int Main(uint32_t *BITPointer)
     
     // Initialize the PMM.
     PMMInit();
+    
+    // Initialize the bouncer for the boot files.
+    InitBootFiles();
+    
+    // Get the background.
+    uint32_t *BGImg;
+    BootFilesBGImg((uint32_t**)&BGImg);
     
     // Initialize 'output' thingy.
     OutputInit(); 

@@ -174,9 +174,8 @@ Main:
     mov ds, ax
 
     mov si, PXEAPIError               ; Accessing the API error occured.
-    call AbortBoot                    ; Abort boot now!
+    jmp AbortBoot                     ; Abort boot now!
 
 .Error2:
-    xor ax, ax
     mov si, BIOSError                 ; Unable to open/find the common BIOS file.
-    call AbortBoot
+    jmp AbortBoot

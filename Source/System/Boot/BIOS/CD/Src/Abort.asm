@@ -17,7 +17,7 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-SECTION .text
+SECTION .base
 
 
 ; Function for aborting boot.
@@ -25,6 +25,9 @@ SECTION .text
 AbortBoot:
     cli
     
+    test si, si
+    jz .Beep
+
     ; Print error message on to screen.
     call Print
 

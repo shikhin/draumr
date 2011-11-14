@@ -79,6 +79,10 @@ DBAL:
     .LBA          dd 0                ; The LBA of the DBAL file.
     .Size         dd 0                ; The Size of the DBAL file in bytes.
 
+Background:
+    .LBA          dd 0                ; The LBA of the Background file.
+    .Size         dd 0                ; The size of the Background file in bytes.
+
 ; Is responsible for finding boot files.
 ;     @rc
 ;                 Aborts boot if ANY error occurs.
@@ -130,7 +134,7 @@ FindBootFiles:
     mov [Boot.Size], eax
     
     mov edx, "BIOS"
-    mov ebp, 2                        ; Number of files to load.
+    mov ebp, 3                        ; Number of files to load.
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
@@ -140,14 +144,45 @@ FindBootFiles:
     cmp byte [di], 0                  ; If zero, we have finished this sector. Move on to next sector.
     je .NextSectorBD
 
-    cmp byte [di + 32], 7             ; If size of directory identifier isn't 0, next record.
-    jne .NextRecordBD
+    cmp byte [di + 32], 7             ; If size of directory identifier isn't 4, then try for background image.
+    jne .CheckBGImage
 
     cmp dword [di + 33], "BIOS"       ; If directory identifier doesn't match, next record.
     je .FoundBIOS
 
     cmp dword [di + 33], "DBAL"       ; Sigh, how many 4 byte entries do we have?
     je .FoundDBAL
+
+.CheckBGImage:
+    cmp byte [di + 32], 14            ; Check the size of the directory identifier.
+    jne .NextRecordBD
+
+    cmp dword [di + 33], "BACK"       ; Check the file name.
+    jne .NextRecordBD
+
+    cmp dword [di + 37], "GROU"       ; And the rest of the file name.
+    jne .NextRecordBD
+    
+    cmp dword [di + 41], ".SIF"       ; And the rest. Woof.
+    jne .NextRecordBD
+
+    ; So we found the background image here. Test it.
+    dec ebp
+
+    push eax
+    push ebx
+ 
+    mov eax, [di + 10]
+    mov ebx, [di + 2]
+
+    mov [Background.LBA], ebx
+    mov [Background.Size], eax
+
+    pop ebx
+    pop eax
+
+    test ebp, ebp
+    jz .Return
 
 .NextRecordBD:
     movzx edx, byte [di]              ; Save the size of the directory record into EDX.
@@ -204,6 +239,16 @@ FindBootFiles:
   
 ; Not found - abort boot.
 .NotFound:
+    ; If the only thing we haven't found yet is the background image, then, can continue.
+    cmp ebp, 1
+    jne .Abort
+
+    ; So 1 file hasn't been found. Is it the image?
+    cmp dword [Background.LBA], 0
+    je .Return                        ; Yes, return.
+
+.Abort:
+    ; Else, abort.
     mov si, FilesNotFound
     mov ax, 0
     call AbortBoot
@@ -225,12 +270,14 @@ SECTION .text
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
 ;                 0 -> Common BIOS File.
+;                 1 -> DBAL.
+;                 2 -> Background image.
 ;     @rc 
 ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
 ;                 @ecx    The size of the file you want to open.
 OpenFile:
     pushad
-    
+
     mov bl, [Open]
     test bl, bl
     jnz .Error
@@ -243,6 +290,9 @@ OpenFile:
 
     cmp al, 1                         ; 1 indicates the DBAL file.
     je .DBAL
+
+    cmp al, 2                         ; 2 indicates the Background image.
+    je .Background
 
     jmp .Error
    
@@ -262,12 +312,24 @@ OpenFile:
     mov eax, [DBAL.Size]
     mov [Open.Size], eax
 
+    jmp .Return
+
+.Background:
+    mov eax, [Background.LBA]
+    test eax, eax
+    jz .Error
+    mov [Open.LBA], eax
+
+    mov eax, [Background.Size]
+    mov [Open.Size], eax
+
 .Return:
     popad
     mov ecx, [Open.Size] 
     ret
 
 .Error:
+    mov byte [Open], 0
     stc 
     popad
     ret

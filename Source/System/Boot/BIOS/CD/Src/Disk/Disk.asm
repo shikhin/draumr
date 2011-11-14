@@ -209,7 +209,7 @@ CheckInt13Ext:
 
 .Error:
     xor si, si
-    call AbortBoot                    ; Abort boot using base method.
+    jmp AbortBoot                    ; Abort boot using base method.
     
 .Return:
     popad
@@ -227,12 +227,20 @@ CheckInt13Ext:
 ReadFromDisk:
     mov byte [Retry], 3
     pushad
+    mov ebp, edi
+
+    ; Get rid of the "perform advacned checking" flag, since it is already stored at in ebp.
+    and edi, 0x7FFFFFFF
+    mov eax, edi
+    and eax, 0xFFFF0000
+    shr eax, 4
+    ; Get the segment in AX.
 
 .Retry:
     mov byte [LBAPacket.Size], 0x10   ; Size of the Packet - 0x10 if you specify Segment:Offset and not a 64-bit linear address.
     mov word [LBAPacket.Sectors], cx  ; Number of sectors to read.
     mov [LBAPacket.BufferOff], di     ; Offset - Since we use 0x0000 as segment offset must be the address of the buffer - @di.
-    mov word [LBAPacket.BufferSeg], 0  
+    mov word [LBAPacket.BufferSeg], ax; Get the segment. 
     mov [LBAPacket.LBALow], ebx       ; Lower 32-bits of the LBA address.
     mov [LBAPacket.LBAHigh], dword 0  ; Higher 32-bits of the LBA address - useful for 48-bit LBA.
      
@@ -260,14 +268,14 @@ ReadFromDisk:
 .Abort:
     xor si, si
 
-    test edi, 0x80000000
+    test ebp, 0x80000000
     jnz .AdvancedAbort
 
-    call AbortBoot
+    jmp AbortBoot
 
 .AdvancedAbort:
     call GetErrorMsg
-    call AbortBoot
+    jmp AbortBoot
 
 .Success:
     popad
@@ -287,6 +295,15 @@ SectorRead:       dd 0
 ReadFromDiskM:
     pushad
    
+    mov ebp, edi
+
+    ; Get rid of the "perform advanced checking" flag, since it is already stored at in ebp.
+    and edi, 0x7FFFFFFF
+    mov eax, edi
+    and eax, 0xFFFF0000
+    shr eax, 4
+    ; Get the segment in AX.
+
     cmp ecx, 0x7F                     ; 0x7F is the maximum sectors we can read, so, let's minimize this number.
     jbe .Multiple                     ; If below or equal, do multiple sector reads.
 
@@ -296,7 +313,7 @@ ReadFromDiskM:
     mov byte [LBAPacket.Size], 0x10   ; Size of the Packet - 0x10 if you specify Segment:Offset and not a 64-bit linear address.
     mov word [LBAPacket.Sectors], cx  ; Number of sectors to read.
     mov [LBAPacket.BufferOff], di     ; Offset - Since we use 0x0000 as segment offset must be the address of the buffer - @di.
-    mov word [LBAPacket.BufferSeg], 0 ; The segment is zero. 
+    mov word [LBAPacket.BufferSeg], ax; The segment is zero. 
     mov [LBAPacket.LBALow], ebx       ; Lower 32-bits of the LBA address.
     mov [LBAPacket.LBAHigh], dword 0  ; Higher 32-bits of the LBA address - useful for 48-bit LBA.
      
@@ -323,7 +340,7 @@ ReadFromDiskM:
     ; And read one sector at a time - the recommended method.
     mov ecx, 1
 
-    or edi, 0x80000000                ; Or EDI with 0x80000000 to enable advanced error checking.
+    mov edi, ebp
 
 .Loop:
     call ReadFromDisk

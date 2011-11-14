@@ -65,13 +65,11 @@ GetBootFile:
 
 .Fail1:
     mov si, DiskError
-    xor ax, ax
-    call AbortBoot
+    jmp AbortBoot
  
 .Fail2:
     mov si, BootError
-    xor ax, ax
-    call AbortBoot
+    jmp AbortBoot
 
 ; Read a sector from the disk to a buffer.
 ;     @edi        The buffer to where to read the disk sector to.
@@ -277,8 +275,7 @@ ReadFromFloppyM:
 
 .Error:
     mov si, DiskError
-    xor ax, ax
-    call AbortBoot
+    jmp AbortBoot
 
 SECTION .data
 
@@ -292,6 +289,8 @@ SECTION .text
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
 ;                 0 -> Common BIOS File.
+;                 1 -> DBAL.
+;                 2 -> Background image.
 ;     @rc 
 ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
 ;                 @ecx    The size of the file you want to open.
@@ -310,6 +309,7 @@ OpenFile:
     cmp al, 1                         ; While 1 indicates the DBAL file.
     je .DBAL
 
+    ; Don't recognize Background image in floppies.
     jmp .Error
 
 .BIOS:
@@ -334,6 +334,7 @@ OpenFile:
     ret
 
 .Error:
+    mov byte [Open], 0
     stc 
     popad
     ret

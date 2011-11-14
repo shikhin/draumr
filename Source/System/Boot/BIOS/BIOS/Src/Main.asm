@@ -59,6 +59,11 @@ BIT:
     .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
     .GetModeInfoVBE  dd 0             ; The 32-bit address of the function to get mode information from VBE.
 
+; Put all the real-mode functions to handle files here.
+OpenFile dd 0
+ReadFile dd 0
+CloseFile dd 0
+
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
 
@@ -72,6 +77,9 @@ ErrorFile db "ERROR: Error occured while trying to open file.", 0
 ; Or file is incorrect.
 ErrorBIOSFile db "ERROR: Error occured while trying to parse the DBAL file.", 0
 
+; Or we are trying to close a file which we haven't even opened.
+ClosingWhileNotOpened db "ERROR: Trying to close a file, while none has been opened yet.", 0
+
 SECTION .text
 GLOBAL Startup
 
@@ -81,14 +89,17 @@ GLOBAL Startup
 ; @ebx            Should point to the ReadFile function.
 ; @ecx            Should point to the CloseFile function.
 Startup:
-    mov [BIT.OpenFile], eax
-    mov [BIT.ReadFile], ebx
-    mov [BIT.CloseFile], ecx
+    mov [OpenFile], eax
+    mov [ReadFile], ebx
+    mov [CloseFile], ecx
 
     ; I might do this statically, but, I may change this in the future from here - better idea (and doesn't take THAT much time).
     mov dword [BIT.SwitchVGA], SwitchVGAWrapper
     mov dword [BIT.SetupPaletteVGA], SetupPaletteVGAWrapper
     mov dword [BIT.GetModeInfoVBE], GetModeInfoVBEWrapper
+    mov dword [BIT.OpenFile], OpenFileWrapper
+    mov dword [BIT.ReadFile], ReadFileWrapper
+    mov dword [BIT.CloseFile], CloseFileWrapper
 
     ; Enable A20, then try to generate memory map.
     call EnableA20
@@ -99,7 +110,7 @@ Startup:
     xor ax, ax                        ; Open File 1, or DBAL file.
     inc ax
     
-    call dword [BIT.OpenFile]         ; Open the File.
+    call word [OpenFile]             ; Open the File.
     
     jc .Error
     
@@ -108,7 +119,7 @@ Startup:
     mov ecx, 512                      ; Read only 512 bytes.
    
     mov edi, 0xE000
-    call [BIT.ReadFile]               ; Read the entire file.
+    call [ReadFile]                   ; Read the entire file.
 
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
@@ -138,10 +149,10 @@ Startup:
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
     
-    call dword [BIT.ReadFile]         ; Read the rest of the file.
+    call word [ReadFile]             ; Read the rest of the file.
     
 .Finish:
-    call dword [BIT.CloseFile]        ; And then close the file.
+    call word [CloseFile]            ; And then close the file.
 
     ; Switch to protected mode - since we might be crossing our boundary here.
     mov ebx, .CheckDBAL2
@@ -181,14 +192,12 @@ BITS 32
 BITS 16
    
 .Error:
-    xor ax, ax
     mov si, ErrorFile
-    call AbortBoot
+    jmp AbortBoot
 
 .Error2:
-    xor ax, ax
     mov si, ErrorBIOSFile
-    call AbortBoot
+    jmp AbortBoot
 
 BITS 32
 .Protected32:
@@ -201,7 +210,7 @@ BITS 32
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
     
-    call dword [0xE004]
+    call word [0xE004]
 
 BITS 16
 
@@ -284,6 +293,94 @@ BITS 16
 BITS 32
 .Return:
     pop eax
+    pop ebx
+    ret
+
+; A wrapper to the OpenFile function - to be done from 32-bit code.
+; Argument pushed                     A 32-bit dword, defining the "code" of the file to open.
+;     rc
+;                                     The size of the file opened in @eax.
+OpenFileWrapper:
+    push ebx
+   
+    mov ebx, .OpenFile
+    jmp SwitchToRM                    ; Switch to Real mode, and return to OpenFile.
+
+BITS 16
+.OpenFile:
+    mov eax, [esp + 8]                ; Get the "file code" into EAX.
+    
+    call word [OpenFile]              ; Open the file.   
+   
+    mov eax, ecx                      ; Get the size into @eax.
+    jnc .BackToPM
+
+    ; And if we failed for some reason, the size is 0.
+    xor eax, eax
+    clc
+    
+.BackToPM:
+    push eax
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop eax  
+    pop ebx
+    ret
+
+
+; A wrapper to the ReadFile function - to be done from 32-bit code.
+; Argument pushed                     A 32-bit dword, defining the length to read.
+;                                     A 32-bit dword, defining the address to read to.
+;     rc
+;                                     The size of the file opened in @eax.
+ReadFileWrapper:
+    push ebx
+   
+    mov ebx, .ReadFile
+    jmp SwitchToRM                    ; Switch to Real mode, and return to ReadFile.
+
+BITS 16
+.ReadFile:
+    mov ecx, [esp + 12]                ; Get the length into EAX.
+    mov edi, [esp + 8]                 ; And the address into EDI.
+    
+    call word [ReadFile]              ; Read the file.
+    
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop ebx
+    
+    ret
+
+
+; A wrapper to the CloseFile function - to be done from 32-bit code.
+CloseFileWrapper:
+    push ebx
+   
+    mov ebx, .CloseFile
+    jmp SwitchToRM                    ; Switch to Real mode, and return to CloseFile.
+
+BITS 16
+.CloseFile:
+    call word [CloseFile]            ; Close the file.
+    jnc .BackToPM
+
+    ; And if we failed for some reason, we got to abort boot.
+    mov si, ClosingWhileNotOpened
+    jmp AbortBoot
+    
+.BackToPM:
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
     pop ebx
     ret
 

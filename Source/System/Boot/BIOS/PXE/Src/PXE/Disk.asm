@@ -51,18 +51,19 @@ IsOpen:           db 0
 Files:
     .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
     .DBAL         dw DBALStr          ; And the DBAL string in the table.
+    .Background   dw BackgroundStr    ; And the Background string in the table.
 
 BIOSStr db "BIOS", 0
-times 128 - ($ - BIOSStr) db 0
-
 DBALStr db "DBAL", 0
-times 128 - ($ - DBALStr) db 0
+BackgroundStr db "Background.sif", 0
 
 SECTION .text
 
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
 ;                 0 -> Common BIOS File.
+;                 1 -> DBAL.
+;                 2 -> Background image.
 ;     @rc 
 ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
 ;                 @ecx    The size of the file you want to open.
@@ -120,8 +121,9 @@ OpenFile:
 
     mov di, PXENV_TFTP_GET_FSIZE
     mov bx, TFTP_GET_FSIZE
-    call UsePXEAPI
 
+    ; With error checking.
+    call UsePXEAPI
     or ax, [PXENV_TFTP_GET_FSIZE]
     test ax, ax
     jnz .Error
@@ -145,6 +147,7 @@ OpenFile:
     ret
 
 .Error:
+    mov byte [IsOpen], 0
     stc
     popad
     ret
@@ -171,9 +174,8 @@ CloseFile:
     ret
 
 .Error:
-    xor ax, ax
     mov si, PXEAPIError
-    call AbortBoot
+    jmp AbortBoot
 
 
 ; Reads the required bytes of the file currently opened.
@@ -183,7 +185,7 @@ CloseFile:
 ;                 Aborts boot if any error occured (during read, that is).
 ReadFile:
     pushad
-
+ 
 .ReadFile: 
     mov edx, edi
     and edx, 0xFFFF0000
@@ -236,6 +238,5 @@ ReadFile:
     ret    
 
 .Error:
-    xor ax, ax
     mov si, PXEAPIError
-    call AbortBoot
+    jmp AbortBoot

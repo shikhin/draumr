@@ -177,14 +177,12 @@ ExtMain:
     jmp dx
 
 .Error:
-    xor ax, ax
     mov si, ErrorFile
-    call AbortBoot
+    jmp AbortBoot
 
 .Error2:
-    xor ax, ax
     mov si, ErrorBIOSFile
-    call AbortBoot
+    jmp AbortBoot
 
 SECTION .pad
 ; Define the DRAUMRSS signature - so that it can be used to check sanity of boot file.

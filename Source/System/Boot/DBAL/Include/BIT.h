@@ -36,9 +36,10 @@
 // The BIT structure.
 struct BIT
 {
-    uint32_t OpenFile;
-    uint32_t ReadFile;
-    uint32_t CloseFile;
+    // The open, read and close file functions.
+    uint32_t (*OpenFile)(uint32_t FileCode);
+    void     (*ReadFile)(void *Destination, uint32_t Bytes);
+    void     (*CloseFile)();
     
     uint8_t  HrdwreFlags;             // The "hardware" flags.
   
@@ -51,13 +52,13 @@ struct BIT
     // Define the Video related things here.
     struct
     {
-        uint8_t VideoFlags;                      // The video flags.
-        VBECntrlrInfo_t *VBECntrlrInfo;          // The 32-bit adddress of the VBE Controller Mode Info block.
-        VBEModeInfo_t *VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
-        uint32_t VBEModeInfoN;                   // The number of entries.
+        uint8_t         VideoFlags;                      // The video flags.
+        VBECntrlrInfo_t *VBECntrlrInfo;                  // The 32-bit adddress of the VBE Controller Mode Info block.
+        VBEModeInfo_t   *VBEModeInfo;                    // The 32-bit address of the (allocated) VBE mode info block.
+        uint32_t        VBEModeInfoN;                    // The number of entries.
         
-        void (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
-	void (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
+        void     (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
+	void     (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
 	uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
 	
 	uint32_t *Address;                       // The address of the video display.
@@ -65,6 +66,8 @@ struct BIT
 	uint32_t YRes;                           // Y resolution.
 	uint32_t BPP;                            // Bytes per pixel.
 	uint32_t BytesBetweenLines;              // Bytes between lines.
+	
+	void     *BootImage;                     // Pointer to the boot image.
     } __attribute__((packed)) Video;
     
     // And the serial port related things here.
