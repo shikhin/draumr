@@ -338,14 +338,15 @@ BITS 32
 ;                                     The size of the file opened in @eax.
 ReadFileWrapper:
     push ebx
+    push edi
    
     mov ebx, .ReadFile
     jmp SwitchToRM                    ; Switch to Real mode, and return to ReadFile.
 
 BITS 16
 .ReadFile:
-    mov ecx, [esp + 12]                ; Get the length into EAX.
-    mov edi, [esp + 8]                 ; And the address into EDI.
+    mov ecx, [esp + 16]                ; Get the length into EAX.
+    mov edi, [esp + 12]                ; And the address into EDI.
     
     call word [ReadFile]              ; Read the file.
     
@@ -354,6 +355,7 @@ BITS 16
 
 BITS 32
 .Return:
+    pop edi
     pop ebx
     
     ret

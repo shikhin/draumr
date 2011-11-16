@@ -22,12 +22,10 @@
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
+#include <FPU.h>
 #include <BootFiles.h>
 #include <Output.h>
-#include <OutputMod/Serial.h>
-
-// Temporary thingy to init the OutputMod.
-//extern void Init();
+//#include <OutputMod/OutputMod.h>
 
 int Main(uint32_t *BITPointer)
 {
@@ -39,16 +37,15 @@ int Main(uint32_t *BITPointer)
     
     // Initialize the bouncer for the boot files.
     InitBootFiles();
-    
-    // Get the background.
-    uint32_t *BGImg;
-    BootFilesBGImg((uint32_t**)&BGImg);
-    
+        
     // Initialize 'output' thingy.
     OutputInit(); 
     
+    // Initialize the FPU, without which, we can't proceed.
+    FPUInit();
+    
     // Just a temporary thingy to init the OutputMod.
-    //Init();
+    //OutputModInit();
 
     for(;;)
         __asm__ __volatile__("hlt");

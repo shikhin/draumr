@@ -34,6 +34,15 @@
 #define BOUNCER_PAGES  ((64 * 1024)/4096)
 #define BOUNCER_SMALL_PAGES ((16 * 1024)/4096)
 
+// The file structure, which is returned by opening files.
+struct FILE
+{
+    void *Location;
+    uint32_t Size;
+} __attribute__((packed));
+
+typedef struct FILE FILE_t;
+
 extern void *Bouncer;
 
 // Initializes the bouncer in which we would be reading the required boot files.
@@ -43,9 +52,8 @@ void InitBootFiles();
 void ClearBootFiles();
 
 // Gets the background image, verifying what we are getting to.
-// void *Location                     Pointer to a pointer where we store the image.
 //     rc
-//                                    uint32_t - the length of the file.
-uint32_t BootFilesBGImg(uint32_t **Location);
+//                                    FILE_t - the file structure containing address and length of the file.
+FILE_t BootFilesBGImg();
 
 #endif                   /* Boot files.h */

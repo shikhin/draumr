@@ -562,9 +562,9 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
 	Previous = Current;
 	Current = (uint32_t*)(*Previous);
     }
-    
+        
     // And, if the contiguous pages found aren't starting from 'Top', make the page at 'top' point to the page at current.
-    if((uint32_t)RegionTop != ((uint32_t)Previous + (Number * 0x1000)))
+    if((uint32_t)RegionTop != ((uint32_t)Previous + ((Number - 1) * 0x1000)))
         *RegionTop = (uint32_t)Current;
     
     // Else, we start from current.
@@ -572,5 +572,6 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
         RegionTop = Current;
    
     Top[Type] = RegionTop;
+     
     return (uint32_t)Previous;
 }

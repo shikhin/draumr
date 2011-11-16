@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 #include <Output.h>
+#include <BootFiles.h>
 
 // Hardware flags.
 #define A20_DISABLED    (1 << 0)
@@ -67,7 +68,7 @@ struct BIT
 	uint32_t BPP;                            // Bytes per pixel.
 	uint32_t BytesBetweenLines;              // Bytes between lines.
 	
-	void     *BootImage;                     // Pointer to the boot image.
+	FILE_t   BackgroundImg;                  // Pointer to the boot image.
     } __attribute__((packed)) Video;
     
     // And the serial port related things here.

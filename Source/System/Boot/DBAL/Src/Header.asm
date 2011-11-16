@@ -39,5 +39,7 @@ CRC32_DEFINE
 ; @esp            This should be equal to 0x7C00 - for clearing.
 GLOBAL Start
 Start:
+    mov ebp, esp
+
     push eax
     call Main

@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <String.h>
 #include <Output.h>
+#include <BootFiles.h>
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
@@ -170,12 +171,12 @@ void OutputInit()
 	    // Get the mode into Mode, and move on to the next video mode thingy.
 	    Mode = *VideoModesFlat++;
 	} while(Mode != 0xFFFF);
-	
+        
 	// Allocate some memory from the Base Stack to hold all the mode information.
 	BIT.Video.VBEModeInfo = 
 	    (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
 						 ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
-	
+        
         if(!BIT.Video.VBEModeInfo)
         {
             BIT.Video.VideoFlags &= ~VBE_PRESENT;   
@@ -235,5 +236,15 @@ void OutputInit()
 	
 	if(BIT.Serial.Port)
 	    BIT.Serial.SerialFlags = SERIAL_PRESENT;
+    }
+    
+    BIT.Video.BackgroundImg.Size = 0;
+    
+    // Check for whether we switched to a video mode or not.
+    if((BIT.Video.VideoFlags & VGA_PRESENT) ||
+       (BIT.Video.VideoFlags & VBE_PRESENT))
+    {
+        // Open the file, and get it's information.
+        BIT.Video.BackgroundImg = BootFilesBGImg();
     }
 }

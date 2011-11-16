@@ -18,6 +18,7 @@
  */
 
 #include <BootFiles.h>
+#include <String.h>
 #include <stdint.h>
 #include <PMM.h>
 #include <Abort.h>
@@ -51,15 +52,16 @@ void ClearBootFiles()
 }
 
 // Gets the background image, verifying what we are getting to.
-// void *Location                     Pointer to a pointer where we store the image.
 //     rc
-//                                    uint32_t - the length of the file.
-uint32_t BootFilesBGImg(uint32_t **Location)
+//                                    FILE_t - the file structure containing address and length of the file.
+FILE_t BootFilesBGImg()
 {
-    Location = Location;
-    uint32_t Size = BIT.OpenFile(0x02);
-    if(!Size)
-        return 0;
+    FILE_t File;
+    File.Size = BIT.OpenFile(0x02);
+    if(!File.Size)
+    {
+        return File;
+    }
     
     // Read 512 bytes at the bouncer
     BIT.ReadFile((uint32_t*)Bouncer, 512);
@@ -68,12 +70,42 @@ uint32_t BootFilesBGImg(uint32_t **Location)
     // So the file isn't valid.
     if((Signature[0] != 'B') ||
        (Signature[1] != 'M'))
-        return 0;    
+    {
+        File.Size = 0;
+        return File;
+    }
     
-    *Location = (uint32_t*)PMMAllocContigFrames(POOL_STACK, (Size + 0xFFF)/0x1000);
+    File.Location = (void*)PMMAllocContigFrames(POOL_STACK, (File.Size + 0xFFF)/0x1000);
     // So we can't allocate space for the image.
-    if(!(*Location))
-        return 0;
+    if(!File.Location)
+    {
+        File.Size = 0;
+        return File;
+    }
     
-    return Size;
+    // Reduce the 512 bytes we left.
+    uint32_t Size = File.Size - 512;
+    uint8_t *OutputBuffer = (uint8_t*)File.Location;
+  
+    memcpy(OutputBuffer, Bouncer, 512);
+    OutputBuffer += 512;
+    
+    // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
+    while(Size > BouncerSize)
+    {
+        BIT.ReadFile((uint32_t*)Bouncer, BouncerSize);
+        memcpy(OutputBuffer, Bouncer, BouncerSize);
+        
+        Size -= BouncerSize;
+        OutputBuffer += BouncerSize;
+    }
+            
+    // If they are any left over bytes, read them.
+    if(Size)
+    {
+        BIT.ReadFile((uint32_t*)Bouncer, Size);   
+        memcpy(OutputBuffer, Bouncer, Size);
+    }
+    
+    return File;
 }
