@@ -151,6 +151,7 @@ static uint32_t DetectSerialPort()
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 void OutputInit()
 {
+    BIT.Video.VideoFlags &= ~VBE_PRESENT;
     // If VBE is present, find the best VBE mode, and use it.
     if(BIT.Video.VideoFlags & VBE_PRESENT)
     {

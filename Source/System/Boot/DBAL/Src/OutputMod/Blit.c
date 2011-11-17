@@ -23,8 +23,6 @@
 #include <PMM.h>
 #include <String.h>
 
-uint32_t *OldBuffer;
-
 // Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
@@ -36,10 +34,3 @@ void BlitBuffer(uint32_t *Buffer)
         BlitBuffer8BPP(Buffer);
 }
 
-/*
-void Init()
-{
-    OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, 38);
-    memset(OldBuffer, 0, 38 * 0x1000);   
-    BlitBuffer((uint32_t*)Image);    
-} */

@@ -33,7 +33,6 @@ MMapEntry_t  *MMapEntries;
 
 // The Top of the Pool stack, and the base memory stack - first is base, second is pool.
 static uint32_t *Top[2];
-static uint32_t Base = 0x00000000;               // Allocate extra memory starting from here in the mmap.
 
 // PMMFixMMap fixes the memory map - only overlapping entries.
 static void PMMFixMMap()
@@ -277,110 +276,6 @@ static void PMMFixMMap()
     }
 }
 
-// Allocates some extra memory from the memory map, in the provided region.
-// uint32_t Type                      The type of the stack to expand upon.
-//     rc
-//                                    int32_t - the number of frames allocated.
-//                                    -1 for nothing left.
-static int32_t PMMGetSpace(uint32_t Type)
-{
-    uint32_t Allocated = 0;
-    
-    if(Type == BASE_STACK)
-        for(uint32_t i = 0; i < MMapHeader->Entries; i++)
-        {
-            // If we have gone farther than 0x100000, then just break.
-            if(MMapEntries[i].Start > 0x100000)
-	        break;
-	
-	    // If type isn't Free, then just continue to the next entry.
-	    if((MMapEntries[i].Type != FREE_RAM))
-	        continue;
-	 
-	    // Start the base, and keep looping till we are in our entry, or till we are behind the 1-MiB mark.
-            for(uint32_t Addr = MMapEntries[i].Start; 
-	        ((Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < 0x100000));
-	        Addr += 0x1000)
-	    { 
-	        // If this is the first free entry, then make it the Top.
-	        if(!Top[0])
-	        {
-		    Top[0] = (uint32_t*)Addr;
-		    *Top[0] = 0xAA55AA55;                                                 // 10101010... in binary - marker for end.
-		    Allocated++;
-	        }
-		
-	        else
-	        {
-	            // The first dword of each page is the 'next' entry.
-	            uint32_t Last = (uint32_t)Top[0];
-	            Top[0] = (uint32_t*)Addr;
-		    *Top[0] = Last;
-		    Allocated++;                                                             // Increase the frames allocated count.
-	        }
-	    }
-        }
- 
-    else 
-    {
-        // If we reached 0xFE000000, and still need more memory, then some thing is WRONG.
-        if(Base == 0xFE000000)
-            return -1;
-        
-        for(uint32_t i = 0; i < MMapHeader->Entries; i++)
-        {
-            // If we have gone farther than Base + MIN_ALLOC (size), then just break.
-            if(MMapEntries[i].Start > (Base + MIN_ALLOC))
-	        break;
-	
-	    // If we are below than Base, or type isn't Free, then just continue to the next entry.
-	    if((MMapEntries[i].Type != FREE_RAM) ||
-	        (MMapEntries[i].Start < Base))
-	        continue;
-	 
-	    // Start the base, and keep looping till we are in our entry, or till we are behind the 32-MiB mark.
-            for(uint32_t Addr = MMapEntries[i].Start; 
-	        (Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < (Base + MIN_ALLOC));
-	        Addr += 0x1000)
-	    {
-	        // If we are on a megabyte thingy, and A20 is disabled, skip the megabyte.
-	        if((BIT.HrdwreFlags & A20_DISABLED) &&
-	           (Addr & 0x100000))
-	        {
-	            // Move to the next megabyte in there.
-	            Addr = (Addr + 0x100000) & ~0xFFFFF; 
-		
-	    	    // And since we are continuing, move one entry behind.
-		    Addr -= 0x1000;
-		    continue;
-	        }
-	    
-	        // If this is the first free entry, then make it the Top.
-	        if(!Top[1])
-	        {
-		    Top[1] = (uint32_t*)Addr;
-		    *Top[1] = 0xAA55AA55;                                                 // 10101010... in binary - marker for end.
-		    Allocated++;
-	        }
-		
-	        else
-	        {
-	            // The first dword of each page is the 'next' entry.
-	            uint32_t Last = (uint32_t)Top[1];
-	            Top[1] = (uint32_t*)Addr;
-		    *Top[1] = Last;
-		    Allocated++;                                                             // Increase the frames allocated count.
-	        }
-	    }
-        }
-        
-        // Increase the base counter.
-        Base += MIN_ALLOC;
-    }
-   
-    return Allocated;
-}
-
 // Initializes the physical memory manager for ourselves.
 void PMMInit()
 {   
@@ -389,21 +284,87 @@ void PMMInit()
     MMapEntries = (MMapEntry_t*)MMapHeader->Address;
 
     PMMFixMMap();                     // Fix overlapping entries. 
-    
-    PMMGetSpace(BASE_STACK);
-    
-    // Keep looping till PMMGetSpace returns something. 
-    while(1)
+
+    // Allocate space for the BASE_STACK.
+    for(uint32_t i = 0; i < MMapHeader->Entries; i++)
     {
-        int32_t Status = PMMGetSpace(POOL_STACK);
-        
-        // If we encountered all the blocks till 0xFE000000 without finding any memory, then abort.
-        if(Status < 0)
-             AbortBoot("ERROR: The DBAL is unable to find enough memory to boot.\n");
-        
-        // If found some pages, break.
-        else if(Status)
-             break;
+        // If we have gone farther than 0x100000, then just break.
+        if(MMapEntries[i].Start > 0x100000)
+            break;
+                    
+        // If type isn't Free, then just continue to the next entry.
+        if((MMapEntries[i].Type != FREE_RAM))
+            continue;
+                        
+        // Start the base, and keep looping till we are in our entry, or till we are behind the 1-MiB mark.
+        for(uint32_t Addr = MMapEntries[i].Start; 
+            ((Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < 0x100000));
+            Addr += 0x1000)
+        { 
+            // If this is the first free entry, then make it the Top.
+            if(!Top[0])
+            {
+                Top[0] = (uint32_t*)Addr;
+                *Top[0] = 0xAA55AA55;                                                 // 10101010... in binary - marker for end.
+            }
+            
+                                                                    
+            else
+            {
+                // The first dword of each page is the 'next' entry.
+                uint32_t Last = (uint32_t)Top[0];
+                Top[0] = (uint32_t*)Addr;
+                *Top[0] = Last;
+            }
+        }
+    }
+    
+    // And then, for the upper memory.
+    // I could do this in a loop, but I prefer it this way.
+    for(uint32_t i = 0; i < MMapHeader->Entries; i++)
+    {
+        // If we have gone farther than Base + MIN_ALLOC (size), then just break.
+        if(MMapEntries[i].Start > (0x100000 + MIN_ALLOC))
+            break;
+                       
+        // If we are below than Base, or type isn't Free, then just continue to the next entry.
+        if((MMapEntries[i].Type != FREE_RAM) ||
+           (MMapEntries[i].Start < 0x100000))
+            continue;
+                            
+        // Start the base, and keep looping till we are in our entry, or till we are behind the 32-MiB mark.
+        for(uint32_t Addr = MMapEntries[i].Start; 
+            (Addr < (MMapEntries[i].Start + MMapEntries[i].Length)) && (Addr < (0x100000 + MIN_ALLOC));
+            Addr += 0x1000)
+        {
+            // If we are on a megabyte thingy, and A20 is disabled, skip the megabyte.
+            if((BIT.HrdwreFlags & A20_DISABLED) &&
+               (Addr & 0x100000))
+            {
+                // Move to the next megabyte in there.
+                Addr = (Addr + 0x100000) & ~0xFFFFF; 
+                                                                                
+                // And since we are continuing, move one entry behind.
+                Addr -= 0x1000;
+                continue;
+            }
+                                                                    
+            // If this is the first free entry, then make it the Top.
+            if(!Top[1])
+            {
+                Top[1] = (uint32_t*)Addr;
+                *Top[1] = 0xAA55AA55;                                                 // 10101010... in binary - marker for end.
+            }
+                                                                                                                    
+            else
+            {
+                // The first dword of each page is the 'next' entry.
+                uint32_t Last = (uint32_t)Top[1];
+                Top[1] = (uint32_t*)Addr;
+                *Top[1] = Last;
+            }
+            
+        }
     }
 }
 
@@ -416,31 +377,7 @@ uint32_t PMMAllocFrame(uint32_t Type)
 {    
     // If we have reached at the end of the stack:
     if(Top[Type] == (uint32_t*)0xAA55AA55)
-    {
-        // If we are allocating for BASE_STACK, then return a NULL (since we can't expand it).
-        if(Type == BASE_STACK)
-            return NULL;
-	
-	else 
-        {    
-            Top[Type] = (uint32_t*)0x00000000;
-            // Keep looping till PMMGetSpace returns something. 
-            while(1)
-            {
-                int32_t Status = PMMGetSpace(POOL_STACK);
-                    
-                if(Status < 0)
-                {
-                    Top[Type] = (uint32_t*)0xAA55AA55;
-                    return NULL;
-                }
-                
-                // If expanded something, break.
-                else if(Status)
-                    break;
-            }
-        }
-    }
+        return NULL;
     
     uint32_t *RegionTop = Top[Type];
     uint32_t Frame = (uint32_t)RegionTop;                                                          // Pop the top entry.
@@ -483,73 +420,13 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
     // If previous is equal to the magic number, we were unable to find any frame.
     // Abort boot.
     if(Previous == (uint32_t*)0xAA55AA55)
-    {
-        if(Type == BASE_STACK)
-        {
-            return -1;    
-        }
-        
-	else
-	{
-            // Expand the pool stack a bit.
-	    RegionTop = Top[Type] = (uint32_t*)0x00000000;
-	    uint32_t Expanded = 0;
-            while(1)
-            {
-                int32_t Status;
-                
-                // If expanded by all the number of pages needed, then break.
-                // Else continue.
-                Expanded += Status = PMMGetSpace(POOL_STACK);
-                
-                if(Status < 0)
-                {
-                    Top[Type] = (uint32_t*)0xAA55AA55;
-                    return NULL;
-                }
-                                
-                else if(Expanded >= Number)
-                    break;
-            }
-                        
-            RegionTop = Top[Type];
-	    Previous = RegionTop;
-	    Current = (uint32_t*)(*Previous);
-	}
-    }
+        return NULL;    
     
     while(FramesFound < Number)
     {
         // If current is equal to the magic number, we were unable to find any frame.
         if(Current == (uint32_t*)0xAA55AA55)
-	{
-	    if(Type == BASE_STACK)
-	        return NULL;
-            
-	    else
-	    {
-	        uint32_t Expanded = FramesFound;
-                while(1)
-                {
-                    int32_t Status;
-                    
-                    // Keep expanding till we get the nnumber of pages we need.
-                    Expanded += Status = PMMGetSpace(POOL_STACK);
-                    
-                    if(Status < 0)
-                    {
-                        Top[Type] = (uint32_t*)0xAA55AA55;
-                        return NULL;
-                    }
-                                    
-                    else if(Expanded >= Number)
-                        break;
-                }
-                
-                // And start from again.
-		return PMMAllocContigFrames(Type, Number);
-	    }
-	}
+	    return NULL;
 	
 	// If current is equal to the frame previous to 'Previous',
 	// then increase the FramesFound count.

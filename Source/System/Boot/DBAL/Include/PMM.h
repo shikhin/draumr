@@ -55,8 +55,8 @@ typedef struct MMapEntry MMapEntry_t;
 // The USABLE flag - is the first bit.
 #define USABLE    (1 << 0)
 
-// We'll be allocating this much each time..
-#define MIN_ALLOC 0x2000000
+// We'll be allocating this much for a start.
+#define MIN_ALLOC 0x4000000
 
 // The types - some macros to make it easy and more beautiful :-)
 #define FREE_RAM  1

@@ -17,8 +17,8 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef OUTPUT_H                      /* Output.h */
-#define OUTPUT_H
+#ifndef BLIT_H                      /* Blit.h */
+#define BLIT_H
 
 #include <stdint.h>
 #include <BIT.h>

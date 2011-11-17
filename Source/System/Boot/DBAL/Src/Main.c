@@ -25,7 +25,7 @@
 #include <FPU.h>
 #include <BootFiles.h>
 #include <Output.h>
-//#include <OutputMod/OutputMod.h>
+#include <OutputMod/OutputMod.h>
 
 int Main(uint32_t *BITPointer)
 {
@@ -45,7 +45,7 @@ int Main(uint32_t *BITPointer)
     FPUInit();
     
     // Just a temporary thingy to init the OutputMod.
-    //OutputModInit();
+    OutputModInit();
 
     for(;;)
         __asm__ __volatile__("hlt");
