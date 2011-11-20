@@ -115,12 +115,26 @@ static void BMPToBuf(FILE *InFile)
         
         Read += Status;
     } while(Read < BMPHeader.ImageSize);
-    Buffer = TempBuffer;
+    
+    uint8_t *ToFree = TempBuffer;
+    Buffer = calloc(BMPHeader.ImageSize, 1);
     
     // Get the data into ImageData.
     ImageData.XSize = BMPHeader.XSize;
     ImageData.YSize = BMPHeader.YSize;
     ImageData.ImageSize = BMPHeader.ImageSize;
+    
+    int32_t i;
+    uint32_t ToCopy = ImageData.XSize * 3;
+    for(i = (BMPHeader.YSize - 1); i >= 0; i--)
+    {
+        // Copy the bytes.
+        memcpy(Buffer + (i * ImageData.XSize * 3), TempBuffer, ToCopy);
+        // And take care of the padding.
+        TempBuffer += ToCopy + (ToCopy % 4);
+    }
+    
+    free(ToFree);
 }
 
 // Resizes a 24bpp image.
