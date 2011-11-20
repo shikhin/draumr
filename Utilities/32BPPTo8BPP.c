@@ -70,16 +70,16 @@ int main()
     uint8_t Pixel[3];
     FILE *File;
     char *ImageData = (char*)Data;
-    uint32_t i, ByteOffset;
+    uint32_t i;
 
     File = fopen("8BPPImage.h", "w");
     Buffer = calloc(Width * Height, 1);
     
     // For every byte, convert it.
-    for(i = 0, ByteOffset = 0; i < (Height * Width); i++, ByteOffset++)
+    for(i = 0; i < (Height * Width); i++)
     {
         HEADER_PIXEL(ImageData, Pixel);
-        Buffer[ByteOffset] = ConvertColorTo8BPP(Pixel[0], Pixel[1], Pixel[2]);
+        Buffer[i] = ConvertColorTo8BPP(Pixel[0], Pixel[1], Pixel[2]);
     }
         
     fprintf(File, "#include <stdint.h>\n\n");

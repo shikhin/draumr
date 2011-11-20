@@ -33,6 +33,7 @@ def _image_builder(target, source, env) :
     if os.path.isfile(env["BACK"]) :
         os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
         env["BACK"] = "Background.sif"              
+        os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
         
     else :
         env["BACK"] = 0

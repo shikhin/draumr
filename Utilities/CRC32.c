@@ -93,7 +93,8 @@ uint32_t Table[256] =
 };
 
 // Creates CRC for any file data (of size size).
-static uint32_t CRC(uint32_t Seed, uint32_t Size, uint8_t *InputBuffer) {
+static uint32_t CRC(uint32_t Seed, uint32_t Size, uint8_t *InputBuffer) 
+{
     while(Size--) 
         Seed = Table[((uint8_t)Seed ^ *(InputBuffer++))] ^ (Seed >> 8);
 
@@ -155,6 +156,40 @@ int main(int argc, char *argv[])
 	}
     }
     
+    else if((FileName[0] == 'B') && (FileName[1] == 'M'))
+    {
+        Status = fseek(File, 50, SEEK_SET);          // Got to beginning + 50 (after header).
+        if(Status)
+            return -1;
+                
+        Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
+        if(!Buf)
+            return -1;
+                
+        do 
+        {
+            Status = fread(Buf, 1, GOOD_LENGTH, File);
+            if(Status > 0) 
+            {  
+                BytesRead = Status;
+                Seed = CRC(Seed, BytesRead, Buf);
+            }
+        } while(Status > 0);
+                
+        if(Status < 0) 
+            return -1;
+                
+        Seed ^= 0xFFFFFFFF;
+        fseek(File, 6, SEEK_SET);
+        fread(&Old, 1, sizeof(uint32_t), File);
+                
+        if(Old != Seed)
+        {
+            fseek(File, 6, SEEK_SET);
+            fwrite(&Seed, 1, sizeof(uint32_t), File);
+        }
+    }
+        
     else
     {
         Status = fseek(File, 24, SEEK_SET);          // Got to beginning + 24 (after header).

@@ -53,8 +53,8 @@ typedef struct BMPHeader BMPHeader_t;
 typedef struct ImageData ImageData_t;
 
 // Globally define ImageData.
-ImageData_t ImageData;
-BMPHeader_t BMPHeader;
+static ImageData_t ImageData;
+static BMPHeader_t BMPHeader;
 
 // The function to convert BMP to the universal buffer, and fill in the details in ImageData.
 // FILE *InFile                       The input file, which we would be reading.

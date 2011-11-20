@@ -33,4 +33,10 @@
  * as to work with C, and 3-channel images */
 void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY);
 
+// Converts a buffer to the required BPP format, INTO the DrawBoard - and dithers if required too.
+// uint8_t  *Input                    The input buffer, which we are about to convert and/or dither.
+// uint8_t  *Output                   The output buffer, where we will store the converted thingy.
+// NOTE: The Input & Output buffer would have a size of BIT.Video.XRes * BIT.Video.YRes
+void Dither(uint8_t *Input, uint8_t *Output);
+
 #endif

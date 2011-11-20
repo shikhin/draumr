@@ -264,6 +264,7 @@ Open:
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
     .Read   dd 0                      ; The number of "extra" bytes read in the last "transaction".
+    .Code   db 0                      ; The "code" of the file opened.
 
 SECTION .text
 
@@ -284,6 +285,7 @@ OpenFile:
 
     mov byte [Open], 1
     mov dword [Open.Read], 0          ; Last transaction - 0 extra read.
+    mov byte [Open.Code], al
 
     cmp al, 0
     je .BIOS                          ; 0 indicates the common BIOS file.
@@ -373,7 +375,7 @@ ReadFile:
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
     call ReadFromDiskM                ; Do the CALL!
-  
+    
     add ebx, ecx                      ; Advance the LBA by read sectors count.
    
     sub edx, ecx                      ; EDX more sectors left to do.
@@ -381,17 +383,12 @@ ReadFile:
     jz .Return                        ; Read all sectors, return.
   
     ; Now need to advance EDI.
-    push eax                          ; Save EAX - and restore it later.
-    push edx
-
-    mov eax, ecx                      ; Get the sectors read count in ECX.
-    mov edx, 2048
-    mul edx                           ; And multiply it by 2048, and advance EDI by it.
-
-    add edi, eax
-
-    pop edx
-    pop eax
+    push ecx                          ; Save EAX - and restore it later.
+   
+    shl ecx, 12
+    add edi, ecx
+  
+    pop ecx
     
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
@@ -400,8 +397,13 @@ ReadFile:
     mov [Open.LBA], ebx               ; Store the new LBA.
 
     pop eax
+    cmp byte [Open.Code], 1
+    jg .Cont2                         ; If we're opening a file with code greater than 2, than
+                                      ; no need for the "extra" bytes read.
+
     mov [Open.Read], eax              ; Store the read into EAX.
 
+.Cont2:
     popad
     ret
 

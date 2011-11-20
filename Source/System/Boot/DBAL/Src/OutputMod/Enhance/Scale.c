@@ -49,7 +49,7 @@ void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uin
             XDiff = (XRatio * j) - x;
             YDiff = (YRatio * i) - y;
             
-            Index = (y * X + x);                
+            Index = y * X + x;                
             ARed = Input[Index * 3];
             AGreen = Input[(Index * 3) + 1];
             ABlue = Input[(Index * 3) + 2];

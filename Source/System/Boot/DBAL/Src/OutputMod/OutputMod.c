@@ -24,6 +24,7 @@
 #include <String.h>
 #include <Log.h>
 #include <OutputMod/Enhance.h>
+#include <OutputMod/Blit.h>
 
 // The old buffer, used for comparision to allow unneccessary copying to video memory.
 uint32_t *OldBuffer = (uint32_t*)0;
@@ -62,7 +63,11 @@ void OutputModInit()
         {
             memset(OldBuffer, 0, NoPages * 0x1000);
         }
-        
+
+        // If we haven't opened the background image file, return.
+        if(!BIT.Video.BackgroundImg.Size)
+            return;
+                
         uint32_t NoPagesScaledBuffer = (BIT.Video.XRes * BIT.Video.YRes * BMPHeader->Plane
                                        * BMPHeader->BPP)/8;
         NoPagesScaledBuffer = (NoPagesScaledBuffer + 0xFFF)/0x1000;
@@ -73,7 +78,7 @@ void OutputModInit()
         {
             // Free the image buffer.
             // TODO: Implement this.
-            //PMMFreeContigFrames(BIT.Video.BackgroundImg, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
+            //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
             return;
         }
         
@@ -82,6 +87,13 @@ void OutputModInit()
                        ImageScaledBuffer, BMPHeader->XSize, BMPHeader->YSize,
                        BIT.Video.XRes, BIT.Video.YRes);
         
-        //Dither(ImageScaledBuffer, DrawBoard);
+        // Converts the image to the required BPP format, INTO the DrawBoard - and dithers if required too.
+        Dither(ImageScaledBuffer, (uint8_t*)DrawBoard);
+        
+        //TODO: Implement this.
+        //PMMFreeContigFrames(ImageScaledBuffer, NoPagesScaledBuffer);
+        //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
+        
+        BlitBuffer((uint32_t*)DrawBoard);
     }
 } 
