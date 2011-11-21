@@ -95,7 +95,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 // Take care of "[x + 1][y]"
                 // BLUE.
                 uint16_t BlueX1Y = Input[YX1];
-                BlueX1Y += (int)(7.0f/16.0f * (float)EBlue);
+                BlueX1Y += (7 * EBlue)/16;
                 if(BlueX1Y > 0xFF)
                     BlueX1Y = 0xFF;
                 
@@ -103,7 +103,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // GREEN.
                 uint16_t GreenX1Y = Input[YX1 + 1];
-                GreenX1Y += (int)(7.0f/16.0f * (float)EGreen);
+                GreenX1Y += (7 * EGreen)/16;
                 if(GreenX1Y > 0xFF)
                     GreenX1Y = 0xFF;
                 
@@ -111,7 +111,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // RED.
                 uint16_t RedX1Y = Input[YX1 + 2];
-                RedX1Y += (int)(7.0f/16.0f * (float)ERed);
+                RedX1Y += (7 * ERed)/16;
                 if(RedX1Y > 0xFF)
                     RedX1Y = 0xFF;
                 
@@ -120,7 +120,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 // Take care of "[x - 1][y + 1]"
                 // BLUE.
                 uint16_t BlueXM1Y1 = Input[Y1XM1];
-                BlueXM1Y1 += (int)(3.0f/16.0f * (float)EBlue);
+                BlueXM1Y1 += (3 * EBlue)/16;
                 if(BlueXM1Y1 > 0xFF)
                     BlueXM1Y1 = 0xFF;
                 
@@ -128,7 +128,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // GREEN.
                 uint16_t GreenXM1Y1 = Input[Y1XM1 + 1];
-                GreenXM1Y1 += (int)(3.0f/16.0f * (float)EGreen);
+                GreenXM1Y1 += (3 * EGreen)/16;
                 if(GreenXM1Y1 > 0xFF)
                     GreenXM1Y1 = 0xFF;
                 
@@ -136,7 +136,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // RED.
                 uint16_t RedXM1Y1 = Input[Y1XM1 + 2];
-                RedXM1Y1 += (int)(3.0f/16.0f * (float)ERed);
+                RedXM1Y1 += (3 * ERed)/16;
                 if(RedXM1Y1 > 0xFF)
                     RedXM1Y1 = 0xFF;
                 
@@ -145,7 +145,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 // Take care of "[x][y + 1]"
                 // BLUE.
                 uint16_t BlueXY1 = Input[Y1X];
-                BlueXY1 += (int)(5.0f/16.0f * (float)EBlue);
+                BlueXY1 += (5 * EBlue)/16;
                 if(BlueXY1 > 0xFF)
                     BlueXY1 = 0xFF;
                 
@@ -153,7 +153,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // GREEN.
                 uint16_t GreenXY1 = Input[Y1X + 1];
-                GreenXY1 += (int)(5.0f/16.0f * (float)EGreen);
+                GreenXY1 += (5 * EGreen)/16;
                 if(GreenXY1 > 0xFF)
                     GreenXY1 = 0xFF;
                 
@@ -161,7 +161,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // RED.
                 uint16_t RedXY1 = Input[Y1X + 2];
-                RedXY1 += (int)(5.0f/16.0f * (float)ERed);
+                RedXY1 += (5 * ERed)/16;
                 if(RedXY1 > 0xFF)
                     RedXY1 = 0xFF;
                 
@@ -170,7 +170,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 // Take care of "[x + 1][y + 1]"
                 // BLUE.
                 uint16_t BlueX1Y1 = Input[Y1X1];
-                BlueX1Y1 += (int)(1.0f/16.0f * (float)EBlue);
+                BlueX1Y1 += EBlue/16;
                 if(BlueX1Y1 > 0xFF)
                     BlueX1Y1 = 0xFF;
                 
@@ -178,7 +178,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // GREEN.
                 uint16_t GreenX1Y1 = Input[Y1X1 + 1];
-                GreenX1Y1 += (int)(1.0f/16.0f * (float)EGreen);
+                GreenX1Y1 += EGreen/16;
                 if(GreenX1Y1 > 0xFF)
                     GreenX1Y1 = 0xFF;
                 
@@ -186,7 +186,7 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 
                 // RED.
                 uint16_t RedX1Y1 = Input[Y1X1 + 2];
-                RedX1Y1 += (int)(1.0f/16.0f * (float)ERed);
+                RedX1Y1 += ERed/16;
                 if(RedX1Y1 > 0xFF)
                     RedX1Y1 = 0xFF;
                 

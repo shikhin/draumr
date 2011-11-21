@@ -4,6 +4,7 @@
 *.o
 *~
 *.sif
+*.bmp
 .bochsrc
 .sconsign.dblite
 debugger.out
