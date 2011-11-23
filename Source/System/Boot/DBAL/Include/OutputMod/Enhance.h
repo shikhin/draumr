@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
+#define PLANE_OFFSET(x) (((BIT.Video.XRes + 7)/8) * BIT.Video.YRes * (x))
+
 // Resizes a 24bpp image.
 // uint8_t  *Input                    The input buffer, which we are about to resize.
 // uint8_t  *Output                   The output buffer, where we will store the resized buffer.

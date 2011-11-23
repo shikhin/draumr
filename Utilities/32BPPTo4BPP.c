@@ -30,7 +30,7 @@
 static uint8_t *Buffer;
 
 // Define the RGB for the 16 colors in the 4bpp mode.
-uint32_t RGB[16] = 
+uint32_t RGB4[16] = 
 {
     0x000000, 0x0000AA,
     0x00AA00, 0x00AAAA,
@@ -56,9 +56,9 @@ static uint8_t ConvertColorTo4BPP(uint8_t Red, uint8_t Green, uint8_t Blue)
     
     for(i = 0; i < 16; i++)
     {
-        int32_t RedScore = Red - ((RGB[i] & 0xFF0000) >> 16);      
-	int32_t GreenScore = Green - ((RGB[i] & 0x00FF00) >> 8);
-	int32_t BlueScore = Blue - ((RGB[i] & 0x0000FF));
+        int32_t RedScore = Red - ((RGB4[i] & 0xFF0000) >> 16);      
+	int32_t GreenScore = Green - ((RGB4[i] & 0x00FF00) >> 8);
+	int32_t BlueScore = Blue - ((RGB4[i] & 0x0000FF));
 		
 	Score = abs(RedScore) + abs(GreenScore) + abs(BlueScore);
         if(Score < LowestScore)
