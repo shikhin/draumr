@@ -22,6 +22,38 @@
 #include <BIT.h>
 #include <OutputMod/Enhance.h>
 
+// Error lookup table for 7/16, 5/16, 3/16 and 1/16.
+uint8_t SeventhLookupTable[256][256];
+uint8_t FifthLookupTable[256][256];
+uint8_t ThirdLookupTable[256][256];
+uint8_t OnethLookupTable[256][256];
+
+// Responsible for initializing dithering, populating the lookup tables.
+void DitherInit()
+{
+    for(uint32_t i = 0; i < 256; i++)
+    {
+        for(uint32_t j = 0; j < 256; j++)
+        {
+            // Calculate Seventh, Fifth, Third, Oneth for this particular j and i - and store it in appropriate places.
+            uint16_t Seventh = i + ((j * 7) >> 4);   
+            uint16_t Fifth = i + ((j * 5) >> 4);
+            uint16_t Third = i + ((j * 3) >> 4);
+            uint16_t Oneth = i + (j >> 4);
+            
+            if(Seventh > 0xFF)          Seventh = 0xFF;
+            if(Fifth > 0xFF)            Fifth = 0xFF;
+            if(Third > 0xFF)            Third = 0xFF;
+            if(Oneth > 0xFF)            Oneth = 0xFF;
+            
+            SeventhLookupTable[i][j] = Seventh;
+            FifthLookupTable[i][j] = Fifth;
+            ThirdLookupTable[i][j] = Third;
+            OnethLookupTable[i][j] = Oneth;
+        }
+    }
+}
+
 // Converts a buffer to the required BPP format, INTO the DrawBoard - and dithers if required too.
 // uint8_t  *Input                    The input buffer, which we are about to convert and/or dither.
 // uint8_t  *Output                   The output buffer, where we will store the converted thingy.
@@ -43,9 +75,9 @@ void Dither(uint8_t *Input, uint8_t *Output)
     else if(BIT.Video.BPP == 8)
     {
         uint32_t InputIndex, OutputIndex;
-        uint32_t Blue, Green, Red;
+        uint16_t Blue, Green, Red;
         // Temporary red, green and blue.
-        uint32_t TRed, TGreen, TBlue;
+        uint16_t TRed, TGreen, TBlue;
         
         // NOTE: Ok, so the naming convention here, and the next function might seem weird (for variables).
         // But, I decided on it to keep it short, as well as meaningful.
@@ -78,17 +110,9 @@ void Dither(uint8_t *Input, uint8_t *Output)
             for(uint32_t j = 1; j < (BIT.Video.XRes - 1); j++, InputIndex += 3, OutputIndex++)
             {
                 // Get all the colors.
-                Blue = Input[InputIndex] + TBlue;
-                Green = Input[InputIndex + 1] + TGreen;
-                Red = Input[InputIndex + 2] + TRed;
-                if(Blue > 0xFF)
-                    Blue = 0xFF;
-                
-                if(Green > 0xFF)
-                    Green = 0xFF;
-                
-                if(Red > 0xFF)
-                    Red = 0xFF;
+                Blue = SeventhLookupTable[Input[InputIndex]][TBlue];
+                Green = SeventhLookupTable[Input[InputIndex + 1]][TGreen];
+                Red = SeventhLookupTable[Input[InputIndex + 2]][TRed];
             
                 // And output the required color.
                 Output[OutputIndex] = (Red & ~0x1F) | ((Green & ~0x1F) >> 3) | ((Blue & ~0x3F) >> 6);
@@ -106,91 +130,40 @@ void Dither(uint8_t *Input, uint8_t *Output)
                 // Dither for the particular pixel.
                 // Take care of "[x - 1][y + 1]"
                 // BLUE.
-                TBlue = Input[LY1XM1] + ((3 * Blue) >> 4);
-                if(TBlue > 0xFF)
-                    TBlue = 0xFF;
-    
-                Input[LY1XM1] = (uint8_t)TBlue;
-                
+                Input[LY1XM1] = ThirdLookupTable[Input[LY1XM1]][Blue];              
                 // GREEN.
-                TGreen = Input[LY1XM1 + 1] + ((3 * Green) >> 4);
-                if(TGreen > 0xFF)
-                    TGreen = 0xFF;
-    
-                Input[LY1XM1 + 1] = (uint8_t)TGreen;
-    
+                Input[LY1XM1 + 1] = ThirdLookupTable[Input[LY1XM1 + 1]][Green];    
                 // RED.
-                TRed = Input[LY1XM1 + 2] + ((3 * Red) >> 4);
-                if(TRed > 0xFF)
-                    TRed = 0xFF;
-    
-                Input[LY1XM1 + 2] = (uint8_t)TRed;
-    
+                Input[LY1XM1 + 2] = ThirdLookupTable[Input[LY1XM1 + 2]][Red];
+                
                 // Take care of "[x][y + 1]"
                 // BLUE.
-                TBlue = Input[LY1X] + ((5 * Blue) >> 4);
-                if(TBlue > 0xFF)
-                    TBlue = 0xFF;
-    
-                Input[LY1X] = (uint8_t)TBlue;
-    
+                Input[LY1X] = FifthLookupTable[Input[LY1X]][Blue];
                 // GREEN.
-                TGreen = Input[LY1X + 1] + ((5 * Green) >> 4);
-                if(TGreen > 0xFF)
-                    TGreen = 0xFF;
-    
-                Input[LY1X + 1] = (uint8_t)TGreen;
-    
+                Input[LY1X + 1] = FifthLookupTable[Input[LY1X + 1]][Green];
                 // RED.
-                TRed = Input[LY1X + 2] + ((5 * Red) >> 4);
-                if(TRed > 0xFF)
-                    TRed = 0xFF;
-    
-                Input[LY1X + 2] = (uint8_t)TRed;
-    
+                Input[LY1X + 2] = FifthLookupTable[Input[LY1X + 2]][Red];
+                
                 // Take care of "[x + 1][y + 1]"
                 // BLUE.
-                TBlue = Input[LY1X1] + (Blue >> 4);
-                if(TBlue > 0xFF)
-                    TBlue = 0xFF;
-    
-                Input[LY1X1] = (uint8_t)TBlue;
-    
+                Input[LY1X1] = OnethLookupTable[Input[LY1X1]][Blue];
                 // GREEN.
-                TGreen = Input[LY1X1 + 1] + (Green >> 4);
-                if(TGreen > 0xFF)
-                    TGreen = 0xFF;
-    
-                Input[LY1X1 + 1] = (uint8_t)TGreen;
-    
+                Input[LY1X1 + 1] = OnethLookupTable[Input[LY1X1 + 1]][Green];
                 // RED.
-                TRed = Input[LY1X1 + 2] + (Red >> 4);
-                if(TRed > 0xFF)
-                    TRed = 0xFF;
-
-                Input[LY1X1 + 2] = (uint8_t)TRed;
+                Input[LY1X1 + 2] = OnethLookupTable[Input[LY1X1 + 2]][Red];
   
                 // Take care of "[x + 1][y]", and pass it on in the loop.
                 // BLUE.
-                TBlue = ((7 * Blue) >> 4);
-                TGreen = ((7 * Green) >> 4);
-                TRed = ((7 * Red) >> 4);
+                TBlue = Blue;
+                TGreen = Green;
+                TRed = Red;
             }
 
             // Get all the colors.
-            Blue = Input[InputIndex] + TBlue;
-            Green = Input[InputIndex + 1] + TGreen;
-            Red = Input[InputIndex + 2] + TRed;
+            Blue = SeventhLookupTable[Input[InputIndex]][TBlue];
+            Green = SeventhLookupTable[Input[InputIndex + 1]][TGreen];
+            Red = SeventhLookupTable[Input[InputIndex + 2]][TRed];
             
-            if(Blue > 0xFF)
-                Blue = 0xFF;
-            
-            if(Green > 0xFF)
-                Green = 0xFF;
-            
-            if(Red > 0xFF)
-                Red = 0xFF;
-                       
             // And output the required color.
             Output[OutputIndex] = (Red & ~0x1F) | ((Green & ~0x1F) >> 3) | ((Blue & ~0x3F) >> 6);
             

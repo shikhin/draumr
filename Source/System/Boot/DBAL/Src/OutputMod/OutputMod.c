@@ -57,6 +57,7 @@ void OutputModInit()
         }
         
         memset(DrawBoard, 0, NoPages * 0x1000);
+        
         // If the call fails, then other blitting code realizes it, and directly blits.
         OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
         if(OldBuffer)
@@ -82,11 +83,16 @@ void OutputModInit()
             return;
         }
         
+        uint32_t A, B, C;
+        
+        __asm__ __volatile__("cpuid" ::: "eax", "ebx", "ecx", "edx");
+        __asm__ __volatile__("rdtsc" : "=a"(A) :: "edx");
         // Resize the image to the scaled buffer.
         ResizeBilinear((uint8_t*)BIT.Video.BackgroundImg.Location + BMPHeader->Offset,
                        ImageScaledBuffer, BMPHeader->XSize, BMPHeader->YSize,
                        BIT.Video.XRes, BIT.Video.YRes);
         
+        __asm__ __volatile__("rdtsc" : "=a"(B) :: "edx");
         // Converts the image to the required BPP format, INTO the DrawBoard - and dithers if required too.
         Dither(ImageScaledBuffer, (uint8_t*)DrawBoard);
         
@@ -94,6 +100,9 @@ void OutputModInit()
         //PMMFreeContigFrames(ImageScaledBuffer, NoPagesScaledBuffer);
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
         
-        BlitBuffer((uint32_t*)DrawBoard);
+        __asm__ __volatile__("rdtsc" : "=a"(C) :: "edx");
+        //BlitBuffer((uint32_t*)DrawBoard);
+        
+        DebugPrintText("\n\nRescaling: %x\tDithering: %x\n", B - A, C - B);
     }
 } 

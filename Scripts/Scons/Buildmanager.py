@@ -66,7 +66,7 @@ class BuildManager :
         if b == "debug" :
             env["CPPFLAGS"] += ["-O0"]
         else :
-            env["CPPFLAGS"] += ["-O2"]
+            env["CPPFLAGS"] += ["-O2", "-march=i486"]
 
         # Hide the ugly compiler command lines and display nice messages.
         env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (colors['green'], colors['end'])

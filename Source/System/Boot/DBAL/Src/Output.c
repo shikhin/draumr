@@ -217,7 +217,7 @@ void OutputInit()
 	
 	// Else, go to the 320*200*256 colors mode.
         #else  
-        SwitchToMode(0x13);
+        //SwitchToMode(0x13);
     
         // Fill in some general details of the video mode.
         BIT.Video.Address = (uint32_t*)0xA0000;
@@ -232,6 +232,7 @@ void OutputInit()
     // Initialize the serial port thingy.
     else
     {
+        SwitchToMode(0x13);
         // Find the "first" working serial port, and get it's address.
         BIT.Serial.Port = DetectSerialPort();  
 	
