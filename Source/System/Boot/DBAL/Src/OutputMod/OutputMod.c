@@ -101,8 +101,8 @@ void OutputModInit()
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
         
         __asm__ __volatile__("rdtsc" : "=a"(C) :: "edx");
-        //BlitBuffer((uint32_t*)DrawBoard);
+        BlitBuffer((uint32_t*)DrawBoard);
         
-        DebugPrintText("\n\nRescaling: %x\tDithering: %x\n", B - A, C - B);
+        //DebugPrintText("\n\nRescaling: %x\tDithering: %x\n", B - A, C - B);
     }
 } 

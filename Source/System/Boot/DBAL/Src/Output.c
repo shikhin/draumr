@@ -25,6 +25,8 @@
 #include <PMM.h>
 #include <Log.h>
 
+#define HIGH_RESOLUTION
+
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
 static void SwitchToMode(uint32_t Mode)
@@ -217,7 +219,7 @@ void OutputInit()
 	
 	// Else, go to the 320*200*256 colors mode.
         #else  
-        //SwitchToMode(0x13);
+        SwitchToMode(0x13);
     
         // Fill in some general details of the video mode.
         BIT.Video.Address = (uint32_t*)0xA0000;

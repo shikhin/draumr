@@ -32,48 +32,53 @@
 void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY) 
 {
     uint32_t ARed, ABlue, AGreen, BRed, BBlue, BGreen, CRed, CBlue, CGreen, DRed, DGreen, DBlue;
-    uint32_t x, y, i, j, Index;
+    uint32_t i, j, OldIndex, Index;
     
     float XRatio = ((float)(X - 1)) / NewX;
     float YRatio = ((float)(Y - 1)) / NewY;
     float XDiff, YDiff, Blue, Red, Green;
     
+    X *= 3;
     uint32_t Offset = 0;
     
     for(i = 0; i < NewY; i++) 
     {
+        YDiff = (YRatio * i);
+        OldIndex = (int)YDiff * X;   
+        YDiff -= (int)(YDiff);
+        
         for(j = 0; j < NewX; j++)
         {
-            x = (int)(XRatio * j);
-            y = (int)(YRatio * i) ;
-            XDiff = (XRatio * j) - x;
-            YDiff = (YRatio * i) - y;
+            XDiff = (XRatio * j);
+            Index = OldIndex + ((int)XDiff * 3);      
+            XDiff -= (int)XDiff;
             
-            Index = y * X + x;                
-            ARed = Input[Index * 3];
-            AGreen = Input[(Index * 3) + 1];
-            ABlue = Input[(Index * 3) + 2];
+            ARed = Input[Index];
+            AGreen = Input[Index + 1];
+            ABlue = Input[Index + 2];
             
-            BRed = Input[(Index + 1) * 3];
-            BGreen = Input[((Index + 1) * 3) + 1];
-            BBlue = Input[((Index + 1) * 3) + 2];
+            BRed = Input[Index + 3];
+            BGreen = Input[Index + 4];
+            BBlue = Input[Index + 5];
             
-            CRed = Input[(Index + X) * 3];
-            CGreen = Input[((Index + X) * 3) + 1];
-            CBlue = Input[((Index + X) * 3) + 2];
+            CRed = Input[Index + X];
+            CGreen = Input[Index + X + 1];
+            CBlue = Input[Index + X + 2];
             
-            DRed = Input[(Index + X + 1) * 3];
-            DGreen = Input[((Index + X + 1) * 3) + 1];
-            DBlue = Input[((Index + X + 1) * 3) + 2];
+            DRed = Input[Index + X + 3];
+            DGreen = Input[Index + X + 4];
+            DBlue = Input[Index + X + 5];
             
             // Take care of the blue element.
             // Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
             Blue = ABlue * (1 - XDiff) * (1 - YDiff) + BBlue * (XDiff) * (1 - YDiff) +
-            CBlue * (YDiff) * (1 - XDiff) + DBlue *(XDiff * YDiff);
+            CBlue * (YDiff) * (1 - XDiff) + DBlue * (XDiff * YDiff);
             
+            // And green.
             Green = AGreen * (1 - XDiff) * (1 - YDiff) + BGreen * (XDiff) * (1 - YDiff) +
             CGreen * (YDiff) * (1 - XDiff) + DGreen * (XDiff * YDiff);
             
+            // And red.
             Red = ARed * (1 - XDiff) * (1 - YDiff) + BRed * (XDiff) * (1 - YDiff) +
             CRed * (YDiff) * (1 - XDiff) + DRed * (XDiff * YDiff);
             

@@ -34,7 +34,7 @@ void BlitBuffer4BPP(uint32_t *Buffer)
    
     // Calculate VideoX * VideoY, and X * Y.
     uint32_t VideoXY = (BIT.Video.XRes * BIT.Video.YRes);
-   
+    
     for(PlaneBit = 1, PlaneShift = 0; 
 	PlaneBit <=8; 
         PlaneBit <<= 1, PlaneShift++) 
