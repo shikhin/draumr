@@ -19,15 +19,35 @@
 
 #include <stdint.h>
 #include <OutputMod/Blit.h>
+#include <OutputMod/Enhance.h>
 #include <BIT.h>
 #include <PMM.h>
 #include <String.h>
+
+// The old buffer, used for comparision to allow unneccessary copying to video memory.
+extern uint32_t *OldBuffer;
+
+// The temporary buffer, where we dither. If allocating this fails, dithering is disabled.
+extern uint32_t *TempBuffer;
 
 // Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
 {
+    // For 8BPP.
     if(BIT.Video.BPP == 8)
-        BlitBuffer8BPP(Buffer);
+    {
+        memcpy(TempBuffer, Buffer, BIT.Video.XRes * BIT.Video.YRes * 24);
+            
+        // Dither the buffer, into itself.
+        if(!(BIT.Video.VideoFlags & DITHER_DISABLE))
+            Dither8BPP((uint8_t*)TempBuffer, (uint8_t*)TempBuffer);
+            
+        // Else, just convert - don't dither.
+        else
+            Convert8BPP((uint8_t*)TempBuffer, (uint8_t*)TempBuffer);
+            
+        BlitBuffer8BPP(TempBuffer);
+    }
 }
 

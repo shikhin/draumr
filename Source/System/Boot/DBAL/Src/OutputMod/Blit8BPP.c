@@ -33,8 +33,9 @@ void BlitBuffer8BPP(uint32_t *Buffer)
     
     VideoOffset = Offset = 0;
 	
+    uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
     // The outerloop for going through the Y axis.
-    for(uint32_t i = 0; i < BIT.Video.YRes; i++)
+    for(uint32_t i = 0; i < BIT.Video.YRes; i++, VideoOffset += DwordsBetweenLines)
     { 
 	// Loop through the X axis for the buffer - blitting the input buffer into a buffer.
         for(uint32_t j = 0; j < BIT.Video.XRes; j += 4, Offset++, VideoOffset++)
@@ -45,8 +46,5 @@ void BlitBuffer8BPP(uint32_t *Buffer)
 		BIT.Video.Address[VideoOffset] = Buffer[Offset];
 	    }
 	}
-	    
-	// Skip the bytes between lines thingy.
-	VideoOffset += BIT.Video.BytesBetweenLines / 4;
     }
 }

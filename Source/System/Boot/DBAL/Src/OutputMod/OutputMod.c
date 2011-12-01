@@ -32,6 +32,9 @@ uint32_t *OldBuffer = (uint32_t*)0;
 // The buffer where we draw everything. If allocating for this fails, then we go to standard text mode.
 uint32_t *DrawBoard = (uint32_t*)0;
 
+// The temporary buffer, where we dither. If allocating this fails, dithering is disabled.
+uint32_t *TempBuffer = (uint32_t*)0;
+
 // Initializes the output module, allocating neccessary buffers and such.
 void OutputModInit()
 {
@@ -40,24 +43,37 @@ void OutputModInit()
     {
         BMPHeader_t *BMPHeader = (BMPHeader_t*)BIT.Video.BackgroundImg.Location;
         
-        uint32_t NoPages = (BIT.Video.XRes * BIT.Video.YRes * BIT.Video.BPP)/8;
+        // We draw in 24BPP.
+        uint32_t NoPages = (BIT.Video.XRes * BIT.Video.YRes * 24)/8;
         NoPages = (NoPages + 0xFFF)/0x1000;
         
         // If we can't allocate space for the "draw board", then gracefully return...
-        // ...to serial port :P
+        // ...to text mode :P
         DrawBoard = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
         if(!DrawBoard)
         {
             // Free the image buffer.
             // TODO: Implement this.
             //PMMFreeContigFrames(BIT.Video.BackgroundImg, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-                                                    
-            BIT.Video.VideoFlags &= ~(VBE_PRESENT | VGA_PRESENT);
+                                         
+            // Go to the 80x25 mode.
+            BIT.Video.SwitchVGA(0x3);
+                                                                 
+            // Fill in some general details of the video mode.
+            BIT.Video.Address = (uint32_t*)0xB8000;
+            BIT.Video.XRes = 80;
+            BIT.Video.YRes = 25;
+            BIT.Video.BPP = 0;
+            BIT.Video.BytesBetweenLines = 0; 
+                                                   
+            BIT.Video.VideoFlags &= ~GUI_MODE;
             return;
         }
         
         memset(DrawBoard, 0, NoPages * 0x1000);
         
+        NoPages = (BIT.Video.XRes * BIT.Video.YRes * BIT.Video.BPP)/8;
+        NoPages = (NoPages + 0xFFF)/0x1000;
         // If the call fails, then other blitting code realizes it, and directly blits.
         OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
         if(OldBuffer)
@@ -69,40 +85,26 @@ void OutputModInit()
         if(!BIT.Video.BackgroundImg.Size)
             return;
                 
-        uint32_t NoPagesScaledBuffer = (BIT.Video.XRes * BIT.Video.YRes * BMPHeader->Plane
-                                       * BMPHeader->BPP)/8;
-        NoPagesScaledBuffer = (NoPagesScaledBuffer + 0xFFF)/0x1000;
+        // 24BPP for the temporary buffer.
+        NoPages = (BIT.Video.XRes * BIT.Video.YRes * 24)/8;
+        NoPages = (NoPages + 0xFFF)/0x1000;
             
-        uint8_t *ImageScaledBuffer = (uint8_t*)PMMAllocContigFrames(POOL_STACK,
-                                                                    NoPagesScaledBuffer);
-        if(!ImageScaledBuffer)
+        TempBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
+        if(!TempBuffer)
         {
-            // Free the image buffer.
-            // TODO: Implement this.
-            //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-            return;
+            // Disable dithering.
+            BIT.Video.VideoFlags |= DITHER_DISABLE;
         }
         
-        uint32_t A, B, C;
-        
-        __asm__ __volatile__("cpuid" ::: "eax", "ebx", "ecx", "edx");
-        __asm__ __volatile__("rdtsc" : "=a"(A) :: "edx");
         // Resize the image to the scaled buffer.
         ResizeBilinear((uint8_t*)BIT.Video.BackgroundImg.Location + BMPHeader->Offset,
-                       ImageScaledBuffer, BMPHeader->XSize, BMPHeader->YSize,
+                       (uint8_t*)DrawBoard, BMPHeader->XSize, BMPHeader->YSize,
                        BIT.Video.XRes, BIT.Video.YRes);
         
-        __asm__ __volatile__("rdtsc" : "=a"(B) :: "edx");
-        // Converts the image to the required BPP format, INTO the DrawBoard - and dithers if required too.
-        Dither(ImageScaledBuffer, (uint8_t*)DrawBoard);
-        
         //TODO: Implement this.
-        //PMMFreeContigFrames(ImageScaledBuffer, NoPagesScaledBuffer);
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
         
-        __asm__ __volatile__("rdtsc" : "=a"(C) :: "edx");
-        BlitBuffer((uint32_t*)DrawBoard);
-        
-        //DebugPrintText("\n\nRescaling: %x\tDithering: %x\n", B - A, C - B);
+        // Blit the background image.
+        BlitBuffer(DrawBoard);
     }
 } 

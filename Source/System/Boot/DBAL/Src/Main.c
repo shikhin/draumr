@@ -40,10 +40,10 @@ int Main(uint32_t *BITPointer)
         
     // Initialize 'output' thingy.
     OutputInit(); 
-    
+
     // Initialize the FPU, without which, we can't proceed.
     FPUInit();
-    
+
     // Just a temporary thingy to init the OutputMod.
     OutputModInit();
 

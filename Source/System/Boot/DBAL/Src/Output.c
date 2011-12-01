@@ -201,6 +201,7 @@ void OutputInit()
         BIT.Video.YRes = 200;
         BIT.Video.BPP = 8;
         BIT.Video.BytesBetweenLines = 0;
+        BIT.Video.VideoFlags |= GUI_MODE;
     }
 
     // Initialize the serial port thingy.

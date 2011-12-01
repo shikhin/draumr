@@ -391,7 +391,7 @@ BITS 16
 ; @ebx            Would sound dumb - but found no better way (without messing with the stack) - the return address here.
 SwitchToPM:
     cli
- 
+
     lgdt [GDTR32]                     ; Load the GDT.
     
     mov eax, cr0                      ; Or 1 with CR0, to enable the PM bit.
@@ -416,7 +416,7 @@ BITS 32
 ; Switch to Real mode back for future generations.
 SwitchToRM:
     lgdt [GDTR16]                     ; Load the 16-bit GDT.
-
+    
     jmp 0x08:.Protected16             ; And jump into 16-bit protected mode!
 
 ; Now, back to 16-bits.
