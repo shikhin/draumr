@@ -25,8 +25,6 @@
 #include <PMM.h>
 #include <Log.h>
 
-#define HIGH_RESOLUTION
-
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
 static void SwitchToMode(uint32_t Mode)
@@ -40,21 +38,9 @@ static void SwitchToMode(uint32_t Mode)
     {
         // Switch to the mode.
         BIT.Video.SwitchVGA((uint16_t)Mode);
-
-	// If the mode is 640 * 480 * 16 colors, then set up the required bit map and RMSR.
-        if(Mode == 0x12)
-        {
-            // Set the bit mask - 0xFF - we except everything!
-	    outb(0x03CE, 0x08);
-	    outb(0x03CF, 0xFF);
-	
-            // Set the address register to a) The Write Map Select Register b) The Read Map Select Register.
-            outb(0x03C4, 0x02);
-            outb(0x03CE, 0x04);
-        }
-    
+   
         // If the mode is 320 * 200 * 256 colors, then set up the palette.
-        else if(Mode == 0x13)
+        if(Mode == 0x13)
             // Setup the palette to a RGB thingy.
 	    BIT.Video.SetupPaletteVGA();
     }
@@ -206,19 +192,7 @@ void OutputInit()
     if(!(BIT.Video.VideoFlags & VBE_PRESENT) &&
         (BIT.Video.VideoFlags & VGA_PRESENT))
     {
-        // If high resolution is set, then switch to 640*480*16 colors mode.
-        #ifdef HIGH_RESOLUTION
-        SwitchToMode(0x12);
-	
-	// Fill in some general details of the video mode.
-	BIT.Video.Address = (uint32_t*)0xA0000;
-	BIT.Video.XRes = 640;
-	BIT.Video.YRes = 480;
-	BIT.Video.BPP = 4;
-	BIT.Video.BytesBetweenLines = 0;
-	
-	// Else, go to the 320*200*256 colors mode.
-        #else  
+	// Go to the 320*200*256 colors mode.
         SwitchToMode(0x13);
     
         // Fill in some general details of the video mode.
@@ -227,14 +201,11 @@ void OutputInit()
         BIT.Video.YRes = 200;
         BIT.Video.BPP = 8;
         BIT.Video.BytesBetweenLines = 0;
-        
-	#endif    /* HIGH_RESOLUTION */ 
     }
 
     // Initialize the serial port thingy.
     else
     {
-        SwitchToMode(0x13);
         // Find the "first" working serial port, and get it's address.
         BIT.Serial.Port = DetectSerialPort();  
 	

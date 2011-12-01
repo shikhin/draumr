@@ -27,10 +27,7 @@
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
 {
-    if(BIT.Video.BPP == 4)
-        BlitBuffer4BPP(Buffer);
-    
-    else if(BIT.Video.BPP == 8)
+    if(BIT.Video.BPP == 8)
         BlitBuffer8BPP(Buffer);
 }
 
