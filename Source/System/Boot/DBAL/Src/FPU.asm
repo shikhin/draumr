@@ -31,7 +31,6 @@ GLOBAL FPUInit
 ;     rc
 ;                                     Aborts boot if unable to find a FPU.
 FPUInit:
-    xchg bx, bx
     pushad
 
 ; Try my luck with CPUID, to see if I can detect the FPU using it.

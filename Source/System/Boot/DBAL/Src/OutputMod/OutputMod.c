@@ -32,8 +32,11 @@ uint32_t *OldBuffer = (uint32_t*)0;
 // The buffer where we draw everything. If allocating for this fails, then we go to standard text mode.
 uint32_t *DrawBoard = (uint32_t*)0;
 
-// The temporary buffer, where we dither. If allocating this fails, dithering is disabled.
+// The temporary buffer, where we dither. If allocating this fails, then we go to standard text mode.
 uint32_t *TempBuffer = (uint32_t*)0;
+
+// The temporary buffer, where we keep the error for the next line.
+uint8_t  *TempErrorLine = (uint8_t*)0;
 
 // Initializes the output module, allocating neccessary buffers and such.
 void OutputModInit()
@@ -50,7 +53,16 @@ void OutputModInit()
         // If we can't allocate space for the "draw board", then gracefully return...
         // ...to text mode :P
         DrawBoard = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
-        if(!DrawBoard)
+        
+        // 24BPP for the temporary buffer.
+        // + 1 extra line for the temporary line buffer.
+        NoPages = (BIT.Video.XRes * (BIT.Video.YRes + 1) * 24)/8;
+        NoPages = (NoPages + 0xFFF)/0x1000;
+        
+        // If allocating that fails, then go to text mode.. 
+        TempBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
+        
+        if(!DrawBoard || !TempBuffer)
         {
             // Free the image buffer.
             // TODO: Implement this.
@@ -70,7 +82,12 @@ void OutputModInit()
             return;
         }
         
-        memset(DrawBoard, 0, NoPages * 0x1000);
+        // Clear the temporary buffer an draw board out.
+        memset(TempBuffer, 0, NoPages * 0x1000);
+        memset(DrawBoard, 0, (BIT.Video.XRes * BIT.Video.YRes * 24)/8);
+        
+        // Go to the last line for the temporary error line.
+        TempErrorLine = (uint8_t*)TempBuffer + ((BIT.Video.XRes * BIT.Video.YRes * 24)/8);
         
         NoPages = (BIT.Video.XRes * BIT.Video.YRes * BIT.Video.BPP)/8;
         NoPages = (NoPages + 0xFFF)/0x1000;
@@ -85,17 +102,6 @@ void OutputModInit()
         if(!BIT.Video.BackgroundImg.Size)
             return;
                 
-        // 24BPP for the temporary buffer.
-        NoPages = (BIT.Video.XRes * BIT.Video.YRes * 24)/8;
-        NoPages = (NoPages + 0xFFF)/0x1000;
-            
-        TempBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
-        if(!TempBuffer)
-        {
-            // Disable dithering.
-            BIT.Video.VideoFlags |= DITHER_DISABLE;
-        }
-        
         // Resize the image to the scaled buffer.
         ResizeBilinear((uint8_t*)BIT.Video.BackgroundImg.Location + BMPHeader->Offset,
                        (uint8_t*)DrawBoard, BMPHeader->XSize, BMPHeader->YSize,
@@ -103,6 +109,8 @@ void OutputModInit()
         
         //TODO: Implement this.
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
+        
+        uint32_t A, B;
         
         // Blit the background image.
         BlitBuffer(DrawBoard);

@@ -30,6 +30,9 @@ extern uint32_t *OldBuffer;
 // The temporary buffer, where we dither. If allocating this fails, dithering is disabled.
 extern uint32_t *TempBuffer;
 
+// The temporary buffer, where we keep the error for the next line.
+extern uint8_t  *TempErrorLine;
+
 // Gives a buffer, of bpp being what we require, to be blitted to the screen.
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
@@ -37,15 +40,13 @@ void BlitBuffer(uint32_t *Buffer)
     // For 8BPP.
     if(BIT.Video.BPP == 8)
     {
-        memcpy(TempBuffer, Buffer, BIT.Video.XRes * BIT.Video.YRes * 24);
-            
         // Dither the buffer, into itself.
         if(!(BIT.Video.VideoFlags & DITHER_DISABLE))
-            Dither8BPP((uint8_t*)TempBuffer, (uint8_t*)TempBuffer);
+            Dither8BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
             
         // Else, just convert - don't dither.
         else
-            Convert8BPP((uint8_t*)TempBuffer, (uint8_t*)TempBuffer);
+            Convert8BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
             
         BlitBuffer8BPP(TempBuffer);
     }
