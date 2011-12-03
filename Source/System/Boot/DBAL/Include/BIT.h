@@ -30,11 +30,12 @@
 // Video flags.
 #define VGA_PRESENT     (1 << 0)
 #define VBE_PRESENT     (1 << 1)
-#define GUI_MODE        (1 << 2)
-#define DITHER_DISABLE  (1 << 3)
+#define GRAPHICAL_USED  (1 << 2)
+#define TEXT_USED       (1 << 3)
+#define DITHER_DISABLE  (1 << 4)
 
 // Serial flags.
-#define SERIAL_PRESENT  (1 << 0)
+#define SERIAL_USED     (1 << 0)
 
 // The BIT structure.
 struct BIT

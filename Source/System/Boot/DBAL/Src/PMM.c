@@ -54,7 +54,6 @@ static void PMMFixMMap()
 	    
 	    // Here, we don't know about the current entry, so, move to previous, and continue.
 	    i--;
-	    continue; 
         }
     }
         

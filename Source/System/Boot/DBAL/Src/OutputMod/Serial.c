@@ -27,7 +27,7 @@
 // char c                             The character to output.
 static void OutputSerialChar(char C)
 {
-    if(!(BIT.Serial.SerialFlags & SERIAL_PRESENT))
+    if(!(BIT.Serial.SerialFlags & SERIAL_USED))
         return;
     
     uint32_t Timeout = 0;
@@ -44,7 +44,7 @@ static void OutputSerialChar(char C)
     // If we reached timeout, then assume somebody plugged it out, and assume no serial port present.
     if(Timeout == MIN_TIMEOUT)
     {
-        BIT.Serial.SerialFlags &= ~SERIAL_PRESENT;
+        BIT.Serial.SerialFlags &= ~SERIAL_USED;
         return;
     }
     
@@ -57,7 +57,7 @@ static void OutputSerialChar(char C)
 // char *S                            The null terminated ASCII string.
 void OutputSerialString(char *S)
 {
-    if(!(BIT.Serial.SerialFlags & SERIAL_PRESENT))
+    if(!(BIT.Serial.SerialFlags & SERIAL_USED))
         return;
     
     // Keep outputting characters till we encounter a null character.

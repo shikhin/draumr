@@ -136,91 +136,160 @@ static uint32_t DetectSerialPort()
     return 0x0000;
 }
 
+// A lookup table for text modes, for VBE < 1.2
+static uint16_t TextModeLookupTable[5][2] = 
+{
+    { 80 , 60 },
+    { 132, 25 },
+    { 132, 43 },
+    { 132, 50 },
+    { 132, 60 }
+};
+
+// Fill information about available text modes - only to be used if VBE Version < 1.2
+static void FillTextInfoVBE()
+{
+    for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
+    {
+        // If:
+        //      The mode cannot be initialized in the present hardware configuration.
+        //      It isn't a text mode.
+        //      It doesn't lie in the "standard VESA defined" text mode range (0x108 - 0x10C).
+        // Then, remove the entry.
+        if(!(BIT.Video.VBEModeInfo[i].ModeAttributes & (1 << 0)) ||    // Can/cannot be initialized. 
+           (BIT.Video.VBEModeInfo[i].ModeAttributes & (1 << 4)) ||     // Text mode/graphics mode.
+           (BIT.Video.VBEModeInfo[i].Mode < 0x108) ||                  // In the text mode range.
+           (BIT.Video.VBEModeInfo[i].Mode > 0x10C))
+        {
+            // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+            memmove(&BIT.Video.VBEModeInfo[i], &BIT.Video.VBEModeInfo[i + 1], 
+                    sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
+            BIT.Video.VBEModeInfoN--;
+            
+            // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
+            i--;
+            continue;
+        }
+        
+        BIT.Video.VBEModeInfo[i].ModeAttributes = HARDWARE_INIT;
+        BIT.Video.VBEModeInfo[i].PhysBasePtr = 0xB8000;         // Keep the base pointer as 0xB8000.
+        BIT.Video.VBEModeInfo[i].NumberOfPlanes = 1;            // The number of planes as 1.
+        BIT.Video.VBEModeInfo[i].BitsPerPixel = 16;             // And bits per pixel as 16.
+        BIT.Video.VBEModeInfo[i].NumberOfBanks = 1;             // Don't know - as the VBE 3.0 core specification said.
+        BIT.Video.VBEModeInfo[i].Reserved = 1;                  // This should be 1 - for a future feature.    
+        
+        // Put the appropriate resolution for the appropriate mode.
+        // The lookup table starts at 0 - 4, for 0x108 - 0x10C - just minus 0x108 from the mode.
+        BIT.Video.VBEModeInfo[i].XResolution = TextModeLookupTable[BIT.Video.VBEModeInfo[i].Mode - 0x108][0];
+        BIT.Video.VBEModeInfo[i].YResolution = TextModeLookupTable[BIT.Video.VBEModeInfo[i].Mode - 0x108][1];
+    }
+    
+    return;
+}
+
+// Parse the VBEModeInfo[] array, and clean it out for usable modes.
+static void ParseVBEInfo()
+{
+    
+}
+
+// Initializes VGA for a 320*200*256 color mode.
+static void InitVGA()
+{ 
+    // Go to the 320*200*256 colors mode.
+    SwitchToMode(0x13);
+
+    // Fill in some general details of the video mode.
+    BIT.Video.Address = (uint32_t*)0xA0000;
+    BIT.Video.XRes = 320;
+    BIT.Video.YRes = 200;
+    BIT.Video.BPP = 8;
+    BIT.Video.BytesBetweenLines = 0;
+    BIT.Video.VideoFlags |= GRAPHICAL_USED;    
+}
+        
+// Initializes VBE for a graphical mode.
+// If something fails, automatically reverts to VGA.
+static void InitVBE()
+{    
+    // Get the segment and the offset.
+    uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
+    uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
+        
+    // Flat pointer, from segment and offset = (segment * 0x10) + offset;
+    uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
+    uint16_t Mode = *VideoModesFlat++;
+    uint32_t Entries = 0;
+        
+    // Keep looping till we reach the End of Entries thingy.
+    do
+    {
+        // So we got one more entry.
+        Entries++;
+        // Get the mode into Mode, and move on to the next video mode thingy.
+        Mode = *VideoModesFlat++;
+    } while(Mode != 0xFFFF);
+        
+    // Allocate some memory from the Base Stack to hold all the mode information.
+    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
+                            ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
+        
+    // If we failed to allocate enough space, simply revert to VGA.
+    if(!BIT.Video.VBEModeInfo)
+    {
+        InitVGA();      
+        return;
+    }
+    
+    // If version number is 1.0, zero out the array. 
+    if(BIT.Video.VBECntrlrInfo->Version == 0x0100)
+        memset(BIT.Video.VBEModeInfo, 0, (sizeof(VBEModeInfo_t) * Entries));
+    
+    // Get mode information from VBE, and the number of entries in VBEModeInfoN.
+    BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
+        
+    // If version number is below 1.2, then, certainly, only text modes would be available.
+    // Thus, fill all the text mode information in VBEModeInfo[], and revert to VGA.
+    if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
+    {
+        // Fill information about available text modes.
+        FillTextInfoVBE();    
+        InitVGA();
+        return;
+    }
+    
+    // Parse the VBEModeInfo[] array, and clean it out for usable modes.
+    ParseVBEInfo();
+}
+
+// Initializes the first available serial port.
+static void InitSerial()
+{
+    // Find the "first" working serial port, and get it's address.
+    BIT.Serial.Port = DetectSerialPort();  
+        
+    if(BIT.Serial.Port)
+        BIT.Serial.SerialFlags = SERIAL_USED;    
+}
+
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 void OutputInit()
 {
-    BIT.Video.VideoFlags &= ~VBE_PRESENT;
-    // If VBE is present, find the best VBE mode, and use it.
+    // If VBE is present, initialize VBE for a graphical mode.
+    // If something fails in there, it automatically reverts t VGA.
     if(BIT.Video.VideoFlags & VBE_PRESENT)
-    {
-        // Get the segment and the offset.
-        uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
-	uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
-	
-	// Flat pointer, from segment and offset = (segment * 0x10) + offset;
-	uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
-	uint16_t Mode = *VideoModesFlat++;
-	uint32_t Entries = 0;
-	
-	// Keep looping till we reach the End of Entries thingy.
-	do
-	{
-	    // So we got one more entry.
-	    Entries++;
-	    // Get the mode into Mode, and move on to the next video mode thingy.
-	    Mode = *VideoModesFlat++;
-	} while(Mode != 0xFFFF);
+        InitVBE();
         
-	// Allocate some memory from the Base Stack to hold all the mode information.
-	BIT.Video.VBEModeInfo = 
-	    (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
-						 ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
-        
-        if(!BIT.Video.VBEModeInfo)
-        {
-            BIT.Video.VideoFlags &= ~VBE_PRESENT;   
-        }
-            
-        else
-        {
-	    // Get mode information from VBE, and the number of entries in VBEModeInfoN.
-	    BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
-	
-	    VBEModeInfo_t *Modes = BIT.Video.VBEModeInfo;
-	    // Just for checking atm.
-	    for(uint32_t i = 0;
-	        i < BIT.Video.VBEModeInfoN;
-	        i++)
-	    {
-	        DebugPrintText("%x\t", Modes[i].HeaderData[0]);
-	    }
-        }
-    }
-    
-    // If VGA is present, and VBE is either not present, or we removed the flag.
-    // Then use 320*200*256 color mode (or 640*480*16 colors).
-    if(!(BIT.Video.VideoFlags & VBE_PRESENT) &&
-        (BIT.Video.VideoFlags & VGA_PRESENT))
-    {
-	// Go to the 320*200*256 colors mode.
-        SwitchToMode(0x13);
-    
-        // Fill in some general details of the video mode.
-        BIT.Video.Address = (uint32_t*)0xA0000;
-        BIT.Video.XRes = 320;
-        BIT.Video.YRes = 200;
-        BIT.Video.BPP = 8;
-        BIT.Video.BytesBetweenLines = 0;
-        BIT.Video.VideoFlags |= GUI_MODE;
-    }
+    // Else If VGA is present initialize VGA for a 320*200*256 color mode.
+    else if(BIT.Video.VideoFlags & VGA_PRESENT)
+        InitVGA();
 
     // Initialize the serial port thingy.
     else
-    {
-        // Find the "first" working serial port, and get it's address.
-        BIT.Serial.Port = DetectSerialPort();  
-	
-	if(BIT.Serial.Port)
-	    BIT.Serial.SerialFlags = SERIAL_PRESENT;
-    }
+        InitSerial();
     
-    BIT.Video.BackgroundImg.Size = 0;
-    
-    // Check for whether we switched to a video mode or not.
-    if((BIT.Video.VideoFlags & VGA_PRESENT) ||
-       (BIT.Video.VideoFlags & VBE_PRESENT))
-    {
+    // If we are using a graphical mode, then load the background image.
+    if(BIT.Video.VideoFlags & GRAPHICAL_USED)
         // Open the file, and get it's information.
         BIT.Video.BackgroundImg = BootFilesBGImg();
-    }
 }

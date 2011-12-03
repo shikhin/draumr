@@ -8,7 +8,7 @@
 *  (at your option) any later version.
 * 
 *  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  but WITHOUT ANY WARRANTY// Without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 *  GNU General Public License for more details.
 * 
@@ -49,16 +49,75 @@ struct VBECntrlrInfo
     uint8_t  OEMData[256];
 } __attribute__((packed));
 
+// Flags for ModeAttributes in VBEModeInfo.
+#define HARDWARE_INIT    (1 << 0)  // If set, can be initialized. Else, can't.
+#define GRAPHICAL_MODE   (1 << 4)  // If set, graphical mode. Else, text.
+
 // VBE Mode Info array - given by VBE.
 struct VBEModeInfo
 {
     // And that's given by the VBE call.
-    uint8_t  Data[256];
+    // Mandatory information for all VBE revisions.
+    uint16_t ModeAttributes;    // Mode attributes
+    uint8_t  WinAAttributes;    // Window A attributes
+    uint8_t  WinBAttributes;    // Window B attributes
+    uint16_t WinGranularity;    // Window granularity
+    uint16_t WinSize;           // Window size
+    uint16_t WinASegment;       // Window A start segment
+    uint16_t WinBSegment;       // Window B start segment
+    uint32_t WinFuncPtr;        // Real mode pointer to window function
+    uint16_t BytesPerScanLine;  // Bytes per scan line
+    
+    // Mandatory information for VBE 1.2 and above.
+    uint16_t XResolution;       // Horizontal resolution in pixels or characters
+    uint16_t YResolution;       // Vertical resolution in pixels or characters
+    uint8_t  XCharSize;         // Character cell width in pixels
+    uint8_t  YCharSize;         // Character cell height in pixels
+    uint8_t  NumberOfPlanes;    // Number of memory planes
+    uint8_t  BitsPerPixel;      // Bits per pixel
+    uint8_t  NumberOfBanks;     // Number of banks
+    
+    uint8_t  MemoryModel;       // Memory model type
+    uint8_t  BankSize;               // Bank size in KB
+    uint8_t  NumberOfImagePages;     // Number of images
+    uint8_t  Reserved;               // Reserved for page function 
+    
+    // Direct Color fields (required for direct/6 and YUV/7 memory models)
+    uint8_t  RedMaskSize;       // Size of direct color red mask in bits
+    uint8_t  RedFieldPosition;  // Bit position of lsb of red mask
+    uint8_t  GreenMaskSize;     // Size of direct color green mask in bits
+    uint8_t  GreenFieldPosition;     // Bit position of lsb of green mask
+    uint8_t  BlueMaskSize;           // Size of direct color blue mask in bits
+    uint8_t  BlueFieldPosition;      // Bit position of lsb of blue mask
+    uint8_t  RsvdMaskSize;           // Size of direct color reserved mask in bits
+    uint8_t  RsvdFieldPosition;      // Bit position of lsb of reserved mask
+    uint8_t  DirectColorModeInfo;    // Direct color mode attributes
+    
+    // Mandatory information for VBE 2.0 and above.
+    uint32_t PhysBasePtr;            // Physical address for flat memory frame buffer
+    uint32_t Reserved0;              // Reserved - always set to 0
+    uint16_t Reserved1;              // Reserved - always set to 0
+    
+    // Mandatory information for VBE 3.0 and above.
+    uint16_t LinBytesPerScanLine;    // Bytes per scan line for linear modes
+    uint8_t  BnkNumberOfImagePages;  // Number of images for banked modes
+    uint8_t  LinNumberOfImagePages;  // Number of images for linear modes
+    uint8_t  LinRedMaskSize;         // Size of direct color red mask (linear modes)
+    uint8_t  LinRedFieldPosition;    // Bit position of lsb of red mask (linear modes)
+    uint8_t  LinGreenMaskSize;       // Size of direct color green mask (linear modes)
+    uint8_t  LinGreenFieldPositiondb;     // Bit position of lsb of green mask (linear modes)
+    uint8_t  LinBlueMaskSize;        // Size of direct color blue mask (linear modes)
+    uint8_t  LinBlueFieldPosition;   // Bit position of lsb of blue mask (linear modes)
+    uint8_t  LinRsvdMaskSize;        // Size of direct color reserved mask (linear modes)
+    uint8_t  LinRsvdFieldPosition;   // Bit position of lsb of reserved mask (linear modes)
+    uint32_t MaxPixelClock;          // Maximum pixel clock (in Hz) for graphics mode
+    uint8_t  Reserved2[189];         // Remainder of ModeInfoBlock
     
     // That's data used by me.
     // Well, technically, I could reduce it by *a lot*.
     // But I don't. To maintain alignment.
-    uint16_t HeaderData[128];
+    uint16_t Mode;
+    uint16_t HeaderData[127];
 } __attribute__((packed));
 
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;

@@ -28,6 +28,9 @@
 //                                    void * - the destination.
 void *memcpy(void *dest, void *src, uint32_t count)
 {
+    if(!count)
+        return dest;
+    
     // Just do a simple rep movsb - good enough for now.
     __asm__ __volatile__("rep movsb" :: "c"(count), "S"(src), "D"(dest));
     return dest; 
@@ -41,6 +44,9 @@ void *memcpy(void *dest, void *src, uint32_t count)
 //                                    void * - the destination.
 void *memmove(void *dest, void *src, uint32_t count)
 {
+    if(!count)
+        return dest;
+    
     // See if src and destination are overlapping - and the src block lies previous to the destination block.
     if((src < dest) && 
       (((uint32_t)src + count) > (uint32_t)dest))
@@ -68,6 +74,9 @@ void *memmove(void *dest, void *src, uint32_t count)
 //                                    void * - the destination.
 void *memset(void *dest, uint8_t value, uint32_t count)
 {
+    if(!count)
+        return dest;
+    
     // Just do a simple rep stosb - good enough for now.
     __asm__ __volatile__("rep stosb" :: "c"(count), "D"(dest), "a"((uint32_t)value));
     return dest; 

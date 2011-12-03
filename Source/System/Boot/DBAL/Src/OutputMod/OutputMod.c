@@ -42,7 +42,7 @@ uint8_t  *TempErrorLine = (uint8_t*)0;
 void OutputModInit()
 {
     // If VGA or VBE is present, then, prepare for it.
-    if(BIT.Video.VideoFlags & (VBE_PRESENT | VGA_PRESENT))
+    if(BIT.Video.VideoFlags & GRAPHICAL_USED)
     {
         BMPHeader_t *BMPHeader = (BMPHeader_t*)BIT.Video.BackgroundImg.Location;
         
@@ -78,10 +78,10 @@ void OutputModInit()
             BIT.Video.BPP = 0;
             BIT.Video.BytesBetweenLines = 0; 
                                                    
-            BIT.Video.VideoFlags &= ~GUI_MODE;
+            BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
             return;
         }
-        
+                
         // Clear the temporary buffer an draw board out.
         memset(TempBuffer, 0, NoPages * 0x1000);
         memset(DrawBoard, 0, (BIT.Video.XRes * BIT.Video.YRes * 24)/8);
@@ -109,9 +109,7 @@ void OutputModInit()
         
         //TODO: Implement this.
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-        
-        uint32_t A, B;
-        
+                
         // Blit the background image.
         BlitBuffer(DrawBoard);
     }
