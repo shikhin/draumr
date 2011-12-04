@@ -52,6 +52,10 @@ struct VBECntrlrInfo
 // Flags for ModeAttributes in VBEModeInfo.
 #define HARDWARE_INIT    (1 << 0)  // If set, can be initialized. Else, can't.
 #define GRAPHICAL_MODE   (1 << 4)  // If set, graphical mode. Else, text.
+#define LFB_AVAILABLE    (1 << 7)  // If set, LFB is supported.
+
+// Flags for DirectColorModeInfo.
+#define COLOR_RAMP_PROGRAMMABLE (1 << 0)    // If set, color ramp is programmable.
 
 // VBE Mode Info array - given by VBE.
 struct VBEModeInfo
@@ -80,7 +84,7 @@ struct VBEModeInfo
     uint8_t  MemoryModel;       // Memory model type
     uint8_t  BankSize;               // Bank size in KB
     uint8_t  NumberOfImagePages;     // Number of images
-    uint8_t  Reserved;               // Reserved for page function 
+    uint8_t  Reserved;               // Reserved for future function 
     
     // Direct Color fields (required for direct/6 and YUV/7 memory models)
     uint8_t  RedMaskSize;       // Size of direct color red mask in bits
@@ -95,8 +99,8 @@ struct VBEModeInfo
     
     // Mandatory information for VBE 2.0 and above.
     uint32_t PhysBasePtr;            // Physical address for flat memory frame buffer
-    uint32_t Reserved0;              // Reserved - always set to 0
-    uint16_t Reserved1;              // Reserved - always set to 0
+    uint32_t Score;                  // Reserved - always set to 0 - but we use it for score. ;-)
+    uint16_t Mode;                   // Reserved - always set to 0 - but we use it for the mode.
     
     // Mandatory information for VBE 3.0 and above.
     uint16_t LinBytesPerScanLine;    // Bytes per scan line for linear modes
@@ -111,17 +115,27 @@ struct VBEModeInfo
     uint8_t  LinRsvdMaskSize;        // Size of direct color reserved mask (linear modes)
     uint8_t  LinRsvdFieldPosition;   // Bit position of lsb of reserved mask (linear modes)
     uint32_t MaxPixelClock;          // Maximum pixel clock (in Hz) for graphics mode
-    uint8_t  Reserved2[189];         // Remainder of ModeInfoBlock
-    
-    // That's data used by me.
-    // Well, technically, I could reduce it by *a lot*.
-    // But I don't. To maintain alignment.
-    uint16_t Mode;
-    uint16_t HeaderData[127];
+    uint8_t  Reserved2[190];         // Remainder of ModeInfoBlock.
 } __attribute__((packed));
+
+// To verify that the video mode is in the standard RGB format - else, removes the video mode entry.
+#define VERIFY_RGB_MODE(RsvdSize, RsvdPos, RedSize, RedPos,	GreenSize, GreenPos, BlueSize, BluePos) do \
+						{											               \
+						    if((VBEModeInfo->RsvdMaskSize != RsvdSize)         ||  \
+						       (VBEModeInfo->RsvdFieldPosition != RsvdPos)     ||  \
+						       (VBEModeInfo->RedMaskSize != RedSize)           ||  \
+						       (VBEModeInfo->RedFieldPosition != RedPos)       ||  \
+						       (VBEModeInfo->GreenMaskSize != GreenSize)       ||  \
+						       (VBEModeInfo->GreenFieldPosition != GreenPos)   ||  \
+						       (VBEModeInfo->BlueMaskSize != BlueSize)         ||  \
+						       (VBEModeInfo->BlueFieldPosition != BluePos))        \
+						        goto RemoveEntry;                                  \
+						} while(0)
+						
 
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;
 typedef struct VBEModeInfo   VBEModeInfo_t;
+
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 // If no video card, initializes the serial port.
 void OutputInit();

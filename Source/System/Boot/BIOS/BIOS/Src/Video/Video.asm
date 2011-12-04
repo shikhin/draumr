@@ -225,9 +225,8 @@ GetModeInfoVBE:
     inc ebp
 
 .MoveNextOutputBuf:
-    ; Write the mode over the "mode" field, if we passed.
-    add di, 256
-    mov [es:di], cx
+    ; Write the mode over the "mode" field (reserved actually, at offset 48), if we passed.
+    mov [es:di + 48], cx
 
     ; Compare DI with the beginning of the last entry in the segment.
     cmp di, (0x10000 - 256)

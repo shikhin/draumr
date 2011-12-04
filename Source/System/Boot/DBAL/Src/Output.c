@@ -39,8 +39,8 @@ static void SwitchToMode(uint32_t Mode)
         // Switch to the mode.
         BIT.Video.SwitchVGA((uint16_t)Mode);
    
-        // If the mode is 320 * 200 * 256 colors, then set up the palette.
-        if(Mode == 0x13)
+        // If the mode is 256 colors, then set up the palette.
+        if(BIT.Video.BPP == 8)
             // Setup the palette to a RGB thingy.
 	    BIT.Video.SetupPaletteVGA();
     }
@@ -62,10 +62,10 @@ static uint32_t DetectSerialPort()
     for(uint32_t i = 0; i < 4; i++)
     {
       	// Offset 7 is the scratch register.
-	// Write 0xA5 (arbitary) to it, and check if we can read 0x2A back.
+	// Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
 	outb(Ports[i] + 7, 0xA5);
 	
-	// If we can't read 0xA5 back, then continue (assume this one's faulty or something.
+	// If we can't read 0xA5 back, then continue (assume this one's faulty or something).
 	if(inb(Ports[i] + 7) != 0xA5)
 	    continue;
       
@@ -156,8 +156,8 @@ static void FillTextInfoVBE()
         //      It isn't a text mode.
         //      It doesn't lie in the "standard VESA defined" text mode range (0x108 - 0x10C).
         // Then, remove the entry.
-        if(!(BIT.Video.VBEModeInfo[i].ModeAttributes & (1 << 0)) ||    // Can/cannot be initialized. 
-           (BIT.Video.VBEModeInfo[i].ModeAttributes & (1 << 4)) ||     // Text mode/graphics mode.
+        if(!(BIT.Video.VBEModeInfo[i].ModeAttributes & HARDWARE_INIT) ||    // Can/cannot be initialized. 
+           (BIT.Video.VBEModeInfo[i].ModeAttributes & GRAPHICAL_MODE) ||     // Text mode/graphics mode.
            (BIT.Video.VBEModeInfo[i].Mode < 0x108) ||                  // In the text mode range.
            (BIT.Video.VBEModeInfo[i].Mode > 0x10C))
         {
@@ -190,22 +190,97 @@ static void FillTextInfoVBE()
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.
 static void ParseVBEInfo()
 {
-    
+	// For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
+    VBEModeInfo_t *VBEModeInfo;
+    // Check through each entry, removing unneccessary ones.
+    for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
+    {
+        VBEModeInfo = &BIT.Video.VBEModeInfo[i];
+        
+        // If this is a text mode, continue with it, "as it is".
+        if(!(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE))
+            continue;
+        
+           // Cannot be initialized in hardware -
+        if(!(VBEModeInfo->ModeAttributes & HARDWARE_INIT) ||    
+            // We are in a 4BPP mode -
+           (VBEModeInfo->BitsPerPixel == 4) ||                  
+           // It requires bank switching, and LFB isn't supported -
+           ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
+               VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
+            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)))
+            goto RemoveEntry;
+        
+        // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
+        if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
+        {
+            // Replace all * fields with Lin* fields.
+            VBEModeInfo->BytesPerScanLine = VBEModeInfo->LinBytesPerScanLine;
+            memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize, sizeof(uint8_t) * 8);
+        }
+        
+        // If XResolution and/or Bytes Per Scan Line aren't a multiple of four,
+        // then, remove the entry.
+        if((VBEModeInfo->BytesPerScanLine % 4) ||
+           (VBEModeInfo->XResolution % 4))
+            goto RemoveEntry;
+
+		// If color ramp isn't programmable, remove entry.
+        if(VBEModeInfo->BitsPerPixel == 8)
+		{
+		    if(!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))
+		        goto RemoveEntry;
+		}
+		
+		// If rgb mode in 15bpp isn't 1:5:5:5, remove entry.   
+		else if(VBEModeInfo->BitsPerPixel == 15)
+    		VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0);
+			
+		// If rgb mode in 16bpp isn't 0:5:6:0, remove entry.
+	    else if(VBEModeInfo->BitsPerPixel == 16)
+			VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0);
+			
+		// If rgb mode in 24bpp isn't 0:8:8:8, remove entry.
+		else if(VBEModeInfo->BitsPerPixel == 24)
+			VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0);
+		
+		// If rgb mode in 32bpp isn't 8:8:8:8, remove entry.
+		else if(VBEModeInfo->BitsPerPixel == 32)
+			VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0);
+		
+		// Continue to the next entry - if we haven't had to remove anything.
+		continue;
+		
+		// Some people told me 'goto' is inherently evil. Well, at this point, I was stuck.
+		// I could simply use 'goto', and have only once piece of RemoveEntry thingy,
+		// or have a function, passed with several pointers, and several calls to it,
+		// or duplicate loads of code. So, why not just use 'goto', with well structured code.
+		RemoveEntry:    
+		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+            memmove(VBEModeInfo, &VBEModeInfo[1], 
+                    sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
+            BIT.Video.VBEModeInfoN--;
+            
+            // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
+            i--;
+    }
+
+    return;
 }
 
 // Initializes VGA for a 320*200*256 color mode.
 static void InitVGA()
 { 
-    // Go to the 320*200*256 colors mode.
-    SwitchToMode(0x13);
-
     // Fill in some general details of the video mode.
     BIT.Video.Address = (uint32_t*)0xA0000;
     BIT.Video.XRes = 320;
     BIT.Video.YRes = 200;
     BIT.Video.BPP = 8;
     BIT.Video.BytesBetweenLines = 0;
-    BIT.Video.VideoFlags |= GRAPHICAL_USED;    
+    BIT.Video.VideoFlags |= GRAPHICAL_USED;
+    
+    // Go to the 320*200*256 colors mode.
+    SwitchToMode(0x13);    
 }
         
 // Initializes VBE for a graphical mode.
@@ -247,7 +322,7 @@ static void InitVBE()
     
     // Get mode information from VBE, and the number of entries in VBEModeInfoN.
     BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
-        
+
     // If version number is below 1.2, then, certainly, only text modes would be available.
     // Thus, fill all the text mode information in VBEModeInfo[], and revert to VGA.
     if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
