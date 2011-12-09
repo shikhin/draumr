@@ -53,7 +53,7 @@ def _iso_builder(target, source, env) :
     if env["BACK"] != 0:
         shutil.copy(background, s)
 
-    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 8 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
+    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
     print("  %s[ISO]%s   %s" % (colors['blue'], colors['end'], target[0]))
     # Clean up our mess. :)
     shutil.rmtree(d)

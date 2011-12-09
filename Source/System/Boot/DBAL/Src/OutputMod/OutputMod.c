@@ -67,18 +67,10 @@ void OutputModInit()
             // Free the image buffer.
             // TODO: Implement this.
             //PMMFreeContigFrames(BIT.Video.BackgroundImg, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-                                         
-            // Go to the 80x25 mode.
-            BIT.Video.SwitchVGA(0x3);
-                                                                 
-            // Fill in some general details of the video mode.
-            BIT.Video.Address = (uint32_t*)0xB8000;
-            BIT.Video.XRes = 80;
-            BIT.Video.YRes = 25;
-            BIT.Video.BPP = 0;
-            BIT.Video.BytesBetweenLines = 0; 
-                                                   
-            BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
+            
+            // TODO: Implement this.
+            // Revert back to a usable text mode.
+            //BIT.Video.Revert();                                                                                             
             return;
         }
                 
@@ -109,8 +101,13 @@ void OutputModInit()
         
         //TODO: Implement this.
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-                
+        uint32_t A, B;
+        __asm__ __volatile__("rdtsc" : "=a"(A) :: "edx");        
         // Blit the background image.
         BlitBuffer(DrawBoard);
+        __asm__ __volatile__("rdtsc" : "=a"(B) :: "edx");
+        BIT.Video.SwitchVGA(0x03);
+        DebugPrintText("Cycles: %d\nCycles per pixel: %d\n",
+                        B - A, (B - A)/(BIT.Video.XRes * BIT.Video.YRes));
     }
 } 

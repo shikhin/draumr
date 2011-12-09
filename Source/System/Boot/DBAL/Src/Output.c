@@ -29,12 +29,12 @@
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
 static void SwitchToMode(uint32_t Mode)
 {
-    if(BIT.Video.VideoFlags & VBE_PRESENT)
+    /*if(BIT.Video.VideoFlags & VBE_PRESENT)
     {
 
     }
     
-    else 
+    else */
     {
         // Switch to the mode.
         BIT.Video.SwitchVGA((uint16_t)Mode);
@@ -193,6 +193,7 @@ static void ParseVBEInfo()
 	// For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
     VBEModeInfo_t *VBEModeInfo;
     // Check through each entry, removing unneccessary ones.
+    // P.S. Badly structured..
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
         VBEModeInfo = &BIT.Video.VBEModeInfo[i];
@@ -335,6 +336,7 @@ static void InitVBE()
     
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
+    InitVGA();
 }
 
 // Initializes the first available serial port.

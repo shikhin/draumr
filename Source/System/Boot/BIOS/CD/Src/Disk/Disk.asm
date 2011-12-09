@@ -17,7 +17,10 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-SECTION .text
+SECTION .data
+
+; The sectors read - used to return from ReadFromDiskM.
+SectorRead:       dd 0
 
 ; Provide a table for disk error messages such that printing them becomes easier.
 DiskErrTable1:
@@ -50,43 +53,37 @@ DiskErrTable2:
     dw DiskErrCmdB6
 
 
-; This section contains all the macros.
-%define           nl 0x0A, 0x0D
-
-
 ; This section contains all the Strings.
-DiskErr0          db "ERROR: Read from CD failed.", nl, 0
-DiskErr1          db "ERROR: Not able to find the Primary Volume Descriptor.", nl, 0
-DiskErr2          db "ERROR: Int 0x13 extension not supported.", nl, 0
+DiskErr0          db "ERROR: Read from CD failed.", 0
+DiskErr1          db "ERROR: Not able to find the Primary Volume Descriptor.", 0
+DiskErr2          db "ERROR: Int 0x13 extension not supported.", 0
 
 ; Error messages returned by a BIOS in AH during disk operations.
-DiskErrCmd01      db "ERROR: Invalid function in AH or invalid parameter.", nl, 0
-DiskErrCmd02      db "ERROR: Address mark not found.", nl, 0
-DiskErrCmd03      db "ERROR: Disk write-protected.", nl, 0
-DiskErrCmd04      db "ERROR: Sector not found/read error.", nl, 0
-DiskErrCmd08      db "ERROR: DMA overrun.", nl, 0
-DiskErrCmd09      db "ERROR: Data boundary error (attempted DMA across 64K boundary).", nl, 0
-DiskErrCmd0C      db "ERROR: Unsupported track or invalid media.", nl, 0
-DiskErrCmd10      db "ERROR: Uncorrectable CRC or ECC error on read.", nl, 0
-DiskErrCmd20      db "ERROR: Controller failure.", nl, 0
-DiskErrCmd31      db "ERROR: No media in drive.", nl, 0
-DiskErrCmd40      db "ERROR: Seek failed.", nl, 0
-DiskErrCmd80      db "ERROR: Timeout (not ready).", nl, 0
-DiskErrCmdB0      db "ERROR: Volume not locked in drive.", nl, 0
-DiskErrCmdB1      db "ERROR: Volume locked in drive.", nl, 0
-DiskErrCmdB2      db "ERROR: Volume not removable.", nl, 0
-DiskErrCmdB3      db "ERROR: Volume in use.", nl, 0
-DiskErrCmdB4      db "ERROR: Lock count exceeded.", nl, 0
-DiskErrCmdB5      db "ERROR: Valid eject request failed.", nl, 0
-DiskErrCmdB6      db "ERROR: Volume present but read protected.", nl, 0
+DiskErrCmd01      db "ERROR: Invalid function in AH or invalid parameter.", 0
+DiskErrCmd02      db "ERROR: Address mark not found.", 0
+DiskErrCmd03      db "ERROR: Disk write-protected.", 0
+DiskErrCmd04      db "ERROR: Sector not found/read error.", 0
+DiskErrCmd08      db "ERROR: DMA overrun.", 0
+DiskErrCmd09      db "ERROR: Data boundary error (attempted DMA across 64K boundary).", 0
+DiskErrCmd0C      db "ERROR: Unsupported track or invalid media.", 0
+DiskErrCmd10      db "ERROR: Uncorrectable CRC or ECC error on read.", 0
+DiskErrCmd20      db "ERROR: Controller failure.", 0
+DiskErrCmd31      db "ERROR: No media in drive.", 0
+DiskErrCmd40      db "ERROR: Seek failed.", 0
+DiskErrCmd80      db "ERROR: Timeout (not ready).", 0
+DiskErrCmdB0      db "ERROR: Volume not locked in drive.", 0
+DiskErrCmdB1      db "ERROR: Volume locked in drive.", 0
+DiskErrCmdB2      db "ERROR: Volume not removable.", 0
+DiskErrCmdB3      db "ERROR: Volume in use.", 0
+DiskErrCmdB4      db "ERROR: Lock count exceeded.", 0
+DiskErrCmdB5      db "ERROR: Valid eject request failed.", 0
+DiskErrCmdB6      db "ERROR: Volume present but read protected.", 0
 
 
 SECTION .base
 
-
 ; Save the boot drive number here.
 BootDrive         dd 0
-
 Retry             db 0                ; Number of times to retry a particular function - safety purposes.
 
 ALIGN 4
@@ -99,15 +96,16 @@ LBAPacket:
    .LBALow        dd 0                ; Lower DWORD of the LBA address to load.
    .LBAHigh       dd 0                ; Higher DWORD of the LBA address to load.
 
-
-FindPVDMan        db 0                ; Set to 1 if need to find PVD by basic method.
-
-
 ; Initializes the boot disk drive, and finds the Primary Volume Descriptor.
 ;     @rc
 ;                 Returns no error code but halts initialization if any error occurs.
 InitDisk:
-    pushad
+    ; Save some registers.
+    push si
+    push edi
+    push ecx
+    push ebx
+
     xor si, si                        ; If any error occurs in the future - abort using basic method.
     call CheckInt13Ext                ; Check whether Int 13 extensions are present or not.
 
@@ -127,15 +125,19 @@ InitDisk:
     cmp byte [0x9005], '1'            ; Check whether valid sector or not.
     jc .Manual         
     
-    popad
-    ret
+    jmp .Return
 
 .Manual:
-    mov byte [FindPVDMan], 1
+    mov dword [BootInfo.PVD], 0
 
-    popad
+.Return:
+    ; Restore the registers.
+    pop ebx
+    pop ecx
+    pop edi
+    pop si
+    
     ret
-
 
 ; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
 CheckBootFile:
@@ -147,10 +149,10 @@ CheckBootFile:
     jne AbortBoot                     ; The boot signature at 510 byte offset was incorrect - can't assume anything. ABORT!
 
     add edi, 0x800                    ; The file is four sectors long as of now.
-    cmp dword [di + 2040], "DRAU"     ; Check our Draumr signature.
+    cmp dword [di + 2040 + 256], "DRAU"    ; Check our Draumr signature.
     jne .FixFile
 
-    cmp dword [di + 2044], "MRSS"     ; Check our Draumr signature.
+    cmp dword [di + 2044 + 256], "MRSS"    ; Check our Draumr signature.
     je .Return
 
 ; Try to fix the boot file.
@@ -283,9 +285,6 @@ ReadFromDisk:
 
 
 SECTION .text
-
-; The sectors read - used to return from ReadFromDiskM.
-SectorRead:       dd 0
 
 ; Reads multiple sectors from disk.
 ; Expects same arguments as that for the above.

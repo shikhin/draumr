@@ -19,6 +19,13 @@
 
 BITS 16
 
+SECTION .data
+
+; Abort boot if can't open file.
+ErrorFile db "ERROR: Error occured while trying to open file.", 0
+
+; Or file is incorrect.
+ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", 0
 
 ; Entry point where the BIOS hands control.
 ;     @dl         Expects the drive number to be present in dl.
@@ -39,18 +46,9 @@ BootInfo:
     .Checksum     dd 0                ; 32 bit checksum
     times 40 db 0    
 
-
-%include "Source/System/Boot/BIOS/CD/Src/Abort.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Disk/Disk.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
-
-
-SECTION .base
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.
-    cld                               ; Clear the direction flag, so that increments happen in string instructions.
-  
+
     xor ax, ax                        ; Set all the segment registers to 0x0000.
     mov ds, ax
     mov es, ax
@@ -66,33 +64,26 @@ Main:
 
     call InitDisk
     call CheckBootFile                ; Check whether the boot file (us) is intact or not.
+
+    ; Now, once we have checked whether we are intact or not, and done stuff -
+    ; jump to extended main.
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
-times 510-($-$$) db 0
-dw 0xAA55
-
-SECTION .data
-
-; Abort boot if can't open file.
-ErrorFile db "ERROR: Error occured while trying to open file.", nl, 0
-
-; Or file is incorrect.
-ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", nl, 0
+BootSignature: 
+    times 510-($-$$) db 0
+    dw 0xAA55
 
 SECTION .text
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
 
-ExtMain:
-    push es
-    mov ax, 0xB800                    
-    mov es, ax                        ; Save 0xB800 in @es, such that @es:0x0000 points to 0xB8000.
-    call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
-    pop es
-    
-    cmp byte [FindPVDMan], 1
-    jne .FindBootFiles
+%include "Source/System/Boot/BIOS/CD/Src/Abort.asm"
+%include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
+%include "Source/System/Boot/BIOS/CD/Src/Disk/Disk.asm"
+%include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
 
+ExtMain:
+    call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					   
     call FindPVD                      ; Find the PVD manually, if need be.
 
 .FindBootFiles: 
@@ -104,19 +95,18 @@ ExtMain:
     jc .Error
     
     ; ECX contains size of file we are opening.
-
     push ecx
     
     mov ecx, 0x800                    ; Read only 0x800 bytes.
-
-    mov edi, 0x9000
-    call ReadFile                     ; Read the entire file.
+    mov edi, 0x9000                   ; At 0x9000.
+    call ReadFile                     ; Read the first sector.
     
-.CheckCommonBIOS1:
+; Check common BIOS file - basic first sector testing.
+.CheckCBIOSFirstSector:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
-    mov ecx, [0x9000 + 10]            ; Get the end of file in ECX.
+    mov ecx, [0x9000 + 16]            ; Get the end of file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x7FF
     shr ecx, 11                       ; Here we have the number of sectors of the file (according to the header).
@@ -129,25 +119,28 @@ ExtMain:
     cmp ecx, edx
     jne .Error2                       ; If they aren't equal, error.
   
+; Load the rest of the file.
 .LoadRestFile:
     add edi, 0x800
+    
+    ; Get back the stored ECX.
     pop ecx
     
     cmp ecx, 0x800
-    jb .Finish
+    jbe .Finish
 
     sub ecx, 0x800                    ; Read the rest 0x800 bytes.
-    
     call ReadFile                     ; Read the rest of the file.
     
 .Finish:
     call CloseFile                    ; And then close the file.
-
-.CheckCommonBIOS2:
-    mov ecx, [0x9000 + 10]            ; Get the end of the file in ECX.
-    sub ecx, 0x9000 + 18              ; Subtract 0x9000 (address of start) + 18 (size of header) from it, to get the size.
-        
-    mov esi, 0x9000 + 18              ; Calculate CRC from above byte 18.    
+    
+; Check rest of the common BIOS file.
+.CheckCBIOSRest:
+    mov ecx, [0x9000 + 16]            ; Get the end of the file in ECX.
+    mov esi, 0x9000 + 24              ; Calculate CRC from above byte 24.
+    
+    sub ecx, esi                      ; Subtract 0x9000 (address of start) + 24 (size of header) from it, to get the size.
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
@@ -159,23 +152,24 @@ ExtMain:
 
 .ZeroBSS:
     mov esi, 0x9000 
-    movzx edi, word [esi + 6]         ; Move the start of BSS section into EDI.
+    mov edi, [esi + 16]                ; Move the start of BSS section into EDI.
    
-    movzx ecx, word [esi + 8]
+    mov ecx, [esi + 20]
     sub ecx, edi                      ; Calculate the length, and store it in ECX.
-
+    shr ecx, 2                        ; Shift the length by 2, effectively dividing by 4.
+    
     xor eax, eax                      ; Zero out EAX, since we want to clear the region.
-    rep stosb                         ; Clear out the BSS section.
+    rep stosd                         ; Clear out the BSS section.
 
 .JmpToBIOS:
     mov eax, OpenFile
     mov ebx, ReadFile
     mov ecx, CloseFile
    
+    ; Reset esp.
     mov esp, 0x7C00
-    mov dx, [0x9004]
-    jmp dx
-
+    jmp [0x9004]
+    
 .Error:
     mov si, ErrorFile
     jmp AbortBoot

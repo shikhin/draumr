@@ -16,51 +16,10 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-
-SECTION .text
-
-
-; Finds the Primary Volume Descriptor, puts its LBA in PVDLBA and loads it at 0x9000.
-;     @rc
-;                 Aborts boot if any error occurs.
-FindPVD:
-    pushad
-    xor si, si                        ; If any error occurs, basic boot.
-    mov ecx, 1                        ; Only read one sector (2KiB).
-    mov ebx, 0x0F                     ; We should start from the 16th Sector.
-    mov edi, 0x9000 | 0x80000000      ; Read the sector at 0x9000 WITH advanced disk checking.
-
-.LoopThroughSectors:
-    inc ebx
-    call ReadFromDisk                 ; Read the disk.
-    jc AbortBoot                      ; The read from the disk failed for some reason.
-
-    cmp byte [di], 0x1                ; If the Type field contains 0x1 we just stumbled upon the Primary Volume Descriptor.
-    jne .Next 
-
-    cmp dword [di + 1], 'CD00'        ; Check if valid Volume Descriptor.
-    jne .Next                         ; No, move on to next.
-
-    cmp byte [di + 4], '1'            ; Check if valid Volume Descriptor.
-    jne .Next                         ; No, move on to next. 
-
-.Next:
-    cmp byte [di], 255                ; This is the Volume Descriptor Set Terminator. No more Volume Descriptors.
-    je AbortBoot                      ; The PVD isn't present! :-(
-
-    jmp .LoopThroughSectors
-
-.Found:
-    popad
-    mov [BootInfo.PVD], ebx
-    ret
-
-
 SECTION .data
 
 ; Some error strings.
-FilesNotFound     db "ERROR: Important boot files are not present.", nl, 0
+FilesNotFound     db "ERROR: Important boot files are not present.", 0
 
 ; Save all LBA/sizes here.
 Root:
@@ -82,6 +41,69 @@ DBAL:
 Background:
     .LBA          dd 0                ; The LBA of the Background file.
     .Size         dd 0                ; The size of the Background file in bytes.
+
+FILE:
+    .Code   db 0                      ; The "code" of the file opened. If -1, no file opened.
+    .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
+    .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
+    .Extra  dd 0                      ; The number of "extra" bytes read in the last "transaction".
+                                      ; And I'll just explain it over here. In cases of BIOS and DBAL file,
+                                      ; we need to read exact on spot. Thus, if we read anything extra in 
+                                      ; the last transaction, we carry that much over.
+    
+SECTION .text
+
+; Finds the Primary Volume Descriptor, puts its LBA in PVDLBA and loads it at 0x9000.
+;     @rc
+;                 Aborts boot if any error occurs.
+FindPVD:
+    ; Save some registers.
+    push si
+    push ecx
+    push ebx
+    push edi
+
+    cmp dword [BootInfo.PVD], 0
+    je .Return
+
+    xor si, si                        ; If any error occurs, basic boot.
+    
+    mov ecx, 1                        ; Only read one sector (2KiB).
+    mov ebx, 0x0F                     ; We should start from the 16th Sector.
+    mov edi, 0x9000 | 0x80000000      ; Read the sector at 0x9000 WITH advanced disk checking.
+
+.LoopThroughSectors:
+    inc ebx
+    
+    call ReadFromDisk                 ; Read the disk.
+    jc AbortBoot                      ; The read from the disk failed for some reason.
+
+    cmp byte [di], 0x1                ; If the Type field contains 0x1 we just stumbled upon the Primary Volume Descriptor.
+    jne .Next 
+
+    cmp dword [di + 1], 'CD00'        ; Check if valid Volume Descriptor.
+    jne .Next                         ; No, move on to next.
+
+    cmp byte [di + 4], '1'            ; Check if valid Volume Descriptor.
+    jne .Next                         ; No, move on to next. 
+
+.Next:
+    cmp byte [di], 255                ; This is the Volume Descriptor Set Terminator. No more Volume Descriptors.
+    je AbortBoot                      ; The PVD isn't present! :-(
+
+    jmp .LoopThroughSectors
+
+.Found:
+    mov [BootInfo.PVD], ebx
+    
+.Return:
+    ; Restore the registers.
+    pop edi
+    pop ebx
+    pop ecx
+    pop si
+    
+    ret
 
 ; Is responsible for finding boot files.
 ;     @rc
@@ -133,7 +155,6 @@ FindBootFiles:
     mov [Boot.LBA], ebx
     mov [Boot.Size], eax
     
-    mov edx, "BIOS"
     mov ebp, 3                        ; Number of files to load.
 
 .LoadSectorBD:
@@ -153,6 +174,9 @@ FindBootFiles:
     cmp dword [di + 33], "DBAL"       ; Sigh, how many 4 byte entries do we have?
     je .FoundDBAL
 
+    ; If not matched with anything, go on to next record.
+    jmp .NextRecordBD
+
 .CheckBGImage:
     cmp byte [di + 32], 14            ; Check the size of the directory identifier.
     jne .NextRecordBD
@@ -166,21 +190,20 @@ FindBootFiles:
     cmp dword [di + 41], ".SIF"       ; And the rest. Woof.
     jne .NextRecordBD
 
-    ; So we found the background image here. Test it.
+    ; So we found the background image here. 
+    
+    ; We don't use edx and esi in the loop/anywhere, so use them to move around
+    ; and store the LBA and Size.
+    mov edx, [di + 10]
+    mov esi, [di + 2]
+
+    mov [Background.LBA], esi
+    mov [Background.Size], edx
+
+.CheckForAllDone:
     dec ebp
-
-    push eax
-    push ebx
- 
-    mov eax, [di + 10]
-    mov ebx, [di + 2]
-
-    mov [Background.LBA], ebx
-    mov [Background.Size], eax
-
-    pop ebx
-    pop eax
-
+    
+    ; If found all files, return.
     test ebp, ebp
     jz .Return
 
@@ -199,49 +222,29 @@ FindBootFiles:
 
     jmp .NotFound                     ; If we reached here, we haven't found all the files. Abort.
 
-.FoundBIOS:
-    push eax
-    push ebx
- 
-    mov eax, [di + 10]
-    mov ebx, [di + 2]
+.FoundBIOS:   
+    mov edx, [di + 10]
+    mov esi, [di + 2]
 
-    mov [BIOS.LBA], ebx
-    mov [BIOS.Size], eax
+    mov [BIOS.LBA], esi
+    mov [BIOS.Size], edx
 
-    pop ebx
-    pop eax
+    jmp .CheckForAllDone
 
-    dec ebp
+.FoundDBAL: 
+    mov edx, [di + 10]
+    mov esi, [di + 2]
 
-    jmp .MoveOn
-
-.FoundDBAL:
-    push eax
-    push ebx
- 
-    mov eax, [di + 10]
-    mov ebx, [di + 2]
-
-    mov [DBAL.LBA], ebx
-    mov [DBAL.Size], eax
+    mov [DBAL.LBA], esi
+    mov [DBAL.Size], edx
    
-    pop ebx
-    pop eax
-
-    dec ebp
-
-.MoveOn:
-    test ebp, ebp
-    jnz .NextRecordBD
-
-    jmp .Return
+    jmp .CheckForAllDone
   
 ; Not found - abort boot.
 .NotFound:
     ; If the only thing we haven't found yet is the background image, then, can continue.
     cmp ebp, 1
-    jne .Abort
+    jg .Abort
 
     ; So 1 file hasn't been found. Is it the image?
     cmp dword [Background.LBA], 0
@@ -250,23 +253,11 @@ FindBootFiles:
 .Abort:
     ; Else, abort.
     mov si, FilesNotFound
-    mov ax, 0
     call AbortBoot
 
 .Return:
     popad
     ret
-
-SECTION .data
-
-Open:
-    .IsOpen db 0                      ; Set to 1 is a file is open.
-    .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
-    .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
-    .Read   dd 0                      ; The number of "extra" bytes read in the last "transaction".
-    .Code   db 0                      ; The "code" of the file opened.
-
-SECTION .text
 
 ; Opens a file to be read from.
 ; @al             Contains the code number of the file to open.
@@ -277,16 +268,18 @@ SECTION .text
 ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
 ;                 @ecx    The size of the file you want to open.
 OpenFile:
-    pushad
+    ; Save some variables.
+    push eax
+    push ebx
 
-    mov bl, [Open]
+    ; Check if any file is already opened. If yes, return with carry set.
+    mov bl, [FILE.Code]
+    
     test bl, bl
     jnz .Error
 
-    mov byte [Open], 1
-    mov dword [Open.Read], 0          ; Last transaction - 0 extra read.
-    mov byte [Open.Code], al
-
+    mov [FILE.Code], al
+    
     cmp al, 0
     je .BIOS                          ; 0 indicates the common BIOS file.
 
@@ -298,44 +291,49 @@ OpenFile:
 
     jmp .Error
    
+; Store the required thingies.
 .BIOS:
     mov eax, [BIOS.LBA]
-    mov [Open.LBA], eax
+    mov [FILE.LBA], eax
 
     mov eax, [BIOS.Size]
-    mov [Open.Size], eax
+    mov [FILE.Size], eax
    
     jmp .Return
 
 .DBAL:
     mov eax, [DBAL.LBA]
-    mov [Open.LBA], eax
+    mov [FILE.LBA], eax
 
     mov eax, [DBAL.Size]
-    mov [Open.Size], eax
+    mov [FILE.Size], eax
 
     jmp .Return
 
 .Background:
+    ; If the background file isn't present, return with carry set.
     mov eax, [Background.LBA]
     test eax, eax
     jz .Error
-    mov [Open.LBA], eax
+    mov [FILE.LBA], eax
 
     mov eax, [Background.Size]
-    mov [Open.Size], eax
+    mov [FILE.Size], eax
 
-.Return:
-    popad
-    mov ecx, [Open.Size] 
-    ret
+    jmp .Return
 
 .Error:
-    mov byte [Open], 0
+    mov byte [FILE.Code], 0
+    mov dword [FILE.Extra], 0
     stc 
-    popad
+    
+.Return:
+    ; Restore registers.
+    pop ebx
+    pop eax
+    
+    mov ecx, [FILE.Size] 
     ret
-
 
 ; Reads the 'next LBA' of the file currently opened.
 ; @edi            The destination address of where to read the file to.
@@ -347,26 +345,31 @@ ReadFile:
 
     mov edx, ecx                      ; Get the original number of bytes in EDX.
     add ecx, 0x7FF
-    and ecx, ~0x7FF                   ; Get it to the nearest rounded 0x800 byte thingy.
+    and ecx, ~0x7FF                   ; Get it to the highest rounded 0x800 byte thingy.
 
     mov eax, ecx                      ; Get the new number of bytes in EAX.
     sub eax, edx                      ; And now, get the extra in EAX.
     push eax                          ; Push it.
 
-    cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
+    ; Get the LBA in EBX.
+    mov ebx, [FILE.LBA]
 
+    cmp ecx, [FILE.Size]              ; If size we want to read <= size we can read continue;
     jbe .Cont
   
-    mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
-    cmp ecx, 0
-    jbe .ZeroLeft
+    mov ecx, [FILE.Size]              ; Else, we read only [FILE.Size] bytes.
+    
+    ; If which is zero, we return.
+    test ecx, ecx
+    jz .Return
 
 .Cont:
-    sub [Open.Size], ecx              ; Subtract bytes read from bytes we can read.
+    sub [FILE.Size], ecx              ; Subtract bytes read from bytes we can read.
 
 .Read:
-    add edi, [Open.Read]
-    mov ebx, [Open.LBA]               ; Get the LBA to read in EBX.
+    ; Add the extra bytes.
+    add edi, [FILE.Extra]
+    
     add ecx, 0x7FF
     shr ecx, 11                       ; And the number of sectors to read in ECX.
 
@@ -380,39 +383,30 @@ ReadFile:
    
     sub edx, ecx                      ; EDX more sectors left to do.
     test edx, edx
+    
     jz .Return                        ; Read all sectors, return.
   
     ; Now need to advance EDI.
-    push ecx                          ; Save EAX - and restore it later.
-   
-    shl ecx, 12
-    add edi, ecx
-  
-    pop ecx
+    mov ebp, ecx
+    shl ebp, 12
+    add edi, ebp
     
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
 
 .Return:
-    mov [Open.LBA], ebx               ; Store the new LBA.
-
+    mov [FILE.LBA], ebx
+    
     pop eax
-    cmp byte [Open.Code], 1
-    jg .Cont2                         ; If we're opening a file with code greater than 2, than
-                                      ; no need for the "extra" bytes read.
-
-    mov [Open.Read], eax              ; Store the read into EAX.
-
-.Cont2:
-    popad
-    ret
-
-.ZeroLeft:
-    pop eax
+    mov [FILE.Extra], eax
+    
     popad
     ret
 
 ; Closes the file currently opened.
 CloseFile:
-    mov byte [Open], 0
+    mov byte [FILE.Code], 0
+    mov dword [FILE.Extra], 0
+    mov dword [FILE.Size], 0
+    mov dword [FILE.LBA], 0
     ret

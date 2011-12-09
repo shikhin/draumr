@@ -1,4 +1,4 @@
-/* Contains common definitions to output to the screen.
+/* Contains common maths related definitions.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -8,7 +8,7 @@
 *  (at your option) any later version.
 * 
 *  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  but WITHOUT ANY WARRANTY// Without even the implied warranty of
 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 *  GNU General Public License for more details.
 * 
@@ -17,18 +17,16 @@
 *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 */
 
-#ifndef BLIT_H                      /* Blit.h */
-#define BLIT_H
-
 #include <stdint.h>
-#include <BIT.h>
+#include <Math.h>
 
-// Gives a buffer, of bpp being what we require, to be blitted to the screen.
-// uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer(uint32_t *Buffer);
-
-// Blits a buffer of 8bpp to the screen.
-// uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer8BPP(uint32_t *Buffer);
-
-#endif
+// Finds out the sqrt of a floating-point value.
+// double x                            The number whose square to find out.
+//     rc
+//                                     double - the square root of the number.
+double sqrt(double x)
+{
+   double Result;
+   __asm__ __volatile__("fsqrt" : "=t"(Result) : "0"(x));
+   return Result;
+}

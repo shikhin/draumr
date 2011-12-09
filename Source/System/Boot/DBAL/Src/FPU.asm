@@ -32,7 +32,7 @@ GLOBAL FPUInit
 ;                                     Aborts boot if unable to find a FPU.
 FPUInit:
     pushad
-
+    
 ; Try my luck with CPUID, to see if I can detect the FPU using it.
 .CPUID:
     pushfd                           ; Get the flags, and pop it into @eax.

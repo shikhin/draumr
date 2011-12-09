@@ -124,10 +124,10 @@ OpenFile:
 
     ; With error checking.
     call UsePXEAPI
-    or ax, [PXENV_TFTP_GET_FSIZE]
+    mov ax, [PXENV_TFTP_GET_FSIZE]
     test ax, ax
     jnz .Error
-    
+
     ; Store the address of the input buffer, and the opcode at BX.
     mov di, PXENV_TFTP_OPEN
     mov bx, TFTP_OPEN

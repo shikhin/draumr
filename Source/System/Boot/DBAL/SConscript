@@ -33,12 +33,13 @@ src = ["Src/Header.asm",
        "Src/BootFiles.c",
        "Src/Output.c",
        "Src/FPU.asm",
+       "Src/Math.c",
        "Src/OutputMod/OutputMod.c",
        "Src/OutputMod/Blit.c",
        "Src/OutputMod/Blit8BPP.c",
        "Src/OutputMod/Serial.c",
        "Src/OutputMod/Enhance/Scale.c",
-       "Src/OutputMod/Enhance/Dither.c"]
+       "Src/OutputMod/Enhance/Dither.c" ]
 
 
 # A target for building the DBAL binary.
