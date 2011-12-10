@@ -19,20 +19,20 @@
 
 BITS 16
 
-
 %include "Source/System/Boot/BIOS/BIOS/Format/Format.inc"
 
 SECTION .header
 ; Define the Common BIOS File Header
-EXTERN bss
-EXTERN end
+EXTERN bss_start
+EXTERN bss_end
 EXTERN file_end
 
 COMMON_BIOS
 ENTRY_POINT       Startup
-BSS_START         bss
-BSS_END           end
+FILE_START        0x9000
 FILE_END          file_end
+BSS_START         bss_start
+BSS_END           bss_end
 CRC32_DEFINE
 
 

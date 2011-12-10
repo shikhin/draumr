@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         
     else
     {
-        Status = fseek(File, 24, SEEK_SET);          // Got to beginning + 24 (after header).
+        Status = fseek(File, 28, SEEK_SET);          // Got to beginning + 24 (after header).
         if(Status)
             return -1;
 
@@ -180,14 +180,14 @@ int main(int argc, char *argv[])
             return -1;
     
         Seed ^= 0xFFFFFFFF;
-        fseek(File, 20, SEEK_SET);
+        fseek(File, 24, SEEK_SET);
         fread(&Old, 1, sizeof(uint32_t), File);
 	
-	if(Old != Seed)
-	{
-	    fseek(File, 20, SEEK_SET);
-	    fwrite(&Seed, 1, sizeof(uint32_t), File);
-	}
+	    if(Old != Seed)
+	    {
+	        fseek(File, 24, SEEK_SET);
+	        fwrite(&Seed, 1, sizeof(uint32_t), File);
+	    }
     }
     
     fclose(File);

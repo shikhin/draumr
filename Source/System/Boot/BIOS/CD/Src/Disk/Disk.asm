@@ -117,18 +117,15 @@ InitDisk:
     jc AbortBoot                      ; Abort boot if read failed.
 
     cmp byte [0x9000], 1              ; Check whether we loaded a PVD or not.
-    jc .Manual                        
+    jne AbortBoot                        
 
     cmp dword [0x9001], 'CD00'        ; Check whether valid sector or not.
-    jc .Manual         
+    jne AbortBoot         
 
     cmp byte [0x9005], '1'            ; Check whether valid sector or not.
-    jc .Manual         
+    jne AbortBoot         
     
     jmp .Return
-
-.Manual:
-    mov dword [BootInfo.PVD], 0
 
 .Return:
     ; Restore the registers.
@@ -172,10 +169,10 @@ CheckBootFile:
 
 .NextSector: 
     inc ebx                           ; Increment the LBA of sector to read.
-    dec eax                           ; Decrement the number of sectors left to read.
     add di, 0x800                     ; Add 0x800 to DI = that is the next sector.
-    test eax, eax
-    jnz .LoadSector
+    
+    dec eax                           ; Decrement the number of sectors left to read.
+    jnz .LoadSector                   ; If not zero, load next sector.
 
 ; Check whether the file on disk is corrupt or not.
 .CheckFileAgain:
@@ -201,18 +198,12 @@ CheckInt13Ext:
     mov ebx, 0x55AA
     mov edx, [BootDrive]
     int 0x13                          ; Check whether extended functions are supported or not.
-    jc .Error                         ; If carry flag is set, go to return since carry flag is set anyway.
+
+    jc AbortBoot                      ; If carry flag is set, go to return since carry flag is set anyway.
     
     cmp bx, 0xAA55                    ; If BX=0xAA55, extended versions are installed. Return.
-    je .Return
-
-    test ah, ah                       ; If AH is zero, the call was successful. Return.
-    je .Return                        
-
-.Error:
-    xor si, si
-    jmp AbortBoot                    ; Abort boot using base method.
-    
+    jne AbortBoot
+   
 .Return:
     popad
     ret                               
@@ -227,8 +218,10 @@ CheckInt13Ext:
 ;     @rc
 ;                 Aborts boot if unsuccesful.
 ReadFromDisk:
-    mov byte [Retry], 3
     pushad
+
+    ; Retry 3 times before failing.
+    mov byte [Retry], 3
     mov ebp, edi
 
     ; Get rid of the "perform advacned checking" flag, since it is already stored at in ebp.
@@ -254,15 +247,8 @@ ReadFromDisk:
     jnc .Success
 
 .Error:
-    push ebx
-    
-    mov bl, [Retry]
-    dec bl
-    mov [Retry], bl
-    test bl, bl
-    
-    pop ebx
-    je .Abort
+    dec byte [Retry]
+    jz .Abort
 
     clc
     jmp .Retry
@@ -296,7 +282,8 @@ ReadFromDiskM:
    
     mov ebp, edi
 
-    ; Get rid of the "perform advanced checking" flag, since it is already stored at in ebp.
+    ; Get rid of the "perform advanced checking" flag, since it is 
+    ; already stored at in @ebp.
     and edi, 0x7FFFFFFF
     mov eax, edi
     and eax, 0xFFFF0000
@@ -323,12 +310,11 @@ ReadFromDiskM:
    
     jc .Single                        ; If we failed, try the single by single method.
 
-    movzx ecx, word [LBAPacket.Sectors]; Let's check if the sectors read is zero - if zero, move to single.
-    test ecx, ecx
-    jz .Single                        ; If zero, move to single.
+    cmp word [LBAPacket.Sectors], 0   ; Let's check if the sectors read is zero - if zero, move to single.
+    je .Single                        ; If zero, move to single.
 
+    movzx ecx, word [LBAPacket.Sectors]
     mov [SectorRead], ecx             ; Let's store the number of sectors read in SectorRead.
-
     jmp .Return
 
 .Single:
@@ -338,16 +324,16 @@ ReadFromDiskM:
     mov eax, ecx
     ; And read one sector at a time - the recommended method.
     mov ecx, 1
-
+   
+    ; Restore the original ebp.
     mov edi, ebp
-
+    
 .Loop:
     call ReadFromDisk
     
     ; Decrease the count of sectors to read.
-    dec eax
     ; If read all sectors, end.
-    test eax, eax
+    dec eax
     jz .Return
     
     inc ebx                           ; Increase the LBA.
@@ -450,5 +436,3 @@ GetErrorMsg:
 .Generic:
     mov si, DiskErr0
     ret
-
-

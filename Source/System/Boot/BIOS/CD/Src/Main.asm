@@ -61,10 +61,10 @@ Main:
     sti
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
-
+    
     call InitDisk
     call CheckBootFile                ; Check whether the boot file (us) is intact or not.
-
+    
     ; Now, once we have checked whether we are intact or not, and done stuff -
     ; jump to extended main.
     jmp ExtMain
@@ -84,13 +84,11 @@ SECTION .text
 
 ExtMain:
     call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					   
-    call FindPVD                      ; Find the PVD manually, if need be.
-
-.FindBootFiles: 
-    call FindBootFiles
-
+    call FindBootFiles                ; Find the boot files.
+    
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
+    
     call OpenFile                     ; Open the File.
     jc .Error
     
@@ -106,7 +104,11 @@ ExtMain:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
     jne .Error2
 
-    mov ecx, [0x9000 + 16]            ; Get the end of file in ECX.
+    ; If the starting address isn't 0x9000, abort.
+    cmp dword [0x9000 + 8], 0x9000
+    jne .Error2
+    
+    mov ecx, [0x9000 + 12]            ; Get the end of file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
     add ecx, 0x7FF
     shr ecx, 11                       ; Here we have the number of sectors of the file (according to the header).
@@ -134,11 +136,11 @@ ExtMain:
     
 .Finish:
     call CloseFile                    ; And then close the file.
-    
+   
 ; Check rest of the common BIOS file.
 .CheckCBIOSRest:
-    mov ecx, [0x9000 + 16]            ; Get the end of the file in ECX.
-    mov esi, 0x9000 + 24              ; Calculate CRC from above byte 24.
+    mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.
+    mov esi, 0x9000 + 28              ; Calculate CRC from above byte 24.
     
     sub ecx, esi                      ; Subtract 0x9000 (address of start) + 24 (size of header) from it, to get the size.
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.

@@ -24,9 +24,10 @@ SECTIONS
     .bss 0x9000 + (bss - header) :
     {
         bss = .;
+        bss_start = .;
         *(.bss)
     }
-    end = .;
+    bss_end = .;
 
     .pad 0xAFFC :
     {

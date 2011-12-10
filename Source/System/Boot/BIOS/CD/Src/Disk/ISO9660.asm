@@ -53,58 +53,6 @@ FILE:
     
 SECTION .text
 
-; Finds the Primary Volume Descriptor, puts its LBA in PVDLBA and loads it at 0x9000.
-;     @rc
-;                 Aborts boot if any error occurs.
-FindPVD:
-    ; Save some registers.
-    push si
-    push ecx
-    push ebx
-    push edi
-
-    cmp dword [BootInfo.PVD], 0
-    je .Return
-
-    xor si, si                        ; If any error occurs, basic boot.
-    
-    mov ecx, 1                        ; Only read one sector (2KiB).
-    mov ebx, 0x0F                     ; We should start from the 16th Sector.
-    mov edi, 0x9000 | 0x80000000      ; Read the sector at 0x9000 WITH advanced disk checking.
-
-.LoopThroughSectors:
-    inc ebx
-    
-    call ReadFromDisk                 ; Read the disk.
-    jc AbortBoot                      ; The read from the disk failed for some reason.
-
-    cmp byte [di], 0x1                ; If the Type field contains 0x1 we just stumbled upon the Primary Volume Descriptor.
-    jne .Next 
-
-    cmp dword [di + 1], 'CD00'        ; Check if valid Volume Descriptor.
-    jne .Next                         ; No, move on to next.
-
-    cmp byte [di + 4], '1'            ; Check if valid Volume Descriptor.
-    jne .Next                         ; No, move on to next. 
-
-.Next:
-    cmp byte [di], 255                ; This is the Volume Descriptor Set Terminator. No more Volume Descriptors.
-    je AbortBoot                      ; The PVD isn't present! :-(
-
-    jmp .LoopThroughSectors
-
-.Found:
-    mov [BootInfo.PVD], ebx
-    
-.Return:
-    ; Restore the registers.
-    pop edi
-    pop ebx
-    pop ecx
-    pop si
-    
-    ret
-
 ; Is responsible for finding boot files.
 ;     @rc
 ;                 Aborts boot if ANY error occurs.
@@ -143,8 +91,8 @@ FindBootFiles:
 
 .NextSectorRD:
     inc ebx                           ; Increase the LBA.
+    
     sub eax, 0x800                    ; Decrease number of bytes left.
-    test eax, eax
     jnz .LoadSectorRD                 ; If EAX isn't zero, load next sector and continue.
 
 .FoundBoot:
@@ -202,9 +150,7 @@ FindBootFiles:
 
 .CheckForAllDone:
     dec ebp
-    
     ; If found all files, return.
-    test ebp, ebp
     jz .Return
 
 .NextRecordBD:
@@ -216,8 +162,8 @@ FindBootFiles:
 
 .NextSectorBD:
     inc ebx                           ; Increase the LBA.
+    
     sub eax, 0x800                    ; Decrease number of bytes left.
-    test eax, eax
     jnz .LoadSectorBD                 ; If EAX isn't zero, load next sector and continue.
 
     jmp .NotFound                     ; If we reached here, we haven't found all the files. Abort.
@@ -382,8 +328,6 @@ ReadFile:
     add ebx, ecx                      ; Advance the LBA by read sectors count.
    
     sub edx, ecx                      ; EDX more sectors left to do.
-    test edx, edx
-    
     jz .Return                        ; Read all sectors, return.
   
     ; Now need to advance EDI.

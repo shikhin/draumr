@@ -38,7 +38,6 @@ AbortBoot:
     jmp $+2
     jmp $+2
 
-
     mov al, 0xD1                      ; Send lower 16-bits of count for frequency to play.            
     out 0x42, al            
 
@@ -48,8 +47,7 @@ AbortBoot:
 
     mov al, 0x11                      ; Send higher 16-bits of count for frequency to play.
     out 0x42, al        
-    
-     
+   
     in al, 0x61                  
     or al, 00000011b                  ; Set the Speaker enable (and other required) bit.
     out 0x61, al                      ; SPEAK.                   
@@ -57,6 +55,7 @@ AbortBoot:
     sti
 
 .Halt:
+    pause
     hlt
     jmp .Halt
 
