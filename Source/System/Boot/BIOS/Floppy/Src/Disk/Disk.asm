@@ -16,24 +16,51 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+SECTION .data
+
+Info:
+    .LBA          dd 0                ; Save the LBA here (for future use)
+    .Sector       dd 0                ; Save the sector here.
+    .Head         dd 0                ; Save the head here.
+    .Cylinder     dd 0                ; Save the cylinder here.
+    .Failure      db 0                ; How many times have we failed (reading all tracks at once).
+    .Read         dd 0                ; How many sectors have we read?
+
+BIOS:
+    .LBA      dd 8                    ; The LBA for the starting of the BIOS File.
+    .Size     dd 0x2000               ; The size of the BIOS File - now we know the exact number.
+
+DBAL:
+    .LBA      dd 24                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
+    .Size     dd 0                    ; The size for the DBAL file is currently unknown - perhaps later it would be known.
+
+FILE:
+    .Code   db 0                      ; Code of the file opened.
+    .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
+    .Size   dd 0                      ; The size of the file left for reading.
+
+%define SECTORS_PER_TRACK             18
+%define HEADS                         2
+%define TRACKS                        80
 
 SECTION .base
 
-; This section contains all the macros.
-%define           nl 0x0A, 0x0D
-DiskError db "ERROR: Unable to access the boot floppy drive.", nl, 0
-BootError db "ERROR: Boot file corrupt.", nl, 0
+DiskError db "ERROR: Unable to access the boot floppy drive.", 0
+BootError db "ERROR: Boot file corrupt.", 0
 
 ; Save the boot drive number here.
 BootDrive         dd 0
-
 Retry             db 0                ; Number of times to retry a particular function - safety purposes.
 
 ; Gets the complete the boot file (us).
 ;     @rc
 ;                 Aborts boot if any error occured.
 GetBootFile:
-    pushad
+    ; Save some registers we are using in this function.
+    push edi
+    push eax
+    push ecx
+    push edx
 
     mov edi, 0x7C00 + 512             ; The load address for the sectors.
     mov al, 1                         ; Head 0; Cylinder 0; Sector 1; Read 2 sector.
@@ -44,8 +71,8 @@ GetBootFile:
 .LoopGet:
     call ReadFromFloppy
     jc .Fail1
+    
     inc cl                            ; Jump to the next sector.
-
     cmp cl, 8                         ; If above 4th sector, finish.
     ja .Done
 
@@ -60,7 +87,12 @@ GetBootFile:
     jne .Fail2
 
 .Return:    
-    popad
+    ; Restore the registers we are using in this function.
+    pop edx
+    pop ecx
+    pop eax
+    pop edi
+    
     ret
 
 .Fail1:
@@ -82,22 +114,22 @@ GetBootFile:
 ;     @rc
 ;                 Sets with carry if unsuccessful.
 ReadFromFloppy:
-    mov byte [Retry], 3
     pushad
     push es
-
+    
+    ; Retry three times before failing.
+    mov byte [Retry], 3
+    
     ; Get the segment in ES.
+    mov ebx, edi
+    and ebx, 0xFFFF0000
+    shr ebx, 4
+    mov es, bx
+    
     mov bx, di
-    and edi, 0xFFFF0000
-    shr edi, 4
-
-    push ax
-    mov ax, di
-    mov es, ax
-    pop ax
     
 ; It is usually recommended to try 3 times - floppy controller can have many errors.
-.Retry:
+.Loop:
     mov ah, 0x02                    
     mov dl, [BootDrive]               ; Save the boot drive number into DL.
   
@@ -107,55 +139,27 @@ ReadFromFloppy:
 .Success:
     pop es
     popad
+    
     ret
 
 .Error:
-    push ecx
-    
-    xor ecx, ecx
-    mov cl, [Retry]
-
-    dec ecx                           ; Decrement ECX.
-    test ecx, ecx                     ; If ECX is zero, finish retrying.
+    ; If did all retry's, then abort with error.
+    dec byte [Retry]
     jz .AbortWithError
 
-    mov [Retry], cl                   ; Save the Retry value.
-    
-    pop ecx                           ; Restore ECX back.
+    ; Or clear carry, and retry.
     clc
-    jmp .Retry                        ; And Retry once again.
+    jmp .Loop                         ; And Retry once again.
     
 .AbortWithError:
-    pop ecx
-
-    stc
+    ; Return without clearing carry.
     pop es
     popad
+
     ret
 
-SECTION .data
-
-Info:
-    .LBA          dd 0                ; Save the LBA here (for future use)
-    .Sector       dd 0                ; Save the sector here.
-    .Head         dd 0                ; Save the head here.
-    .Cylinder     dd 0                ; Save the cylinder here.
-    .Failure      db 0                ; How many times have we failed (reading all tracks at once).
-    .Read         dd 0                ; How many sectors have we read?
-
-BIOS:
-    .LBA      dd 8                    ; The LBA for the starting of the BIOS File.
-    .Size     dd 0x2000               ; The size of the BIOS File - now we know the exact number.
-
-DBAL:
-    .LBA      dd 24                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
-    .Size     dd 0                    ; The size for the DBAL file is currently unknown - perhaps later it would be known.
 
 SECTION .text
-
-%define SECTORS_PER_TRACK             18
-%define HEADS                         2
-%define TRACKS                        80
 
 ; Initializes the system so that files may be opened/closed later on (finds LBA).
 InitBootFiles:
@@ -167,7 +171,7 @@ InitBootFiles:
     
     call ReadFromFloppyM              ; Read from the floppy - multiple sectors, with advanced error checking.
     
-    mov ecx, [0x9000 + 16]            ; Offset 10 of the file is the EOF address.
+    mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
     sub ecx, 0xE000                   ; Subtract Start of File to get the size of the file.
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
@@ -243,7 +247,8 @@ ReadFromFloppyM:
 
 .Fail:
     inc byte [Info.Failure]           ; Increase the failure byte.
-
+    jmp .Read                         ; And try to read again.
+    
 .Single:
     mov ebx, [Info.Read]              ; How many sectors to read - get into EBX.
 
@@ -259,9 +264,7 @@ ReadFromFloppyM:
 
     ; Decrease the count of sectors to read.
     dec ebx
- 
     ; If read all sectors, end.
-    test ebx, ebx
     jz .Return
     
     inc cl                            ; Increase the sector (which we are reading).
@@ -270,6 +273,7 @@ ReadFromFloppyM:
 
 .Return:
     popad
+    
     mov ecx, [Info.Read]
     ret
 
@@ -277,31 +281,20 @@ ReadFromFloppyM:
     mov si, DiskError
     jmp AbortBoot
 
-SECTION .data
-
-Open:
-    .IsOpen db 0                      ; Set to 1 is a file is open.
-    .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
-    .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
-
-SECTION .text
-
 ; Opens a file to be read from.
-; @al             Contains the code number of the file to open.
+; @al             Contains the code number of the file to FILE.
 ;                 0 -> Common BIOS File.
 ;                 1 -> DBAL.
 ;                 2 -> Background image.
 ;     @rc 
 ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
-;                 @ecx    The size of the file you want to open.
+;                 @ecx    The size of the file you want to FILE.
 OpenFile:
-    pushad
+    push eax
     
-    mov bl, [Open]
-    test bl, bl
-    jnz .Error
-
-    mov byte [Open], 1
+    ; If file code is 0, then return with error.
+    cmp byte [FILE.Code], 0
+    jne .Error
 
     cmp al, 0
     je .BIOS                          ; Code 0 indicates the common BIOS file.
@@ -313,30 +306,37 @@ OpenFile:
     jmp .Error
 
 .BIOS:
+    mov [FILE.Code], al
+
     mov eax, [BIOS.LBA]               ; Get the LBA in EAX.
-    mov [Open.LBA], eax
+    mov [FILE.LBA], eax
 
     mov eax, [BIOS.Size]              ; Get the Size in EAX.
-    mov [Open.Size], eax
+    mov [FILE.Size], eax
 
     jmp .Return
 
 .DBAL:
+    mov [FILE.Code], al
+
     mov eax, [DBAL.LBA]               ; Get the LBA in EAX.
-    mov [Open.LBA], eax
+    mov [FILE.LBA], eax
 
     mov eax, [DBAL.Size]
-    mov [Open.Size], eax              ; And the size.
+    mov [FILE.Size], eax              ; And the size.
 
 .Return:
-    popad
-    mov ecx, [Open.Size] 
+    mov ecx, [FILE.Size] 
+    
+    pop eax
     ret
 
 .Error:
-    mov byte [Open], 0
+    ; Set the file code to 0, and the carry flag.
+    mov byte [FILE.Code], 0
     stc 
-    popad
+    
+    pop eax
     ret
 
 ; Reads the 'next LBA' of the file currently opened.
@@ -346,19 +346,20 @@ OpenFile:
 ;                 Aborts boot if any error occured (during read, that is).
 ReadFile:
     pushad
+    
     add ecx, 0x1FF
     and ecx, ~0x1FF                   ; Pad it to the nearest 1FF byte boundary (512).
-    cmp ecx, [Open.Size]              ; If size we want to read <= size we can read continue;
+    cmp ecx, [FILE.Size]              ; If size we want to read <= size we can read continue;
     
     jbe .Cont
   
-    mov ecx, [Open.Size]              ; Else, we read only [Open.Size] bytes.
+    mov ecx, [FILE.Size]              ; Else, we read only [FILE.Size] bytes.
 
 .Cont:
-    sub [Open.Size], ecx              ; Subtract bytes read from bytes we can read.
+    sub [FILE.Size], ecx              ; Subtract bytes read from bytes we can read.
 
 .Read:
-    mov eax, [Open.LBA]               ; Get the LBA to read in EBX.
+    mov eax, [FILE.LBA]               ; Get the LBA to read in EBX.
     add ecx, 0x1FF
     shr ecx, 9                        ; And the number of sectors to read in ECX.
     
@@ -371,32 +372,24 @@ ReadFile:
     add eax, ecx                      ; Advance the LBA by read sectors count.
 
     sub edx, ecx                      ; EDX more sectors left to do.
-    test edx, edx
     jz .Return                        ; Read all sectors, return.
    
     ; Now need to advance EDI.
-    push eax                          ; Save EAX - and restore it later.
-    push edx
-
-    mov eax, ecx                      ; Get the sectors read count in ECX.
-    mov ebx, 512
-    mul ebx                           ; And multiply it by 512, and advance EDI by it.
-
-    add edi, eax
-
-    pop edx
-    pop eax
+    mov ebp, ecx
+    shl ebp, 9                        ; Shift left by 9, effectively multiplying by 512.
     
+    add edi, ebp
+
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
     
 .Return:
-    mov [Open.LBA], eax               ; Store the next LBA in Open.LBA
+    mov [FILE.LBA], eax               ; Store the next LBA in FILE.LBA
 
     popad
     ret
 
 ; Closes the file currently opened.
 CloseFile:
-    mov byte [Open], 0
+    mov byte [FILE.Code], 0
     ret

@@ -16,21 +16,17 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-SECTION .text
-
-
-BITS 16
-
-
 ; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
-;     @es         Should contain the segment containing Video Memory.
 InitScreen:
     pushad                            ; Push all general purpose registers to save them.
-
+    push es                           ; And es.
+   
+    ; Set es to 0xB800.
+    mov ax, 0xB800
+    mov es, ax
+    
     ; Set to mode 0x03, or 80*25 text mode.
-    mov ah, 0x00
-    mov al, 0x03
+    mov ax, 0x03
    
     ; SWITCH! 
     int 0x10
@@ -49,25 +45,29 @@ InitScreen:
     mov eax, 0x1F201F20               ; Set the value to set the screen to: Blue background, white foreground, blank spaces.
     rep stosd                         ; Clear the entire screen. 
     
+    pop es                            ; Restore es
     popad                             ; Pop all general registers back to save them.
     ret
 
 
-SECTION .base
-
 ; Prints a message on the screen using the BIOS.
 ;     @si         Should contain the address of the null terminated string.
 Print:
-    pushad
+    ; Save some registers.
+    push si
+    push ax
+
 .PrintLoop:
     lodsb                             ; Load the value at [@es:@si] in @al.
     test al, al                       ; If AL is the terminator character, stop printing.
+
     je .PrintDone                  	
     mov ah, 0x0E	
     int 0x10
     jmp .PrintLoop                    ; Loop till the null character not found.
 	
 .PrintDone:
-    popad                             ; Pop all general purpose registers to save them.
+    ; Restore them.
+    pop ax
+    pop si
     ret	
-
