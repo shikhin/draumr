@@ -19,8 +19,8 @@
 
 SECTION .data
 
-NoPXE       db    "ERROR: Not booted from PXE, or invalid PXE.", nl, 0
-PXEAPIError db    "ERROR: Error occured while trying to access PXE API.", nl, 0 
+NoPXE       db    "ERROR: Not booted from PXE, or invalid PXE.", 0
+PXEAPIError db    "ERROR: Error occured while trying to access PXE API.", 0 
 SIP         dd 0
 GIP         dd 0
 
@@ -73,9 +73,8 @@ InitPXE:
 .Checksum:
     add al, byte [es:bx]              ; Add the byte at es:bx to result.
     inc bx                            ; Point to next byte.
+   
     dec cx                            ; Decrement number of bytes left.
-
-    test cx, cx
     jnz .Checksum                     ; Done all bytes - return!
 
     test al, al
@@ -119,9 +118,8 @@ InitPXE:
 .Checksum2:
     add al, byte [es:bx]              ; Add the byte at es:bx to result.
     inc bx                            ; Point to next byte.
+    
     dec cx                            ; Decrement number of bytes left.
-
-    test cx, cx
     jnz .Checksum2                    ; Done all bytes - return!
 
     test al, al
@@ -140,8 +138,10 @@ InitPXE:
     ; Restore ES and BX.
     pop bx
     pop es
-    jmp .Return
 
+.Return:
+    popad
+    ret
 
 .FailPXEChecksum:
     pop bx
@@ -153,14 +153,10 @@ InitPXE:
     jmp .PXENV
 
 .NoPXE:
-    ; Mov the address of the string into SI, and zero out AX, before aborting boot.
+    ; Mov the address of the string into SI, and zero out DS and ES, before aborting boot.
     xor ax, ax
     mov ds, ax                        ; Clear out ES and DS.
     mov es, ax
  
     mov si, NoPXE
     jmp AbortBoot   
-
-.Return:
-    popad
-    ret

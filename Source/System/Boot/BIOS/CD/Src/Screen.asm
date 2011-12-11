@@ -16,9 +16,6 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-SECTION .text
-
 ; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
 InitScreen:
     pushad                            ; Push all general purpose registers to save them.
@@ -73,5 +70,4 @@ Print:
     ; Restore them.
     pop ax
     pop si
-    ret	
-
+    ret

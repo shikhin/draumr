@@ -35,7 +35,7 @@ DBAL:
     .Size     dd 0                    ; The size for the DBAL file is currently unknown - perhaps later it would be known.
 
 FILE:
-    .Code   db 0                      ; Code of the file opened.
+    .Code   db -1                     ; Code of the file opened.
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left for reading.
 
@@ -292,8 +292,8 @@ ReadFromFloppyM:
 OpenFile:
     push eax
     
-    ; If file code is 0, then return with error.
-    cmp byte [FILE.Code], 0
+    ; If file code isn't -1, then return with error.
+    cmp byte [FILE.Code], -1
     jne .Error
 
     cmp al, 0
@@ -391,5 +391,5 @@ ReadFile:
 
 ; Closes the file currently opened.
 CloseFile:
-    mov byte [FILE.Code], 0
+    mov byte [FILE.Code], -1
     ret

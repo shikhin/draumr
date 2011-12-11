@@ -43,7 +43,7 @@ Background:
     .Size         dd 0                ; The size of the Background file in bytes.
 
 FILE:
-    .Code   db 0                      ; The "code" of the file opened. If -1, no file opened.
+    .Code   db -1                     ; The "code" of the file opened. If -1, no file opened.
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
     .Extra  dd 0                      ; The number of "extra" bytes read in the last "transaction".
@@ -219,10 +219,8 @@ OpenFile:
     push ebx
 
     ; Check if any file is already opened. If yes, return with carry set.
-    mov bl, [FILE.Code]
-    
-    test bl, bl
-    jnz .Error
+    cmp byte [FILE.Code], -1
+    jne .Error
 
     mov [FILE.Code], al
     
@@ -349,7 +347,7 @@ ReadFile:
 
 ; Closes the file currently opened.
 CloseFile:
-    mov byte [FILE.Code], 0
+    mov byte [FILE.Code], -1
     mov dword [FILE.Extra], 0
     mov dword [FILE.Size], 0
     mov dword [FILE.LBA], 0
