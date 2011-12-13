@@ -122,7 +122,7 @@ ReadFromFloppy:
     
     ; Get the segment in ES.
     mov ebx, edi
-    and ebx, 0xFFFF0000
+    and edi, 0x000F
     shr ebx, 4
     mov es, bx
     
@@ -247,8 +247,7 @@ ReadFromFloppyM:
 
 .Fail:
     inc byte [Info.Failure]           ; Increase the failure byte.
-    jmp .Read                         ; And try to read again.
-    
+
 .Single:
     mov ebx, [Info.Read]              ; How many sectors to read - get into EBX.
 
@@ -263,7 +262,7 @@ ReadFromFloppyM:
     jc .Error
 
     ; Decrease the count of sectors to read.
-    dec ebx
+    dec ebx 
     ; If read all sectors, end.
     jz .Return
     
@@ -273,7 +272,6 @@ ReadFromFloppyM:
 
 .Return:
     popad
-    
     mov ecx, [Info.Read]
     ret
 
@@ -376,10 +374,9 @@ ReadFile:
    
     ; Now need to advance EDI.
     mov ebp, ecx
-    shl ebp, 9                        ; Shift left by 9, effectively multiplying by 512.
-    
+    shl ebp, 9
     add edi, ebp
-
+    
     mov ecx, edx                      ; If not, read EDX (sectors left to do) sectors next time.
     jmp .Loop
     

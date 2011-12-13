@@ -147,7 +147,7 @@ Startup:
     
     cmp ecx, 0x200
     jbe .Finish
-
+    
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
    
     call [ReadFile]                   ; Read the rest of the file.
@@ -168,7 +168,7 @@ BITS 32
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
-
+    
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
             
