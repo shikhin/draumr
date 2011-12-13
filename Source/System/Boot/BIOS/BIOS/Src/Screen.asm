@@ -26,10 +26,12 @@ BITS 16
 ;     @si         Should contain the address of the null terminated string.
 Print:
     pushad
+
 .PrintLoop:
     lodsb                             ; Load the value at [@es:@si] in @al.
     test al, al                       ; If AL is the terminator character, stop printing.
     je .PrintDone                  	
+    
     mov ah, 0x0E	
     int 0x10
     jmp .PrintLoop                    ; Loop till the null character not found.

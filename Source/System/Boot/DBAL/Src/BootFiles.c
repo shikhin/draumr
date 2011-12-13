@@ -140,7 +140,7 @@ FILE_t BootFilesBGImg()
     {
         return File;
     }
-    
+
     // Read 2048 bytes at the bouncer
     BIT.ReadFile((uint32_t*)Bouncer, 2048);
     
@@ -149,7 +149,7 @@ FILE_t BootFilesBGImg()
     if((Signature[0] != 'B') ||
        (Signature[1] != 'M'))
     {
-        File.Size = 0;
+		File.Size = 0;
         return File;
     }
     
@@ -167,17 +167,17 @@ FILE_t BootFilesBGImg()
   
     memcpy(OutputBuffer, Bouncer, 2048);
     OutputBuffer += 2048;
-    
+  
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
     while(Size > BouncerSize)
     {
-        BIT.ReadFile((uint32_t*)Bouncer, BouncerSize);
+		BIT.ReadFile((uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
         
         Size -= BouncerSize;
         OutputBuffer += BouncerSize;
     }
-            
+           
     // If they are any left over bytes, read them.
     if(Size)
     {
@@ -186,13 +186,13 @@ FILE_t BootFilesBGImg()
     }
     
     uint32_t CRC32 = *(uint32_t*)((uint8_t*)File.Location + 6);
-    
+
     if(CRC32 != ~CRC(0xFFFFFFFF, File.Size - 50, (uint8_t*)File.Location + 50))
     {
         // TODO: Implement this.
         //PMMFreeContigFrames(POOL_STACK, File.Location, File.Size);
         File.Size = 0;
     }
-    
+
     return File;
 }

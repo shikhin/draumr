@@ -27,8 +27,6 @@ FindTables:
 
     movzx esi, word [0x40E]
     shl esi, 4                        ; Usually, the word at 0x40E contains the address of EBDA shifted right by 4.
-    
-    test esi, esi                     ; If ESI contains 0, then assume that no EBDA is present, or something.
     jz .Cont
    
     ; Check the first kilobyte of the EBDA.
@@ -70,11 +68,9 @@ FindTables:
     push ecx                          ; Save ECX - since it's used in the Checksum process.
 
     ; The length is at offset 8 - in 16 byte units.
-    movzx eax, byte [esi + 8]
-    mov ecx, 0x10                     ; Multiple it by 0x10.
-    mul ecx                           ; And get the result in ECX.
-
-    mov ecx, eax                      ; And use it to calculate the checksum.
+    movzx ecx, byte [esi + 8]
+    shl ecx, 4                        ; Shift left by 4, effectively multiplying by 16
+    
     call Checksum
 
     pop ecx
@@ -89,10 +85,9 @@ FindTables:
 ; Move on to the next entry.
 .EBDANext:
     ; Move on 16 byte boundaries.
-    sub ecx, 0x10
     add esi, 0x10
 
-    test ecx, ecx
+    sub ecx, 0x10
     jz .Cont
 
     ; If ACPI is zero, loop.
@@ -164,11 +159,9 @@ FindTables:
     push ecx                          ; Save ECX - since it's used in the Checksum process.
 
     ; The length is at offset 8 - in 16 byte units.
-    movzx eax, byte [esi + 8]
-    mov ecx, 0x10                     ; Multiple it by 0x10.
-    mul ecx                           ; And get the result in ECX.
-
-    mov ecx, eax                      ; And use it to calculate the checksum.
+    movzx ecx, byte [esi + 8]
+    shl ecx, 4                         ; Shift left by 4, effectively dividing by 16.
+     
     call Checksum
 
     pop ecx
@@ -205,11 +198,10 @@ FindTables:
 ; Move on to the next entry.
 .BIOSNext:
     ; Move on 16 byte boundaries.
-    sub ecx, 0x10
     add esi, 0x10
 
     ; If we completed all entries - end.
-    test ecx, ecx
+    sub ecx, 0x10
     jz .Return
 
     ; If ACPI is zero, loop.
@@ -248,7 +240,6 @@ Checksum:
 
     ; Decrease the number of bytes left - and check for zero.
     dec ecx
-    test ecx, ecx
     jnz .Loop
 
 .Return:

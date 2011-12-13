@@ -367,6 +367,8 @@ void OutputInit()
     
     // If we are using a graphical mode, then load the background image.
     if(BIT.Video.VideoFlags & GRAPHICAL_USED)
+    {
         // Open the file, and get it's information.
         BIT.Video.BackgroundImg = BootFilesBGImg();
+    }
 }

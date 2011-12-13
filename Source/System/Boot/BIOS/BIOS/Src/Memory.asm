@@ -16,6 +16,10 @@
 ; with this program; if not, write to the Free Software Foundation, Inc.,
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+%define BD_CD      0
+%define BD_FLOPPY  1
+%define BD_PXE     2
+
 SECTION .text
 
 ; Tries to build a advanced, sophisticated, sorted, memory map.
@@ -27,6 +31,19 @@ MMapBuild:
 .Prepare:
     mov di, MMap
     xor bp, bp                        ; The number of entries in the MMap.
+
+; TODO: Check if were booted from PXE, and if yes - mark the portion from 0x80000 to 0xC0000 as reclaimable.
+    cmp byte [BIT.BDFlags], BD_PXE
+    jne .BDA
+    
+.PXE:
+    ; Set the PXE entry as 0x80000->0xC0000 of type 2, boot code (so that it can be reclaimed later).
+    mov dword [di + 0], 0x80000
+    mov dword [di + 8], 0x40000
+    mov dword [di + 16], 2
+    mov dword [di + 20], 1
+    add di, 24
+    inc bp
 
 .BDA:    
     ; Set the BDA entry as 0x400->0x500 of type 4, unusable RAM.
@@ -122,10 +139,10 @@ MMapBuild:
     call E8X1                         
     jnc .Clean        
 
-; Well, this is really confusing - which one is more reliable? I assume 0x8A is more reliable than 0xDA88.
-.8A:
     clc
 
+; Well, this is really confusing - which one is more reliable? I assume 0x8A is more reliable than 0xDA88.
+.8A:
     ; Clear out EDX and EAX - since we'd need the higher word to be clear in any case.
     xor edx, edx
     xor eax, eax

@@ -35,19 +35,19 @@ BSS_START         bss_start
 BSS_END           bss_end
 CRC32_DEFINE
 
-
 SECTION .data
 BIT:
-    .OpenFile     dd 0
-    .ReadFile     dd 0
-    .CloseFile    dd 0
+    .OpenFile     dd OpenFileWrapper
+    .ReadFile     dd ReadFileWrapper
+    .CloseFile    dd CloseFileWrapper
     .HrdwreFlags  db 0                ; The "hardware" flags.
-  
+    .BDFlags      db 0                ; The boot device flags.
+    
     .ACPI         dd 0                ; The 32-bit address of the RSDP.
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
-    .MMap         dd 0                ; The 32-bit address of the MMap.
+    .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
 
     ; BIT Video stuff here.
     .VideoFlags      db 0             ; The "video" flags.
@@ -55,14 +55,14 @@ BIT:
     .VBEModeInfo     dd 0             ; The 32-bit address of the VBE Mode Info block.
     .VBEModeInfoN    dd 0             ; The number of entries in the VBE Mode Info block.
 
-    .SwitchVGA       dd 0             ; The 32-bit address of the function to switch to a VGA mode.
-    .SetupPaletteVGA dd 0             ; The 32-bit address of the function to set up the palette in 8bpp modes.
-    .GetModeInfoVBE  dd 0             ; The 32-bit address of the function to get mode information from VBE.
+    .SwitchVGA       dd SwitchVGAWrapper        ; The 32-bit address of the function to switch to a VGA mode.
+    .SetupPaletteVGA dd SetupPaletteVGAWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
+    .GetModeInfoVBE  dd GetModeInfoVBEWrapper	; The 32-bit address of the function to get mode information from VBE.
 
 ; Put all the real-mode functions to handle files here.
-OpenFile dd 0
-ReadFile dd 0
-CloseFile dd 0
+OpenFile:          dd 0
+ReadFile:          dd 0
+CloseFile:         dd 0
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -81,26 +81,27 @@ ErrorBIOSFile db "ERROR: Error occured while trying to parse the DBAL file.", 0
 ClosingWhileNotOpened db "ERROR: Trying to close a file, while none has been opened yet.", 0
 
 SECTION .text
-GLOBAL Startup
 
+%include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
+
+GLOBAL Startup
 ; Point where the Stage 1 boot loader handles control.
 ; @ss:sp          Should point to 0x7C00.
 ; @eax            Should point to the OpenFile function.
 ; @ebx            Should point to the ReadFile function.
 ; @ecx            Should point to the CloseFile function.
+; @edx            Should contain the BD flags.
 Startup:
     mov [OpenFile], eax
     mov [ReadFile], ebx
     mov [CloseFile], ecx
-
-    ; I might do this statically, but, I may change this in the future from here - better idea (and doesn't take THAT much time).
-    mov dword [BIT.SwitchVGA], SwitchVGAWrapper
-    mov dword [BIT.SetupPaletteVGA], SetupPaletteVGAWrapper
-    mov dword [BIT.GetModeInfoVBE], GetModeInfoVBEWrapper
-    mov dword [BIT.OpenFile], OpenFileWrapper
-    mov dword [BIT.ReadFile], ReadFileWrapper
-    mov dword [BIT.CloseFile], CloseFileWrapper
-
+    mov [BIT.BDFlags], edx
+    
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild
@@ -110,23 +111,24 @@ Startup:
     xor ax, ax                        ; Open File 1, or DBAL file.
     inc ax
     
-    call word [OpenFile]             ; Open the File.
-    
+    call [OpenFile]                   ; Open the File.
     jc .Error
     
     ; ECX contains size of file we are opening.
     push ecx
+    
     mov ecx, 512                      ; Read only 512 bytes.
-   
     mov edi, 0xE000
     call [ReadFile]                   ; Read the entire file.
 
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
-
     jne .Error2
-
-    mov ecx, [0xE000 + 16]            ; Get the end of file in ECX - actual file size.
+    
+    cmp dword [0xE008], 0xE000        ; Check the starting address.
+    jne .Error2
+    
+    mov ecx, [0xE000 + 12]            ; Get the end of file in ECX - actual file size.
     sub ecx, 0xE000                   ; Subtract 0xE000 from it to get it's size.
     add ecx, 0x1FF
     shr ecx, 9                        ; Here we have the number of sectors of the file (according to the header).
@@ -137,7 +139,6 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
     
     cmp ecx, edx
-    
     jne .Error2                       ; If they aren't equal, error.
   
 .LoadRestFile:
@@ -145,32 +146,32 @@ Startup:
     pop ecx
     
     cmp ecx, 0x200
-    jb .Finish
+    jbe .Finish
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
-    
-    call word [ReadFile]             ; Read the rest of the file.
+   
+    call [ReadFile]                   ; Read the rest of the file.
     
 .Finish:
-    call word [CloseFile]            ; And then close the file.
+    call [CloseFile]                  ; And then close the file.
 
     ; Switch to protected mode - since we might be crossing our boundary here.
     mov ebx, .CheckDBAL2
     call SwitchToPM
 
 BITS 32
-.CheckDBAL2:
-    mov ecx, [0xE000 + 16]            ; Get the end of the file in ECX.
-    sub ecx, 0xE000 + 24              ; Subtract 0xE000 (address of start) + 24 (size of header) from it, to get the size.
+.CheckDBAL2:   
+    mov ecx, [0xE000 + 12]            ; Get the end of the file in ECX.
+    mov esi, 0xE000 + 28              ; Calculate CRC from above byte 24.
     
-    mov esi, 0xE000 + 24              ; Calculate CRC from above byte 18.    
+    sub ecx, esi                      ; Subtract 0x9000 (address of start) + 24 (size of header) from it, to get the size.
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
-    
+
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
-        
+            
     je .ZeroBSS
     
     ; If error occured, switch to Real Modee
@@ -179,18 +180,19 @@ BITS 32
 
 .ZeroBSS:
     mov esi, 0xE000 
-    mov edi, [esi + 8]                ; Move the start of BSS section into EDI.
+    mov edi, [esi + 16]               ; Move the start of BSS section into EDI.
    
-    mov ecx, [esi + 12]
+    mov ecx, [esi + 20]
     sub ecx, edi                      ; Calculate the length, and store it in ECX.
-
+    shr ecx, 2                        ; Shift ecx right by 2, effectively dividing by 4.
+    
     xor eax, eax                      ; Zero out EAX, since we want to clear the region.
-    rep stosb                         ; Clear out the BSS section.
+    rep stosd                         ; Clear out the BSS section.
 
-    jmp .Protected32
+    jmp .Cont
+
 
 BITS 16
-   
 .Error:
     mov si, ErrorFile
     jmp AbortBoot
@@ -200,9 +202,9 @@ BITS 16
     jmp AbortBoot
 
 BITS 32
-.Protected32:
+.Cont:
     call FindTables
-   
+
 ; Jump to the DBAL file here.
 .JmpToDBAL:
     ; Reset the stack - who needs all the junk anyway?
@@ -210,25 +212,10 @@ BITS 32
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
     
-    call word [0xE004]
+    call [0xE004]
 
-BITS 16
-
-SECTION .text
-
-BITS 32
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
-BITS 16
-%include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
-SECTION .text
-
-BITS 32
 ; A wrapper to the SwitchVGA function - to be done from 32-bit code.
 ; Argument pushed                     A 16-byte word, defining the mode to switch to.
 SwitchVGAWrapper:

@@ -20,6 +20,10 @@ BITS 16
 
 SECTION .data
 
+%define BD_CD        0
+%define BD_FLOPPY    1
+%define BD_PXE       2
+
 BIOSError db "ERROR: Error occured while trying to read, open or parse common BIOS File.", 0
 
 ; Prepare the PXENV_GET_CACHED_INFO structure.
@@ -158,17 +162,17 @@ Main:
     rep stosd                         ; Clear out the BSS section.
  
 .JmpToBIOS:
-    mov eax, OpenFile
-    mov ebx, ReadFile
-    mov ecx, CloseFile
-   
     xor dx, dx
     mov ss, dx
 
+    mov eax, OpenFile
+    mov ebx, ReadFile
+    mov ecx, CloseFile
+    mov edx, BD_PXE
+       
     mov esp, 0x7C00
-    
-    mov edx, [0x9004]
-    jmp edx
+    xor ebp, ebp
+    jmp [0x9004]
 
 .Error:
     xor ax, ax

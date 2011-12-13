@@ -29,9 +29,10 @@ EXTERN Main
 
 DBAL
 ENTRY_POINT       Start
+FILE_START        0xE000
+FILE_END          file_end
 BSS_START         bss
 BSS_END           end
-FILE_END          file_end
 CRC32_DEFINE
 
 ; Here, we start.

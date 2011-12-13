@@ -50,6 +50,7 @@ UsePXEAPI:
     call far [PXEAPI]
     
     add sp, 6                         ; Clean up the stack.
+    
     ret
 
 ; Initializes PXE (and checks whether the structures are correct or not).

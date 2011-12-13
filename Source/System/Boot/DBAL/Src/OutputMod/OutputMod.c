@@ -89,7 +89,7 @@ void OutputModInit()
         {
             memset(OldBuffer, 0, NoPages * 0x1000);
         }
-
+        
         // If we haven't opened the background image file, return.
         if(!BIT.Video.BackgroundImg.Size)
             return;

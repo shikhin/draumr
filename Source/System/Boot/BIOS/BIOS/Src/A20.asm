@@ -17,8 +17,6 @@
 ; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-SECTION .text
-
 ; Tries to enable A20.
 ; @rc            
 ;                 If due to any reasons we were unable to enable A20, it sets the A20_DISABLED flag in BIT.HrdwreFlags

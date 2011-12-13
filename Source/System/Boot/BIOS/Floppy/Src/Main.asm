@@ -21,6 +21,10 @@ BITS 16
 
 SECTION .data
 
+%define BD_CD        0
+%define BD_FLOPPY    1
+%define BD_PXE       2
+
 ; Abort boot if can't open file.
 ErrorFile db "ERROR: Error occured while trying to open file.", 0
 
@@ -111,7 +115,7 @@ ExtMain:
     pop ecx
     
     cmp ecx, 0x200
-    jb .Finish
+    jbe .Finish
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
     
@@ -148,11 +152,11 @@ ExtMain:
     mov eax, OpenFile
     mov ebx, ReadFile
     mov ecx, CloseFile
-   
+    mov edx, BD_FLOPPY
+       
     mov esp, 0x7C00
-   
-    mov edx, [0x9004]
-    jmp edx
+    xor ebp, ebp
+    jmp [0x9004]
 
 .Error:
     mov si, ErrorFile

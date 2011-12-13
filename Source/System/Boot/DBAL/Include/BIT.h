@@ -37,6 +37,11 @@
 // Serial flags.
 #define SERIAL_USED     (1 << 0)
 
+// Boot device flags.
+#define BD_CD           0
+#define BD_FLOPPY       1
+#define BD_PXE          2
+
 // The BIT structure.
 struct BIT
 {
@@ -46,7 +51,8 @@ struct BIT
     void     (*CloseFile)();
     
     uint8_t  HrdwreFlags;             // The "hardware" flags.
-  
+    uint8_t  BDFlags;                 // The boot device flags.
+    
     uint32_t ACPI;                    // The 32-bit address of the RSDP.
     uint32_t MPS;                     // The 32-bit address of the MPS tables.
     uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
