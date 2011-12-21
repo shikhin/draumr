@@ -40,6 +40,8 @@ BIT:
     .OpenFile     dd OpenFileWrapper
     .ReadFile     dd ReadFileWrapper
     .CloseFile    dd CloseFileWrapper
+    
+    .IPS          dq 0                ; The intstructions executed per second.
     .HrdwreFlags  db 0                ; The "hardware" flags.
     .BDFlags      db 0                ; The boot device flags.
     
@@ -86,6 +88,7 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/IPS.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
@@ -106,6 +109,7 @@ Startup:
     call EnableA20
     call MMapBuild
     call VideoInit
+    call FindIPS
 
 .LoadDBAL:    
     xor ax, ax                        ; Open File 1, or DBAL file.

@@ -45,7 +45,7 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
     // Clear out the first and second pixels' error.
     memset(TempErrorLine, 0, sizeof(uint8_t) * 6);
     for(uint32_t i = 0; i < (BIT.Video.YRes - 1); i++) 
-    {
+    {	    
         // Get the current error for blue, green and red.
         CEBlue = TempErrorLine[0];
         CEGreen = TempErrorLine[1];
