@@ -57,11 +57,16 @@ FindIPS:
     mov [Tick], dx
 
 ;  Now loop for finding ips.
+.BigLoopIPS:
+    mov ecx, 100
+
 .LoopIPS:
     ; Note. The instructions following here till the next comment are
     ; just some common instructions I use a lot.
     
     ; If it looks like very random, I intended it to be that way. ;-)
+    push ecx
+    
     xor ecx, ecx
     not ecx
     sub ecx, 0x7FFFFFFF
@@ -122,17 +127,22 @@ FindIPS:
 .C6:
     rep nop
     loop .C6
-    
-    ; Increase the counter.
-    inc dword [Counter]
 
+    pop ecx
+    dec ecx
+    jnz .LoopIPS
+    
     ; Get system time again.
     xor ah, ah
     int 0x1A
     
     ; If it is the same as last time, loop again.
     cmp [Tick], dx
-    je .LoopIPS
+    jne .Calculate
+   
+    ; Increase the counter.
+    inc dword [Counter]
+    jmp .BigLoopIPS
 
 .Calculate:
     ; Calculate the IPS based on the counter.
@@ -143,8 +153,9 @@ FindIPS:
     mov ecx, 18
     mul ecx
 
-    ; Multiply by 111 - the number of instructions - assuming 44 instructions in int 0x1A.
-    mov ecx, 111
+    ; Multiply by 75 * 100 - the number of instructions - the number of times it is looped - +50
+    ; for the big loop.
+    mov ecx, (75 * 100) + 50
     mul ecx
 
     ; Store the IPS.

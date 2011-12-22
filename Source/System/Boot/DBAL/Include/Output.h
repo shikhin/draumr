@@ -119,19 +119,15 @@ struct VBEModeInfo
 } __attribute__((packed));
 
 // To verify that the video mode is in the standard RGB format - else, removes the video mode entry.
-#define VERIFY_RGB_MODE(RsvdSize, RsvdPos, RedSize, RedPos,	GreenSize, GreenPos, BlueSize, BluePos) do \
-						{											               \
-						    if((VBEModeInfo->RsvdMaskSize != RsvdSize)         ||  \
+#define VERIFY_RGB_MODE(RsvdSize, RsvdPos, RedSize, RedPos,	GreenSize, GreenPos, BlueSize, BluePos) \
+							  ((VBEModeInfo->RsvdMaskSize != RsvdSize)         ||  \
 						       (VBEModeInfo->RsvdFieldPosition != RsvdPos)     ||  \
 						       (VBEModeInfo->RedMaskSize != RedSize)           ||  \
 						       (VBEModeInfo->RedFieldPosition != RedPos)       ||  \
 						       (VBEModeInfo->GreenMaskSize != GreenSize)       ||  \
 						       (VBEModeInfo->GreenFieldPosition != GreenPos)   ||  \
 						       (VBEModeInfo->BlueMaskSize != BlueSize)         ||  \
-						       (VBEModeInfo->BlueFieldPosition != BluePos))        \
-						        goto RemoveEntry;                                  \
-						} while(0)
-						
+						       (VBEModeInfo->BlueFieldPosition != BluePos))        						
 
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;
 typedef struct VBEModeInfo   VBEModeInfo_t;

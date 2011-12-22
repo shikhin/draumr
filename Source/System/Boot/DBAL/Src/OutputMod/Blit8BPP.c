@@ -28,23 +28,42 @@ extern uint32_t *OldBuffer;
 // uint32_t *Buffer                   The address of the buffer to blit.
 void BlitBuffer8BPP(uint32_t *Buffer)
 {
-    // Define the Video Address and the Old Buffer address (temp).
-    uint32_t *VidAddress = BIT.Video.Address,
-             *OldBufferTemp = OldBuffer;
+	if(OldBuffer)
+	{
+        // Define the Video Address and the Old Buffer address (temp).
+        uint32_t *VidAddress = BIT.Video.Address,
+                 *OldBufferTemp = OldBuffer;
 	
-    uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
-    // The outerloop for going through the Y axis.
-    for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
-    {
-	    // Loop through the X axis for the buffer - blitting the input buffer into a buffer.
-        for(uint32_t j = 0; j < BIT.Video.XRes; j += 4, OldBufferTemp++,
-                                                Buffer++, VidAddress++)
-	    {  
-	        if(*Buffer != *OldBufferTemp)
-	        {
-	            *OldBufferTemp = *Buffer;
-		        *VidAddress = *Buffer;
+        uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
+        // The outerloop for going through the Y axis.
+        for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
+        {
+	        // Loop through the X axis for the buffer - blitting the input buffer into a buffer.
+            for(uint32_t j = 0; j < BIT.Video.XRes; j += 4, OldBufferTemp++,
+                                                    Buffer++, VidAddress++)
+	        {  
+	            if(*Buffer != *OldBufferTemp)
+	            {
+	                *OldBufferTemp = *Buffer;
+		            *VidAddress = *Buffer;
+	            }
 	        }
-	    }
+        }
     }
+    
+    else
+    {
+        // Define the Video Address and the Old Buffer address (temp).
+        uint32_t *VidAddress = BIT.Video.Address;
+        
+        uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
+        uint32_t XRes = BIT.Video.XRes / 4;
+        // The outerloop for going through the Y axis.
+        for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
+        {
+			memcpy(VidAddress, Buffer, BIT.Video.XRes);
+			Buffer += XRes;
+			VidAddress += XRes;
+        }		
+	}
 }

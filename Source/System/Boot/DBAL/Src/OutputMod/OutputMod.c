@@ -101,13 +101,8 @@ void OutputModInit()
         
         //TODO: Implement this.
         //PMMFreeContigFrames(BIT.Video.BackgroundImg.Location, (BIT.Video.BackgroundImg.Size + 0xFFF)/0x1000);
-        uint32_t A, B;
-        __asm__ __volatile__("rdtsc" : "=a"(A) :: "edx");        
+           
         // Blit the background image.
         BlitBuffer(DrawBoard);
-        __asm__ __volatile__("rdtsc" : "=a"(B) :: "edx");
-        BIT.Video.SwitchVGA(0x03);
-        DebugPrintText("Cycles: %d\nCycles per pixel: %d\n",
-                        B - A, (B - A)/(BIT.Video.XRes * BIT.Video.YRes));
     }
 } 

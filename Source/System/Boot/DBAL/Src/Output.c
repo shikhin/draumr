@@ -29,12 +29,12 @@
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
 static void SwitchToMode(uint32_t Mode)
 {
-    /*if(BIT.Video.VideoFlags & VBE_PRESENT)
+    if(BIT.Video.VideoFlags & VBE_PRESENT)
     {
 
     }
     
-    else */
+    else 
     {
         // Switch to the mode.
         BIT.Video.SwitchVGA((uint16_t)Mode);
@@ -193,7 +193,6 @@ static void ParseVBEInfo()
 	// For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
     VBEModeInfo_t *VBEModeInfo;
     // Check through each entry, removing unneccessary ones.
-    // P.S. Badly structured..
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
         VBEModeInfo = &BIT.Video.VBEModeInfo[i];
@@ -210,7 +209,16 @@ static void ParseVBEInfo()
            ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
                VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
             !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)))
-            goto RemoveEntry;
+        {
+		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+            memmove(VBEModeInfo, &VBEModeInfo[1], 
+                    sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
+            BIT.Video.VBEModeInfoN--;
+            
+            // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
+            i--;
+            continue;
+        }
         
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
         if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
@@ -220,43 +228,25 @@ static void ParseVBEInfo()
             memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize, sizeof(uint8_t) * 8);
         }
         
-        // If XResolution and/or Bytes Per Scan Line aren't a multiple of four,
-        // then, remove the entry.
+        // Remove the entry if doesn't suit us..
         if((VBEModeInfo->BytesPerScanLine % 4) ||
-           (VBEModeInfo->XResolution % 4))
-            goto RemoveEntry;
-
-		// If color ramp isn't programmable, remove entry.
-        if(VBEModeInfo->BitsPerPixel == 8)
-		{
-		    if(!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))
-		        goto RemoveEntry;
-		}
-		
-		// If rgb mode in 15bpp isn't 1:5:5:5, remove entry.   
-		else if(VBEModeInfo->BitsPerPixel == 15)
-    		VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0);
-			
-		// If rgb mode in 16bpp isn't 0:5:6:0, remove entry.
-	    else if(VBEModeInfo->BitsPerPixel == 16)
-			VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0);
-			
-		// If rgb mode in 24bpp isn't 0:8:8:8, remove entry.
-		else if(VBEModeInfo->BitsPerPixel == 24)
-			VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0);
-		
-		// If rgb mode in 32bpp isn't 8:8:8:8, remove entry.
-		else if(VBEModeInfo->BitsPerPixel == 32)
-			VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0);
-		
-		// Continue to the next entry - if we haven't had to remove anything.
-		continue;
-		
-		// Some people told me 'goto' is inherently evil. Well, at this point, I was stuck.
-		// I could simply use 'goto', and have only once piece of RemoveEntry thingy,
-		// or have a function, passed with several pointers, and several calls to it,
-		// or duplicate loads of code. So, why not just use 'goto', with well structured code.
-		RemoveEntry:    
+           (VBEModeInfo->XResolution % 4)      ||
+         
+           ((VBEModeInfo->BitsPerPixel == 8) &&
+            (!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))) ||
+         
+           ((VBEModeInfo->BitsPerPixel == 15) &&
+            VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
+         
+           ((VBEModeInfo->BitsPerPixel == 16) &&
+            VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0))                        ||
+         
+           ((VBEModeInfo->BitsPerPixel == 24) &&                       
+            VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
+         
+           ((VBEModeInfo->BitsPerPixel == 32) && 
+            VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)))
+        {
 		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
             memmove(VBEModeInfo, &VBEModeInfo[1], 
                     sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
@@ -264,6 +254,7 @@ static void ParseVBEInfo()
             
             // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
             i--;
+        }
     }
 
     return;
@@ -336,7 +327,6 @@ static void InitVBE()
     
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
-    InitVGA();
 }
 
 // Initializes the first available serial port.
