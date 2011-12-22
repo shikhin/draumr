@@ -42,7 +42,7 @@ static void SwitchToMode(uint32_t Mode)
         // If the mode is 256 colors, then set up the palette.
         if(BIT.Video.BPP == 8)
             // Setup the palette to a RGB thingy.
-	    BIT.Video.SetupPaletteVGA();
+	        BIT.Video.SetupPaletteVGA();
     }
 }
 
@@ -54,83 +54,83 @@ static uint32_t DetectSerialPort()
     // Define the IO port for each of the COM port.
     static uint16_t Ports[4] = { 0x3F8,
                                  0x2F8,
-				 0x3E8,
-				 0x2E8 };
+                				 0x3E8,
+				                 0x2E8 };
 				 
     
     // Loop through the each of the port.
     for(uint32_t i = 0; i < 4; i++)
     {
       	// Offset 7 is the scratch register.
-	// Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
-	outb(Ports[i] + 7, 0xA5);
+	    // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
+	    outb(Ports[i] + 7, 0xA5);
 	
-	// If we can't read 0xA5 back, then continue (assume this one's faulty or something).
-	if(inb(Ports[i] + 7) != 0xA5)
-	    continue;
+	    // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
+	    if(inb(Ports[i] + 7) != 0xA5)
+	         continue;
       
         // At offset 1 is the Interrupt Enable register.
         // Disable all interrupts for this one.
         outb(Ports[i] + 1, 0x00);
+	 
+        // At offset 3 is the Line Control register.
+ 	    // Set the Divisor Latch Access Bit - so we set the Divisor next time.
+        outb(Ports[i] + 3, 0x80);
 	
-	// At offset 3 is the Line Control register.
-	// Set the Divisor Latch Access Bit - so we set the Divisor next time.
-	outb(Ports[i] + 3, 0x80);
+	    // Offset 0 and 1 is the divisor register too.
+	    // Set the divisor to 3, which comes out to a frequency of 38400 baud.
+	    outb(Ports[i] + 0, 0x03);
+	    outb(Ports[i] + 1, 0x00);
 	
-	// Offset 0 and 1 is the divisor register too.
-	// Set the divisor to 3, which comes out to a frequency of 38400 baud.
-	outb(Ports[i] + 0, 0x03);
-	outb(Ports[i] + 1, 0x00);
+   	    // Offset 3 is the Line Control register.
+	    // Set it to 8 bits, 1 stop, no parity.
+	    outb(Ports[i] + 3, 0x03);
 	
-	// Offset 3 is the Line Control register.
-	// Set it to 8 bits, 1 stop, no parity.
-	outb(Ports[i] + 3, 0x03);
-	
-	// Offset 4 is the Modem Control Register.
-	// 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
-	outb(Ports[i] + 4, 0x13);	
+	    // Offset 4 is the Modem Control Register.
+	    // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
+	    outb(Ports[i] + 4, 0x13);	
 
-	uint32_t Timeout = 0;
+	    uint32_t Timeout = 0;
 	
-	// Read from the Line status register.
-	// And keep looping till the transmit register isn't empty.
-	// And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	while((!(inb(Ports[i] + 5) & 0x20))
-	      && (Timeout < MIN_TIMEOUT))
-	{
-	    __asm__ __volatile__("pause");
-	    Timeout++;
-	}
+	    // Read from the Line status register.
+	    // And keep looping till the transmit register isn't empty.
+	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	    while((!(inb(Ports[i] + 5) & 0x20))
+	          && (Timeout < MIN_TIMEOUT))
+	    {
+	        __asm__ __volatile__("pause");
+	        Timeout++;
+	    }
 	
-	// If we reached timeout, the continue and assume faulty.
-	if(Timeout == MIN_TIMEOUT)
-	    continue;
+	    // If we reached timeout, the continue and assume faulty.
+	    if(Timeout == MIN_TIMEOUT)
+	        continue;
 	
-	// Output 0xA5 - now, since we are in loopback mode, the input register would also have 0xA5.
-	outb(Ports[i], 0xA5);
+   	    // Output 0xA5 - now, since we are in loopback mode, the input register would also have 0xA5.
+	    outb(Ports[i], 0xA5);
 	
-	Timeout = 0;
-	// And keep looping till we didn't recieve something.
-	// And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	while((!(inb(Ports[i] + 5) & 0x01))
-	      && (Timeout < MIN_TIMEOUT))
-	{
-	    __asm__ __volatile__("pause");
-	    Timeout++;
-	}
+	    Timeout = 0;
+	    // And keep looping till we didn't recieve something.
+	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	    while((!(inb(Ports[i] + 5) & 0x01))
+	           && (Timeout < MIN_TIMEOUT))
+	    {  
+	        __asm__ __volatile__("pause");
+	        Timeout++;
+   	    }
 	
-	// If we reached timeout, the continue and assume faulty.
-	if(Timeout == MIN_TIMEOUT)
-	    continue;
+	    // If we reached timeout, the continue and assume faulty.
+	    if(Timeout == MIN_TIMEOUT)
+	        continue;
 	
-	// If not, assume faulty or something.
-	if(inb(Ports[i]) != 0xA5)
-	    continue;
+  	    // If not, assume faulty or something.
+	    if(inb(Ports[i]) != 0xA5)
+	        continue;
 	
-	// Offset 4 is the Modem Control Register.
-	// 0x3 sets the Request to Send and the Data Terminal Ready bits.
-	outb(Ports[i] + 4, 0x3);
-	return Ports[i];
+	    // Offset 4 is the Modem Control Register.
+	    // 0x3 sets the Request to Send and the Data Terminal Ready bits.
+	    outb(Ports[i] + 4, 0x3);
+	    return Ports[i];
     }
     
     return 0x0000;
@@ -196,7 +196,16 @@ static void ParseVBEInfo()
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
         VBEModeInfo = &BIT.Video.VBEModeInfo[i];
-        
+        // If we haven't defined the PhysBasePtr - fill it.
+        if(!VBEModeInfo->PhysBasePtr)
+        {
+		    if(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)
+		        VBEModeInfo->PhysBasePtr = 0xA0000;
+		        
+		    else
+		        VBEModeInfo->PhysBasePtr = 0xB8000;	
+		}
+		
         // If this is a text mode, continue with it, "as it is".
         if(!(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE))
             continue;
@@ -231,6 +240,10 @@ static void ParseVBEInfo()
         // Remove the entry if doesn't suit us..
         if((VBEModeInfo->BytesPerScanLine % 4) ||
            (VBEModeInfo->XResolution % 4)      ||
+
+           ((VBEModeInfo->MemoryModel != 0)    &&
+            (VBEModeInfo->MemoryModel != 4)    && 
+            (VBEModeInfo->MemoryModel != 6))   ||
          
            ((VBEModeInfo->BitsPerPixel == 8) &&
             (!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))) ||
@@ -254,6 +267,7 @@ static void ParseVBEInfo()
             
             // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
             i--;
+            continue;
         }
     }
 
