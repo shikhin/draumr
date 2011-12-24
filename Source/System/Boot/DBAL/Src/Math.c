@@ -26,7 +26,19 @@
 //                                     double - the square root of the number.
 double sqrt(double x)
 {
-   double Result;
-   __asm__ __volatile__("fsqrt" : "=t"(Result) : "0"(x));
-   return Result;
+    double Result; 
+    __asm__ __volatile__("fsqrt" : "=&t"(Result) : "f"(x));
+    return Result;
+}
+
+// Finds out the log (base 2) of a floating-point value, and multiplies it with another number.
+// double x                            The number whose log 2 to find out.
+// double y                            The number to multiply to.
+//     rc
+//                                     double - the result.
+double fyl2x(double x, double y)
+{
+    double Result; 
+    __asm__ __volatile__("fyl2x" : "=&t"(Result) : "f"(x), "u"(y));
+    return Result;
 }

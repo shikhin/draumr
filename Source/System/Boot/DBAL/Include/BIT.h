@@ -69,16 +69,19 @@ struct BIT
         uint32_t        VBEModeInfoN;                    // The number of entries.
         
         void     (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
-	void     (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
-	uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
+	    void     (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
+	    uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
+
+	    uint16_t (*SwitchVBE)(uint16_t Mode);        // The function which performs the switch to a vbe mode.
+        void     (*SetupPaletteVBE)();               // The function which sets up a palette for a 8bpp mode.	    
+	    
+	    uint32_t *Address;                       // The address of the video display. 
+   	    uint32_t XRes;                           // X resolution.
+	    uint32_t YRes;                           // Y resolution.
+	    uint32_t BPP;                            // Bytes per pixel.
+	    uint32_t BytesBetweenLines;              // Bytes between lines.
 	
-	uint32_t *Address;                       // The address of the video display.
-	uint32_t XRes;                           // X resolution.
-	uint32_t YRes;                           // Y resolution.
-	uint32_t BPP;                            // Bytes per pixel.
-	uint32_t BytesBetweenLines;              // Bytes between lines.
-	
-	FILE_t   BackgroundImg;                  // Pointer to the boot image.
+	    FILE_t   BackgroundImg;                  // Pointer to the boot image.
     } __attribute__((packed)) Video;
     
     // And the serial port related things here.

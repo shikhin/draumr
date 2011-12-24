@@ -28,4 +28,11 @@
 //                                     double - the square root of the number.
 double sqrt(double x);
 
+// Finds out the log (base 2) of a floating-point value, and multiplies it with another number.
+// double x                            The number whose log 2 to find out.
+// double y                            The number to multiply to.
+//     rc
+//                                     double - the result.
+double fyl2x(double x, double y);
+
 #endif                                 /* Math.h */

@@ -57,6 +57,9 @@ struct VBECntrlrInfo
 // Flags for DirectColorModeInfo.
 #define COLOR_RAMP_PROGRAMMABLE (1 << 0)    // If set, color ramp is programmable.
 
+// The factor used for scaling BPP.
+#define BPP_SCALING_FACTOR (240)
+
 // VBE Mode Info array - given by VBE.
 struct VBEModeInfo
 {

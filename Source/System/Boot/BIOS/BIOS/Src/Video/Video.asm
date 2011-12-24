@@ -41,6 +41,70 @@ SwitchVGA:
     popad
     ret
 
+; Performs a switch to a VBE mode, using the VBE.
+;     rc
+;                                      @ax - contains the status return code.
+SwitchVBE:
+    mov bx, ax
+    mov ax, 0x4F02
+    
+    int 0x10
+   
+.Return:
+    ret
+
+; Set ups the palette for a 8bpp mode, using the VBE.
+SetupPaletteVBE:
+    pushad
+    
+    ; Clear the counter, and point edi at the output buffer.
+    mov edi, Palette
+    xor edx, edx
+
+.PaletteLoop:
+    ; Move the counter in EAX, EBX, ECX.
+    mov eax, edx
+    mov ebx, edx
+    mov ecx, edx
+
+    ; Get the red, green and blue bits in EAX, EBX, ECX.
+    shr al, 5
+    shr bl, 2
+    and cl, 0x03
+    and bl, 0x07
+
+    ; Get the values from the lookup tables.
+    mov al, [PaletteLookup3BITS + eax]
+    mov ah, [PaletteLookup3BITS + ebx]
+    mov bl, [PaletteLookup2BITS + ecx]
+    
+    ; And store them.
+    mov [di], bl
+    mov [di + 1], ax
+       
+    add di, 4
+    add dl, 0x01
+    jnc .PaletteLoop
+
+    ; Start from register 0, set 256 registers, from the table 'Palette', using AX = 0x4F09.
+    mov ax, 0x4F09
+    xor dx, dx
+    xor bl, bl
+    mov cx, 256
+    mov di, Palette
+
+    int 0x10
+    
+    ; If successful, return.
+    cmp ax, 0x4F
+    je .Return
+    
+    ; Else, use VGA.
+    call SetupPaletteVGA
+    
+.Return:
+    popad
+    ret
 
 ; Set ups the palette for a 8bpp mode, using the BIOS.
 SetupPaletteVGA:

@@ -24,14 +24,28 @@
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
+#include <Math.h>
 
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
-static void SwitchToMode(uint32_t Mode)
+//     rc
+//                                    uint16_t - the status of the switch.
+//                                             - non zero values indicate errors.
+static uint16_t SwitchToMode(uint32_t Mode)
 {
     if(BIT.Video.VideoFlags & VBE_PRESENT)
     {
-
+        // Switch to the mode, and save the status value.
+        uint16_t Return = BIT.Video.SwitchVBE((uint16_t)Mode);
+        
+        // If the mode is 256 colors, then set up the palette.
+        if((BIT.Video.BPP == 8) && (Return == 0x4F)) 
+            // Setup the palette to a RGB thingy.
+            BIT.Video.SetupPaletteVBE();
+            
+        // Get rid of 0x4F - signifying function exists.
+        Return &= ~0x4F;
+        return Return;
     }
     
     else 
@@ -43,6 +57,8 @@ static void SwitchToMode(uint32_t Mode)
         if(BIT.Video.BPP == 8)
             // Setup the palette to a RGB thingy.
 	        BIT.Video.SetupPaletteVGA();
+	        
+	    return 0x0000;
     }
 }
 
@@ -136,6 +152,56 @@ static uint32_t DetectSerialPort()
     return 0x0000;
 }
 
+// Get the best mode from VBEModeInfo[] array using all factors neccessary.
+static VBEModeInfo_t *FindBestVBEMode()
+{
+	// Ok - so I find this the best place (other than official documentation),
+	// as to what's the algorithm I use to calculate score.
+	// I won't be commenting on it further, so, read carefully, buddy.
+	
+	// Currently, I use the pythagorean theorem to find the "distance" between
+	// all the factors in a xD axis - where x is the number of factors.
+	
+	// Currently, the factors are:
+	
+	// 				a) X Resolution - this is the X resolution of the mode. It's used
+	//				   as it is.
+	
+	//				b) Y Resolution - this is the Y resolution of the mode. It's used 
+	//				   as it is.
+	
+	//				c) Bits per pixel - this is the bits per pixel of the mode. Firstly,
+	//				   log 2 of the mode is taken. This is then scaled using a pre-calculated
+	//				   scaling factor. 
+	//				   NOTE: The current scaling factor has been decided by taking the highest
+	//				   possible BPP (32), taking the log 2 (5), and then dividing a good score (1200)
+	//				   by the log 2. This comes out as 240.
+	
+	// The best mode - to be returned.
+	VBEModeInfo_t *Best = &BIT.Video.VBEModeInfo[0];
+	Best->Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
+	Best->Score = sqrt((Best->Score * Best->Score) + 
+	                   (Best->XResolution * Best->XResolution) +
+	                   (Best->YResolution * Best->YResolution));
+          
+	// Calculate the score for each mode - while side by side, finding the best mode.
+	for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
+	{
+        BIT.Video.VBEModeInfo[i].Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
+	    BIT.Video.VBEModeInfo[i].Score = sqrt((Best->Score * Best->Score) + 
+	                                     (Best->XResolution * Best->XResolution) +
+	                                     (Best->YResolution * Best->YResolution));
+	
+	    // If the score of this is greater than the best till now,
+	    // make it the best.                                     
+	    if(BIT.Video.VBEModeInfo[i].Score >
+	       Best->Score)
+	        Best = &BIT.Video.VBEModeInfo[i];
+    }
+    
+	return Best;
+}
+
 // A lookup table for text modes, for VBE < 1.2
 static uint16_t TextModeLookupTable[5][2] = 
 {
@@ -210,25 +276,6 @@ static void ParseVBEInfo()
         if(!(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE))
             continue;
         
-           // Cannot be initialized in hardware -
-        if(!(VBEModeInfo->ModeAttributes & HARDWARE_INIT) ||    
-            // We are in a 4BPP mode -
-           (VBEModeInfo->BitsPerPixel == 4) ||                  
-           // It requires bank switching, and LFB isn't supported -
-           ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
-               VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
-            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)))
-        {
-		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
-            memmove(VBEModeInfo, &VBEModeInfo[1], 
-                    sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
-            BIT.Video.VBEModeInfoN--;
-            
-            // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
-            i--;
-            continue;
-        }
-        
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
         if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
         {
@@ -238,15 +285,23 @@ static void ParseVBEInfo()
         }
         
         // Remove the entry if doesn't suit us..
-        if((VBEModeInfo->BytesPerScanLine % 4) ||
+        if(!(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
+        
+           ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
+               VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
+           !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
+           
+           (VBEModeInfo->BitsPerPixel != 8)    ||
+            
+           (VBEModeInfo->BytesPerScanLine % 4) ||
            (VBEModeInfo->XResolution % 4)      ||
 
            ((VBEModeInfo->MemoryModel != 0)    &&
             (VBEModeInfo->MemoryModel != 4)    && 
             (VBEModeInfo->MemoryModel != 6))   ||
          
-           ((VBEModeInfo->BitsPerPixel == 8) &&
-            (!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))) ||
+           //((VBEModeInfo->BitsPerPixel == 8) &&
+           // (!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))) ||
          
            ((VBEModeInfo->BitsPerPixel == 15) &&
             VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
@@ -269,6 +324,10 @@ static void ParseVBEInfo()
             i--;
             continue;
         }
+        
+        if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
+            // Set the use LFB bit.
+            VBEModeInfo->Mode |= (1 << 14);
     }
 
     return;
@@ -341,6 +400,21 @@ static void InitVBE()
     
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
+    
+    // Get the best mode from VBEModeInfo[] array - and then switch to it.
+    VBEModeInfo_t *Best = FindBestVBEMode();
+    
+    // Fill in the required info in BIT.Video.
+    BIT.Video.XRes = Best->XResolution;
+    BIT.Video.YRes = Best->YResolution;
+    BIT.Video.BPP  = Best->BitsPerPixel;
+    BIT.Video.Address = (uint32_t*)Best->PhysBasePtr;
+    BIT.Video.BytesBetweenLines = (Best->BytesPerScanLine) - 
+                                 ((Best->XResolution * Best->BitsPerPixel) / 8);
+    BIT.Video.VideoFlags |= GRAPHICAL_USED;
+    
+    // Switch to the best mode - woohoo!
+    SwitchToMode(Best->Mode);
 }
 
 // Initializes the first available serial port.

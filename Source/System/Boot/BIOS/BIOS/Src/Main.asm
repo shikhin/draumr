@@ -60,6 +60,9 @@ BIT:
     .SwitchVGA       dd SwitchVGAWrapper        ; The 32-bit address of the function to switch to a VGA mode.
     .SetupPaletteVGA dd SetupPaletteVGAWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
     .GetModeInfoVBE  dd GetModeInfoVBEWrapper	; The 32-bit address of the function to get mode information from VBE.
+    
+    .SwitchVBE       dd SwitchVBEWrapper        ; The 32-bit address of the function to switch to a VBE mode.
+    .SetupPaletteVBE dd SetupPaletteVBEWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
 
 ; Put all the real-mode functions to handle files here.
 OpenFile:          dd 0
@@ -284,6 +287,50 @@ BITS 16
 BITS 32
 .Return:
     pop eax
+    pop ebx
+    ret
+
+; A wrapper to the SwitchVBE function - to be done from 32-bit code.
+; Argument pushed                     A 16-byte word, defining the mode to switch to.
+;     rc
+;                                     uint16_t - the status of the call to VBE.
+SwitchVBEWrapper:
+    push ebx
+   
+    mov ebx, .GetInfo
+    jmp SwitchToRM                    ; Switch to Real mode, and return to GetInfo.
+
+BITS 16
+.GetInfo:
+    mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
+    call SwitchVBE                    ; Switch to the VBE mode defined.
+    push eax
+    
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    pop eax
+    pop ebx
+    ret
+
+; A wrapper to the SetupPaletteVBE function - to be done from 32-bit code.
+SetupPaletteVBEWrapper:
+    push ebx
+   
+    mov ebx, .SetupPalette
+    jmp SwitchToRM                    ; Switch to Real mode, and return to SetupPalette.
+
+BITS 16
+.SetupPalette:
+    call SetupPaletteVBE              ; Set up the palette.
+    
+    mov ebx, .Return
+    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
     pop ebx
     ret
 
