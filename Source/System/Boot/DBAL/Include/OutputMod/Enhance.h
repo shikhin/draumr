@@ -47,4 +47,10 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output);
 // NOTE: The Input & Output buffer would have a size of BIT.Video.XRes * BIT.Video.YRes
 void Convert8BPP(uint8_t *Input, uint8_t *Output);
 
+// Converts a buffer to the required BPP format, INTO the DrawBoard.
+// uint8_t  *Input                    The input buffer, which we are about to convert.
+// uint8_t  *Output                   The output buffer, where we will store the converted thingy.
+// NOTE: The Input & Output buffer would have a size of BIT.Video.XRes * BIT.Video.YRes
+void Convert15BPP(uint8_t *Input, uint8_t *Output);
+
 #endif

@@ -50,5 +50,13 @@ void BlitBuffer(uint32_t *Buffer)
             
         BlitBuffer8BPP(TempBuffer);
     }
+    
+    // For 15BPP.
+    else if(BIT.Video.BPP == 15)
+    {
+	    // Convert the buffer into 15bpp.
+	    Convert15BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
+	    BlitBuffer15BPP(TempBuffer);
+	}
 }
 

@@ -31,4 +31,8 @@ void BlitBuffer(uint32_t *Buffer);
 // uint32_t *Buffer                   The address of the buffer to blit.
 void BlitBuffer8BPP(uint32_t *Buffer);
 
+// Blits a buffer of 15bpp to the screen.
+// uint32_t *Buffer                   The address of the buffer to blit.
+void BlitBuffer15BPP(uint32_t *Buffer);
+
 #endif

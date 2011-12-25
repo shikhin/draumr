@@ -238,3 +238,33 @@ void Convert8BPP(uint8_t *Input, uint8_t *Output)
     }
 }
 
+/* 15 BPP STUFF */
+
+// Converts a buffer to the required BPP format, INTO the DrawBoard.
+// uint8_t  *Input                    The input buffer, which we are about to convert.
+// uint8_t  *Output                   The output buffer, where we will store the converted thingy.
+// NOTE: The Input & Output buffer would have a size of BIT.Video.XRes * BIT.Video.YRes
+void Convert15BPP(uint8_t *Input, uint8_t *Output)
+{
+    uint32_t InputIndex, OutputIndex;
+    uint32_t Blue, Green, Red;
+    uint16_t *OutputP = (uint16_t*)Output;
+    
+    InputIndex = OutputIndex = 0;
+        
+    for(uint32_t i = 0; i < BIT.Video.YRes; i++) 
+    {
+        for(uint32_t j = 0; j < BIT.Video.XRes; j++)
+        {
+            // Get all the colors.
+            Blue = Input[InputIndex++];
+            Green = Input[InputIndex++];
+            Red = Input[InputIndex++];
+          
+            // And output the required color.
+            OutputP[OutputIndex++] = ((Red & ~0x7) << 7) | 
+                                     ((Green & ~0x7) << 2) | ((Blue & ~0x3) >> 3);
+        }
+    }
+}
+

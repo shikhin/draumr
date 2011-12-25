@@ -291,17 +291,19 @@ static void ParseVBEInfo()
                VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
            
-           (VBEModeInfo->BitsPerPixel != 8)    ||
+           ((VBEModeInfo->BitsPerPixel != 8)   &&
+            (VBEModeInfo->BitsPerPixel != 15)) ||
             
-           (VBEModeInfo->BytesPerScanLine % 4) ||
-           (VBEModeInfo->XResolution % 4)      ||
+           ((VBEModeInfo->BytesPerScanLine * (
+             VBEModeInfo->RsvdFieldPosition + 
+             VBEModeInfo->RedFieldPosition	+
+             VBEModeInfo->GreenFieldPosition +
+             VBEModeInfo->BlueFieldPosition)) % 32) ||
+           (VBEModeInfo->XResolution % 4)           ||
 
            ((VBEModeInfo->MemoryModel != 0)    &&
             (VBEModeInfo->MemoryModel != 4)    && 
             (VBEModeInfo->MemoryModel != 6))   ||
-         
-           //((VBEModeInfo->BitsPerPixel == 8) &&
-           // (!(VBEModeInfo->DirectColorModeInfo & COLOR_RAMP_PROGRAMMABLE))) ||
          
            ((VBEModeInfo->BitsPerPixel == 15) &&
             VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
@@ -411,6 +413,9 @@ static void InitVBE()
     BIT.Video.Address = (uint32_t*)Best->PhysBasePtr;
     BIT.Video.BytesBetweenLines = (Best->BytesPerScanLine) - 
                                  ((Best->XResolution * Best->BitsPerPixel) / 8);
+    if(Best->BitsPerPixel == 15)
+        BIT.Video.BytesBetweenLines -= Best->XResolution/8;
+        
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Switch to the best mode - woohoo!

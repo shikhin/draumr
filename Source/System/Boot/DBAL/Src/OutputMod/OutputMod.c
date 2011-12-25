@@ -82,6 +82,9 @@ void OutputModInit()
         TempErrorLine = (uint8_t*)TempBuffer + ((BIT.Video.XRes * BIT.Video.YRes * 24)/8);
         
         NoPages = (BIT.Video.XRes * BIT.Video.YRes * BIT.Video.BPP)/8;
+        if(BIT.Video.BPP == 15)
+            NoPages += (BIT.Video.XRes * BIT.Video.YRes)/8;
+        
         NoPages = (NoPages + 0xFFF)/0x1000;
         // If the call fails, then other blitting code realizes it, and directly blits.
         OldBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
