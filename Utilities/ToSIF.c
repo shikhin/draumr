@@ -133,6 +133,15 @@ static void BMPToBuf(FILE *InFile)
         // And take care of the padding.
         TempBuffer += ToCopy + (ToCopy % 4);
     }
+
+    uint32_t Index, j;
+    for(j = 0; j < (BMPHeader.YSize * BMPHeader.XSize); j++, Index += 3)
+    {
+	    // Swap blue and red - fixing the color format.
+		uint32_t Blue = Buffer[Index];
+	    Buffer[Index] = Buffer[Index + 2];
+	    Buffer[Index + 2] = Blue;
+    }
     
     free(ToFree);
 }

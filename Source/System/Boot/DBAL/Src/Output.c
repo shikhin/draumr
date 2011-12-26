@@ -292,7 +292,8 @@ static void ParseVBEInfo()
            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
            
            ((VBEModeInfo->BitsPerPixel != 8)   &&
-            (VBEModeInfo->BitsPerPixel != 15)) ||
+            (VBEModeInfo->BitsPerPixel != 15)  &&
+            (VBEModeInfo->BitsPerPixel != 16)) ||
             
            ((VBEModeInfo->BytesPerScanLine * (
              VBEModeInfo->RsvdFieldPosition + 

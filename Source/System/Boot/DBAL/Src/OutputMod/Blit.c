@@ -37,6 +37,7 @@ extern uint8_t  *TempErrorLine;
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
 {
+	// NOTE: Replace this all with function pointers.
     // For 8BPP.
     if(BIT.Video.BPP == 8)
     {
@@ -57,6 +58,16 @@ void BlitBuffer(uint32_t *Buffer)
 	    // Convert the buffer into 15bpp.
 	    Convert15BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
 	    BlitBuffer15BPP(TempBuffer);
+	}
+	
+	// For 16BPP.
+	else if(BIT.Video.BPP == 16)
+	{
+		// Convert the buffer into 16bpp.
+		Convert16BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
+		
+		// 16BPP and 15BPP blitting are almost the same - so..
+		BlitBuffer15BPP(TempBuffer);
 	}
 }
 
