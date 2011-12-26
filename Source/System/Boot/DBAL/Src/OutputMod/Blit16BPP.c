@@ -1,4 +1,4 @@
-/* Contains definitions to output to the screen, in 15BPP mode.
+/* Contains definitions to output to the screen, in 16BPP mode.
 * 
 *  Copyright (c) 2011 Shikhin Sethi
 * 
@@ -28,9 +28,9 @@ extern uint32_t *OldBuffer;
 // The temporary buffer, where we keep the error for the next line.
 extern uint8_t  *TempErrorLine;
 
-// Blits a buffer of 15bpp to the screen.
+// Blits a buffer of 16bpp to the screen.
 // uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer15BPP(uint32_t *Buffer)
+void BlitBuffer16BPP(uint32_t *Buffer)
 {
 	if(OldBuffer)
 	{
@@ -47,14 +47,14 @@ void BlitBuffer15BPP(uint32_t *Buffer)
             for(uint32_t j = 0; j < BIT.Video.XRes; j += 2, OldBufferTemp++,
                                                             VidAddress++)
 	        {  
-				Value  = ((*BufferP++ & ~0x7) << 7);
-				Value |= ((*BufferP++ & ~0x7) << 2);
+				Value  = ((*BufferP++ & ~0x7) << 8);
+				Value |= ((*BufferP++ & ~0x3) << 3);
 				Value |= ((*BufferP++ & ~0x7) >> 3);
 				           
 				Value <<= 16;
 				
-				Value |= ((*BufferP++ & ~0x7) << 7);
-				Value |= ((*BufferP++ & ~0x7) << 2);
+				Value |= ((*BufferP++ & ~0x7) << 8);
+				Value |= ((*BufferP++ & ~0x3) << 3);
 				Value |= ((*BufferP++ & ~0x7) >> 3);
 				                 
 	            if(Value != *OldBufferTemp)
@@ -90,8 +90,8 @@ void BlitBuffer15BPP(uint32_t *Buffer)
                 Blue = *BufferP++;
           
                 // And output the required color.
-                *TempLine++ = ((Red & ~0x7) << 7) | 
-                               ((Green & ~0x7) << 2) | ((Blue & ~0x7) >> 3);
+                *TempLine++ = ((Red & ~0x7) << 8) | 
+                               ((Green & ~0x3) << 3) | ((Blue & ~0x7) >> 3);
             }
 
 			memcpy(VidAddress, TempErrorLine, XRes1);

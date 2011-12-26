@@ -47,22 +47,27 @@ void OutputModInit()
         BMPHeader_t *BMPHeader = (BMPHeader_t*)BIT.Video.BackgroundImg.Location;
         
         // We draw in 24BPP.
-        uint32_t NoPages = (BIT.Video.XRes * BIT.Video.YRes * 24)/8;
+        // Allocate a extra line as the temperrorline.
+        uint32_t NoPages = (BIT.Video.XRes * (BIT.Video.YRes + 1) * 24)/8;
         NoPages = (NoPages + 0xFFF)/0x1000;
         
         // If we can't allocate space for the "draw board", then gracefully return...
         // ...to text mode :P
         DrawBoard = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
         
-        // 24BPP for the temporary buffer.
-        // + 1 extra line for the temporary line buffer.
-        NoPages = (BIT.Video.XRes * (BIT.Video.YRes + 1) * 24)/8;
-        NoPages = (NoPages + 0xFFF)/0x1000;
+        // We only need a temporary buffer in 8bpp mode. 
+        if(BIT.Video.BPP == 8)
+        {
+			// 8BPP for the temporary buffer.
+            NoPages = BIT.Video.XRes * BIT.Video.YRes;
+            NoPages = (NoPages + 0xFFF)/0x1000;
+            TempBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
+            
+            // Clear the temporary buffer an draw board out.
+            memset(TempBuffer, 0, NoPages * 0x1000);  
+        }
         
-        // If allocating that fails, then go to text mode.. 
-        TempBuffer = (uint32_t*)PMMAllocContigFrames(POOL_STACK, NoPages);
-        
-        if(!DrawBoard || !TempBuffer)
+        if(!DrawBoard || (!TempBuffer && (BIT.Video.BPP == 8)))
         {
             // Free the image buffer.
             // TODO: Implement this.
@@ -74,12 +79,10 @@ void OutputModInit()
             return;
         }
                 
-        // Clear the temporary buffer an draw board out.
-        memset(TempBuffer, 0, NoPages * 0x1000);
-        memset(DrawBoard, 0, (BIT.Video.XRes * BIT.Video.YRes * 24)/8);
+        memset(DrawBoard, 0, BIT.Video.XRes * (BIT.Video.YRes + 1) * 3);
         
         // Go to the last line for the temporary error line.
-        TempErrorLine = (uint8_t*)TempBuffer + ((BIT.Video.XRes * BIT.Video.YRes * 24)/8);
+        TempErrorLine = (uint8_t*)DrawBoard + (BIT.Video.XRes * BIT.Video.YRes * 3);
         
         NoPages = (BIT.Video.XRes * BIT.Video.YRes * BIT.Video.BPP)/8;
         if(BIT.Video.BPP == 15)

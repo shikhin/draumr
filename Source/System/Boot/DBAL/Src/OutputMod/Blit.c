@@ -27,7 +27,7 @@
 // The old buffer, used for comparision to allow unneccessary copying to video memory.
 extern uint32_t *OldBuffer;
 
-// The temporary buffer, where we dither. If allocating this fails, dithering is disabled.
+// The temporary buffer, where we dither - required only for 8BPP modes.
 extern uint32_t *TempBuffer;
 
 // The temporary buffer, where we keep the error for the next line.
@@ -37,7 +37,7 @@ extern uint8_t  *TempErrorLine;
 // uint32_t *Buffer                   The address of the buffer to print.
 void BlitBuffer(uint32_t *Buffer)
 {
-	// NOTE: Replace this all with function pointers.
+	// TODO: Replace this all with function pointers.
     // For 8BPP.
     if(BIT.Video.BPP == 8)
     {
@@ -54,20 +54,10 @@ void BlitBuffer(uint32_t *Buffer)
     
     // For 15BPP.
     else if(BIT.Video.BPP == 15)
-    {
-	    // Convert the buffer into 15bpp.
-	    Convert15BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
-	    BlitBuffer15BPP(TempBuffer);
-	}
+        BlitBuffer15BPP(Buffer);
 	
 	// For 16BPP.
 	else if(BIT.Video.BPP == 16)
-	{
-		// Convert the buffer into 16bpp.
-		Convert16BPP((uint8_t*)Buffer, (uint8_t*)TempBuffer);
-		
-		// 16BPP and 15BPP blitting are almost the same - so..
-		BlitBuffer15BPP(TempBuffer);
-	}
+		BlitBuffer16BPP(Buffer);
 }
 

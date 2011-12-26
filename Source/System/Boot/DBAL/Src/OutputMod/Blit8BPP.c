@@ -58,6 +58,7 @@ void BlitBuffer8BPP(uint32_t *Buffer)
         
         uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
         uint32_t XRes = BIT.Video.XRes / 4;
+
         // The outerloop for going through the Y axis.
         for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
         {
