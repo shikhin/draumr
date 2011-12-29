@@ -27,64 +27,72 @@
 // uint32_t Y                         The previous Y size of the image.
 // uint32_t NewX                      The X to be resized to.
 // uint32_t NewY                      The Y to be resized to.
-/* NOTE: Credit to this goes to http://tech-algorithm.com/, whose algorithm has just been slightly tweaked
- * as to work with C, and 3-channel images */
 void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY) 
 {
-    uint32_t ARed, ABlue, AGreen, BRed, BBlue, BGreen, CRed, CBlue, CGreen, DRed, DGreen, DBlue;
-    uint32_t i, j, OldIndex, Index;
+	double XNewX = ((double)(X - 1)) / ((double)(NewX - 1));
+    double YNewY = ((double)(Y - 1)) / ((double)(NewY - 1));
+
+    double  cj = 0, ci;
+    uint32_t X1, Y1 = 0, X2;
+    double XOff, YOff;
     
-    float XRatio = ((float)(X - 1)) / NewX;
-    float YRatio = ((float)(Y - 1)) / NewY;
-    float XDiff, YDiff, Blue, Red, Green;
+    uint32_t C1RGB[3], C2RGB[3], C3RGB[3], C4RGB[3];
+    uint32_t Red, Green, Blue, Offset = 0;
+
+    uint8_t *Line1, *Line2;
     
     X *= 3;
-    uint32_t Offset = 0;
-    
-    for(i = 0; i < NewY; i++) 
+    for(uint32_t j = 0; j < NewY; j++, cj += YNewY, Y1 = cj)
     {
-        YDiff = (YRatio * i);
-        OldIndex = (int)YDiff * X;   
-        YDiff -= (int)(YDiff);
+        YOff = cj - Y1;
         
-        for(j = 0; j < NewX; j++)
-        {
-            XDiff = (XRatio * j);
-            Index = OldIndex + ((int)XDiff * 3);      
-            XDiff -= (int)XDiff;
+        Line1 = (uint8_t*)&Input[Y1 * X];
+        Line2 = (Y1 < (Y - 1) ? Line1 + X : (uint8_t*)&Input[(Y - 1) * X]);
+         
+        ci = 0; X1 = 0;
+        for(uint32_t i = 0; i < NewX; i++, ci += XNewX, 
+                                           X1 = (int)ci)
+        {            
+            XOff = ci  - X1;
+            X1 *= 3;
+            X2 = X1 < (X - 3) ? X1 + 3 : (X - 3);
             
-            ARed = Input[Index];
-            AGreen = Input[Index + 1];
-            ABlue = Input[Index + 2];
+            C1RGB[0] = Line1[X1];
+            C1RGB[1] = Line1[X1 + 1];
+            C1RGB[2] = Line1[X1 + 2];
             
-            BRed = Input[Index + 3];
-            BGreen = Input[Index + 4];
-            BBlue = Input[Index + 5];
+            C2RGB[0] = Line1[X2];
+            C2RGB[1] = Line1[X2 + 1];
+            C2RGB[2] = Line1[X2 + 2];
             
-            CRed = Input[Index + X];
-            CGreen = Input[Index + X + 1];
-            CBlue = Input[Index + X + 2];
+            C3RGB[0] = Line2[X1];
+            C3RGB[1] = Line2[X1 + 1];
+            C3RGB[2] = Line2[X1 + 2];
+                        
+            C4RGB[0] = Line2[X2];
+            C4RGB[1] = Line2[X2 + 1];
+            C4RGB[2] = Line2[X2 + 2];
+ 
+            // Formula.
+            // Y = A(1-w)(1-h) + B(w)(1-h) + C(h)(1-w) + D(wh)
+            Blue = (C1RGB[0] * ((1 - XOff) * (1 - YOff))) + 
+                   (C2RGB[0] * (XOff * (1 - YOff))) +
+                   (C3RGB[0] * (YOff * (1 - XOff))) +
+                   (C4RGB[0] * (XOff * YOff));
+   
+            Green = (C1RGB[1] * ((1 - XOff) * (1 - YOff))) + 
+                    (C2RGB[1] * (XOff * (1 - YOff))) +
+                    (C3RGB[1] * (YOff * (1 - XOff))) +
+                    (C4RGB[1] * (XOff * YOff));
             
-            DRed = Input[Index + X + 3];
-            DGreen = Input[Index + X + 4];
-            DBlue = Input[Index + X + 5];
-            
-            // Take care of the blue element.
-            // Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
-            Blue = ABlue * (1 - XDiff) * (1 - YDiff) + BBlue * (XDiff) * (1 - YDiff) +
-            CBlue * (YDiff) * (1 - XDiff) + DBlue * (XDiff * YDiff);
-            
-            // And green.
-            Green = AGreen * (1 - XDiff) * (1 - YDiff) + BGreen * (XDiff) * (1 - YDiff) +
-            CGreen * (YDiff) * (1 - XDiff) + DGreen * (XDiff * YDiff);
-            
-            // And red.
-            Red = ARed * (1 - XDiff) * (1 - YDiff) + BRed * (XDiff) * (1 - YDiff) +
-            CRed * (YDiff) * (1 - XDiff) + DRed * (XDiff * YDiff);
-            
-            Output[Offset++] = Red;
-            Output[Offset++] = Green;
+            Red = (C1RGB[2] * ((1 - XOff) * (1 - YOff))) + 
+                  (C2RGB[2] * (XOff * (1 - YOff))) +
+                  (C3RGB[2] * (YOff * (1 - XOff))) +
+                  (C4RGB[2] * (XOff * YOff));
+			
             Output[Offset++] = Blue;
+            Output[Offset++] = Green;
+            Output[Offset++] = Red;
         }
     }
 }

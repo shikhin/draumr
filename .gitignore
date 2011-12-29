@@ -20,3 +20,5 @@ Source/System/Boot/DBAL/DBAL
 Utilities/*.util
 *.util
 *.sh
+
+*.sublime*

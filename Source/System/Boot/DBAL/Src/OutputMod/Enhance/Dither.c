@@ -47,22 +47,22 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
     for(uint32_t i = 0; i < (BIT.Video.YRes - 1); i++) 
     {	    
         // Get the current error for blue, green and red.
-        CERed = TempErrorLine[0];
+        CEBlue = TempErrorLine[0];
         CEGreen = TempErrorLine[1];
-        CEBlue = TempErrorLine[2];
+        CERed = TempErrorLine[2];
         
         // And the next error for the same.
-        NERed = TempErrorLine[3];
+        NEBlue = TempErrorLine[3];
         NEGreen = TempErrorLine[4];
-        NEBlue = TempErrorLine[5];
+        NERed = TempErrorLine[5];
         
         // Clear out the first and second pixels' error.
         memset(TempErrorLine, 0, sizeof(uint8_t) * 6);
         
         // Get all the colors.
-        Red = *Input++ + CERed;
+        Blue = *Input++ + CERed;
         Green = *Input++ + CEGreen;
-        Blue = *Input++ + CEBlue;
+        Red = *Input++ + CEBlue;
             
         if(Red > 0xFF)
             Red = 0xFF;
@@ -85,14 +85,15 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
             CERed = NERed;
             
             // Get the next errors for blue, red and green - before we destroy it.
-            NERed = TempErrorLine[j + 3];
+            NEBlue = TempErrorLine[j + 3];
             NEGreen = TempErrorLine[j + 4];
-            NEBlue = TempErrorLine[j + 5];
+            NERed = TempErrorLine[j + 5];
             
             // Get all the colors - adding the current error for the pixel, and the error distributed from the left pixel.
-            Red = *Input++ + TRed + CERed;
-            Green = *Input++ + TGreen + CEGreen;
             Blue = *Input++ + TBlue + CEBlue;
+            Green = *Input++ + TGreen + CEGreen;
+            Red = *Input++ + TRed + CERed;
+            
             if(Blue > 0xFF)
                 Blue = 0xFF;
                
@@ -112,12 +113,12 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
                
             // Dither for the particular pixel.
             // Take care of "[x - 1]" in the next line.
-            // RED.
-            TRed = TempErrorLine[j - 3] + ((3 * Red) >> 4);
-            if(TRed > 0xFF)
-                TRed = 0xFF;
+            // Blue.
+            TBlue = TempErrorLine[j - 3] + ((3 * Blue) >> 4);
+            if(TBlue > 0xFF)
+                TBlue = 0xFF;
     
-            TempErrorLine[j - 3] = (uint8_t)TRed;
+            TempErrorLine[j - 3] = (uint8_t)TBlue;
                 
             // GREEN.
             TGreen = TempErrorLine[j - 2] + ((3 * Green) >> 4);
@@ -126,20 +127,20 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
     
             TempErrorLine[j - 2] = (uint8_t)TGreen;
    
-            // BLUE.
-            TBlue = TempErrorLine[j - 1] + ((3 * Blue) >> 4);
-            if(TBlue > 0xFF)
-                TBlue = 0xFF;
-    
-            TempErrorLine[j - 1] = (uint8_t)TBlue;
-    
-            // Take care of "[x] for the next line"
-            // RED.
-            TRed = TempErrorLine[j] + ((5 * Red) >> 4);
+            // Red.
+            TRed = TempErrorLine[j - 1] + ((3 * Red) >> 4);
             if(TRed > 0xFF)
                 TRed = 0xFF;
     
-            TempErrorLine[j++] = (uint8_t)TRed;
+            TempErrorLine[j - 1] = (uint8_t)TRed;
+    
+            // Take care of "[x] for the next line"
+            // Blue.
+            TBlue = TempErrorLine[j] + ((5 * Blue) >> 4);
+            if(TBlue > 0xFF)
+                TBlue = 0xFF;
+    
+            TempErrorLine[j++] = (uint8_t)TBlue;
     
             // GREEN.
             TGreen = TempErrorLine[j] + ((5 * Green) >> 4);
@@ -148,42 +149,42 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
     
             TempErrorLine[j++] = (uint8_t)TGreen;
    
-            // BLUE.
-            TBlue = TempErrorLine[j] + ((5 * Blue) >> 4);
-            if(TBlue > 0xFF)
-                TBlue = 0xFF;
+            // Red.
+            TRed = TempErrorLine[j] + ((5 * Red) >> 4);
+            if(TRed > 0xFF)
+                TRed = 0xFF;
     
-            TempErrorLine[j++] = (uint8_t)TBlue;
+            TempErrorLine[j++] = (uint8_t)TRed;
     
             // Take care of "[x + 1] for the next line"
-            // RED.
-            TempErrorLine[j] = (Red >> 4);
+            // Blue.
+            TempErrorLine[j] = (Blue >> 4);
             
             // GREEN.
             TempErrorLine[j + 1] = (Green >> 4);
             
-            // BLUE.
-            TempErrorLine[j + 2] = (Blue >> 4);
+            // Red.
+            TempErrorLine[j + 2] = (Red >> 4);
             
             // Take care of "[x + 1][y]", and pass it on in the loop.
-            TRed = ((7 * Red) >> 4);
-            TGreen = ((7 * Green) >> 4);
             TBlue = ((7 * Blue) >> 4);
+            TGreen = ((7 * Green) >> 4);
+            TRed = ((7 * Red) >> 4);
         }
 
         // Get all the colors.
-        Red = *Input++ + TRed + NERed;
-        Green = *Input++ + TGreen + NEGreen;
         Blue = *Input++ + TBlue + NEBlue;
+        Green = *Input++ + TGreen + NEGreen;
+        Red = *Input++ + TRed + NERed;
            
-        if(Blue > 0xFF)
-            Blue = 0xFF;
+        if(Red > 0xFF)
+            Red = 0xFF;
             
         if(Green > 0xFF)
             Green = 0xFF;
             
-        if(Red > 0xFF)
-            Red = 0xFF;
+        if(Blue > 0xFF)
+            Blue = 0xFF;
                        
         // And output the required color.
         *Output++ = (Red & ~0x1F) | ((Green & ~0x1F) >> 3) | ((Blue & ~0x3F) >> 6);
@@ -193,9 +194,9 @@ void Dither8BPP(uint8_t *Input, uint8_t *Output)
     for(uint32_t j = 0; j < XRes;)
     {
         // Get all the colors.
-        Red = *Input++ + TempErrorLine[j++];
+        Blue = *Input++ + TempErrorLine[j++];
         Green = *Input++ + TempErrorLine[j++];
-        Blue = *Input++ + TempErrorLine[j++];            
+        Red = *Input++ + TempErrorLine[j++];            
                        
         if(Blue > 0xFF)
             Blue = 0xFF;
@@ -227,9 +228,9 @@ void Convert8BPP(uint8_t *Input, uint8_t *Output)
         for(uint32_t j = 0; j < BIT.Video.XRes; j++)
         {
             // Get all the colors.
-            Red = Input[InputIndex++];
-            Green = Input[InputIndex++];
             Blue = Input[InputIndex++];
+            Green = Input[InputIndex++];
+            Red = Input[InputIndex++];
           
             // And output the required color.
             Output[OutputIndex++] = (Red & ~0x1F) | ((Green & ~0x1F) >> 3) | ((Blue & ~0x3F) >> 6);

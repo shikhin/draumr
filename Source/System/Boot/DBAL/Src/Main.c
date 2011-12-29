@@ -43,7 +43,7 @@ int Main(uint32_t *BITPointer)
         
     // Initialize 'output' thingy.
     OutputInit(); 
-
+    
     // Just a temporary thingy to init the OutputMod.
     OutputModInit();
 

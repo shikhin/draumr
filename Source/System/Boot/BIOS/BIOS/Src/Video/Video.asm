@@ -96,8 +96,8 @@ SetupPaletteVBE:
     int 0x10
     
     ; If successful, return.
-    cmp ax, 0x4F
-    je .Return
+   ; cmp ax, 0x4F
+   ; je .Return
     
     ; Else, use VGA.
     call SetupPaletteVGA

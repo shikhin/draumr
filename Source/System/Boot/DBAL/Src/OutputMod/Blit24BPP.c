@@ -25,40 +25,30 @@
 // The old buffer, used for comparision to allow unneccessary copying to video memory.
 extern uint32_t *OldBuffer;
 
-// The temporary buffer, where we keep the error for the next line.
-extern uint8_t  *TempErrorLine;
-
-// Blits a buffer of 16bpp to the screen.
+// Blits a buffer of 24bpp to the screen.
 // uint32_t *Buffer                   The address of the buffer to blit.
-void BlitBuffer16BPP(uint32_t *Buffer)
+void BlitBuffer24BPP(uint32_t *Buffer)
 {
 	if(OldBuffer)
 	{
-		uint8_t  *BufferP = (uint8_t*)Buffer;
         // Define the Video Address and the Old Buffer address (temp).
         uint32_t *VidAddress = BIT.Video.Address,
-                 *OldBufferTemp = OldBuffer;
+                 *OldBufferTemp = OldBuffer,
+                 XRes = (BIT.Video.XRes * 3) / 4;
 	
-        uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4, Value;
+        uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
         // The outerloop for going through the Y axis.
         for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
         {
-			 // Loop through the X axis for the buffer - blitting the input buffer into a buffer.
-            for(uint32_t j = 0; j < BIT.Video.XRes; j += 2, OldBufferTemp++,
-                                                            VidAddress++)
+	        // Loop through the X axis for the buffer - blitting the input buffer into a buffer.
+            for(uint32_t j = 0; j < XRes; j++, OldBufferTemp++,
+                                               VidAddress++,
+                                               Buffer++)
 	        {  
-				Value  = ((*BufferP++ & ~0x7) >> 3);
-				Value |= ((*BufferP++ & ~0x3) << 3);
-				Value |= ((*BufferP++ & ~0x7) << 8);
-				           
-				Value |= ((*BufferP++ & ~0x7) >> 3) << 16;
-				Value |= ((*BufferP++ & ~0x3) << 3) << 16;
-				Value |= ((*BufferP++ & ~0x7) << 8) << 16;
-				      
-	            if(Value != *OldBufferTemp)
+	            if(*Buffer != *OldBufferTemp)
 	            {
-	                *OldBufferTemp = Value;
-		            *VidAddress = Value;
+	                *OldBufferTemp = *Buffer;
+		            *VidAddress = *Buffer;
 	            }
 	        }
 	    }
@@ -68,32 +58,15 @@ void BlitBuffer16BPP(uint32_t *Buffer)
     {
 		// Define the Video Address and the Old Buffer address (temp).
         uint32_t *VidAddress = BIT.Video.Address;
-        uint16_t *TempLine;
-        uint8_t  *BufferP = (uint8_t*)Buffer;
-        
         uint32_t DwordsBetweenLines = BIT.Video.BytesBetweenLines / 4;
-        uint32_t XRes = BIT.Video.XRes / 2, XRes1 = BIT.Video.XRes * 2;
-        
-        uint32_t Blue, Green, Red;
+        uint32_t XRes = BIT.Video.XRes * 4;
         
         // The outerloop for going through the Y axis.
         for(uint32_t i = 0; i < BIT.Video.YRes; i++, VidAddress += DwordsBetweenLines)
         {		
-			TempLine = (uint16_t*)TempErrorLine;
-            for(uint32_t j = 0; j < BIT.Video.XRes; j++)
-            {
-                // Get all the colors.
-                Blue = *BufferP++;
-                Green = *BufferP++;
-                Red = *BufferP++;
-          
-                // And output the required color.
-                *TempLine++ = ((Red & ~0x7) << 8) | 
-                               ((Green & ~0x3) << 3) | ((Blue & ~0x7) >> 3);
-            }
-
-			memcpy(VidAddress, TempErrorLine, XRes1);
-			VidAddress += XRes;
+			memcpy(VidAddress, Buffer, XRes);
+		    Buffer += BIT.Video.XRes;
+			VidAddress += BIT.Video.XRes;
         }
     }
 }

@@ -133,15 +133,6 @@ static void BMPToBuf(FILE *InFile)
         // And take care of the padding.
         TempBuffer += ToCopy + (ToCopy % 4);
     }
-
-    uint32_t Index, j;
-    for(j = 0; j < (BMPHeader.YSize * BMPHeader.XSize); j++, Index += 3)
-    {
-	    // Swap blue and red - fixing the color format.
-		uint32_t Blue = Buffer[Index];
-	    Buffer[Index] = Buffer[Index + 2];
-	    Buffer[Index + 2] = Blue;
-    }
     
     free(ToFree);
 }
@@ -176,21 +167,21 @@ static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t
             YDiff = (YRatio * i) - y;
             
             Index = (y * X + x);                
-            ARed = Input[Index * 3];
+            ABlue = Input[Index * 3];
             AGreen = Input[(Index * 3) + 1];
-            ABlue = Input[(Index * 3) + 2];
+            ARed = Input[(Index * 3) + 2];
             
-            BRed = Input[(Index + 1) * 3];
+            BBlue = Input[(Index + 1) * 3];
             BGreen = Input[((Index + 1) * 3) + 1];
-            BBlue = Input[((Index + 1) * 3) + 2];
+            BRed = Input[((Index + 1) * 3) + 2];
             
-            CRed = Input[(Index + X) * 3];
+            CBlue = Input[(Index + X) * 3];
             CGreen = Input[((Index + X) * 3) + 1];
-            CBlue = Input[((Index + X) * 3) + 2];
+            CRed = Input[((Index + X) * 3) + 2];
             
-            DRed = Input[(Index + X + 1) * 3];
+            DBlue = Input[(Index + X + 1) * 3];
             DGreen = Input[((Index + X + 1) * 3) + 1];
-            DBlue = Input[((Index + X + 1) * 3) + 2];
+            DRed = Input[((Index + X + 1) * 3) + 2];
             
             // Take care of the blue element.
             // Yb = Ab(1-w)(1-h) + Bb(w)(1-h) + Cb(h)(1-w) + Db(wh)
@@ -203,9 +194,9 @@ static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t
             Red = ARed * (1 - XDiff) * (1 - YDiff) + BRed * (XDiff) * (1 - YDiff) +
                   CRed * (YDiff) * (1 - XDiff) + DRed * (XDiff * YDiff);
             
-            Output[Offset++] = Red;
-            Output[Offset++] = Green;
             Output[Offset++] = Blue;
+            Output[Offset++] = Green;
+            Output[Offset++] = Red;
         }
     }
 }
@@ -308,5 +299,5 @@ int main(int argc, char **argv)
     // Free the buffer.
     free(Buffer);
     
-    printf("  \033[94m[ToSIF]\033[0m %s -> %s\n", argv[1], argv[2]);
+    printf("  [ToSIF] %s -> %s\n", argv[1], argv[2]);
 }

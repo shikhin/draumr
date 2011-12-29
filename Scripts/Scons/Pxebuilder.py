@@ -53,7 +53,7 @@ def _pxe_builder(target, source, env) :
     if env["BACK"] != 0:
         shutil.copy(background, s)
     
-    print("  %s[PXE]%s   %s" % (colors['blue'], colors['end'], target[0]))
+    print("  [PXE]   %s" % (target[0]))
     return 0
 
 PXEBuilder = Builder(action = Action(_pxe_builder, None))

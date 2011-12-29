@@ -47,16 +47,14 @@ void BlitBuffer15BPP(uint32_t *Buffer)
             for(uint32_t j = 0; j < BIT.Video.XRes; j += 2, OldBufferTemp++,
                                                             VidAddress++)
 	        {  
-				Value  = ((*BufferP++ & ~0x7) << 7);
+				Value  = ((*BufferP++ & ~0x7) >> 3);
 				Value |= ((*BufferP++ & ~0x7) << 2);
-				Value |= ((*BufferP++ & ~0x7) >> 3);
-				           
-				Value <<= 16;
-				
 				Value |= ((*BufferP++ & ~0x7) << 7);
-				Value |= ((*BufferP++ & ~0x7) << 2);
-				Value |= ((*BufferP++ & ~0x7) >> 3);
-				                 
+				
+				Value |= ((*BufferP++ & ~0x7) >> 3) << 16;     
+				Value |= ((*BufferP++ & ~0x7) << 2) << 16;
+				Value |= ((*BufferP++ & ~0x7) << 7) << 16;
+				             
 	            if(Value != *OldBufferTemp)
 	            {
 	                *OldBufferTemp = Value;
@@ -85,9 +83,9 @@ void BlitBuffer15BPP(uint32_t *Buffer)
             for(uint32_t j = 0; j < BIT.Video.XRes; j++)
             {
                 // Get all the colors.
-                Red = *BufferP++;
-                Green = *BufferP++;
                 Blue = *BufferP++;
+                Green = *BufferP++;
+                Red = *BufferP++;
           
                 // And output the required color.
                 *TempLine++ = ((Red & ~0x7) << 7) | 

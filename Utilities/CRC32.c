@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
     
     fclose(File);
     if(Old != Seed)
-        printf("  \033[94m[CRC32]\033[0m %s -> 0x%X\n", FileName, Seed);
+        printf("  [CRC32] %s -> 0x%X\n", FileName, Seed);
     
     return 0;
 }

@@ -34,9 +34,9 @@ colors['end']    = '\033[0m'
 
 
 # Hide the ugly compiler command lines and display nice messages.
-our_env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (colors['green'], colors['end'])
-our_env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (colors['green'], colors['end'])
-our_env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (colors['green'], colors['end'])
+our_env["ASCOMSTR"] = "  [AS]    $SOURCE"
+our_env["CCCOMSTR"] = "  [CC]    $SOURCE"
+our_env["LINKCOMSTR"] = "  [LINK]  $TARGET"
 
 CRC32 = our_env.Program("CRC32.util", "CRC32.c")
 ToSIF = our_env.Program("ToSIF.util", "ToSIF.c")

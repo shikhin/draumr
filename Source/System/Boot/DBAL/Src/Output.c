@@ -33,7 +33,8 @@
 //                                             - non zero values indicate errors.
 static uint16_t SwitchToMode(uint32_t Mode)
 {
-    if(BIT.Video.VideoFlags & VBE_PRESENT)
+	// The 8th bit specifies whether it's a VBE mode or not.
+    if(Mode & (1 << 8))
     {
         // Switch to the mode, and save the status value.
         uint16_t Return = BIT.Video.SwitchVBE((uint16_t)Mode);
@@ -183,15 +184,15 @@ static VBEModeInfo_t *FindBestVBEMode()
 	Best->Score = sqrt((Best->Score * Best->Score) + 
 	                   (Best->XResolution * Best->XResolution) +
 	                   (Best->YResolution * Best->YResolution));
-          
-	// Calculate the score for each mode - while side by side, finding the best mode.
+    
+    // Calculate the score for each mode - while side by side, finding the best mode.
 	for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
 	{
         BIT.Video.VBEModeInfo[i].Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
 	    BIT.Video.VBEModeInfo[i].Score = sqrt((Best->Score * Best->Score) + 
 	                                     (Best->XResolution * Best->XResolution) +
 	                                     (Best->YResolution * Best->YResolution));
-	
+	 
 	    // If the score of this is greater than the best till now,
 	    // make it the best.                                     
 	    if(BIT.Video.VBEModeInfo[i].Score >
@@ -288,12 +289,13 @@ static void ParseVBEInfo()
         if(!(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
         
            ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
-               VBEModeInfo->BitsPerPixel) / 8) > 0x20000) && 
+               VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
            
            ((VBEModeInfo->BitsPerPixel != 8)   &&
             (VBEModeInfo->BitsPerPixel != 15)  &&
-            (VBEModeInfo->BitsPerPixel != 16)) ||
+            (VBEModeInfo->BitsPerPixel != 16)  &&
+            (VBEModeInfo->BitsPerPixel != 24)) ||
             
            ((VBEModeInfo->BytesPerScanLine * (
              VBEModeInfo->RsvdFieldPosition + 
@@ -305,7 +307,9 @@ static void ParseVBEInfo()
            ((VBEModeInfo->MemoryModel != 0)    &&
             (VBEModeInfo->MemoryModel != 4)    && 
             (VBEModeInfo->MemoryModel != 6))   ||
-         
+                  
+           (VBEModeInfo->NumberOfPlanes != 1)  ||
+                  
            ((VBEModeInfo->BitsPerPixel == 15) &&
             VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
          
@@ -418,7 +422,7 @@ static void InitVBE()
         BIT.Video.BytesBetweenLines -= Best->XResolution/8;
         
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
-    
+
     // Switch to the best mode - woohoo!
     SwitchToMode(Best->Mode);
 }
