@@ -33,6 +33,7 @@
 #define GRAPHICAL_USED  (1 << 2)
 #define TEXT_USED       (1 << 3)
 #define DITHER_DISABLE  (1 << 4)
+#define EDID_PRESENT    (1 << 5)
 
 // Serial flags.
 #define SERIAL_USED     (1 << 0)
@@ -68,6 +69,8 @@ struct BIT
         VBEModeInfo_t   *VBEModeInfo;                    // The 32-bit address of the (allocated) VBE mode info block.
         uint32_t        VBEModeInfoN;                    // The number of entries.
         
+        EDIDInfo_t EDIDInfo;                             // The EDID information.
+
         void     (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
 	    void     (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
 	    uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.

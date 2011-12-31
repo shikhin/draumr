@@ -22,8 +22,6 @@
 
 #include <stdint.h>
 
-#define PLANE_OFFSET(x) (((BIT.Video.XRes + 7)/8) * BIT.Video.YRes * (x))
-
 // Resizes a 24bpp image.
 // uint8_t  *Input                    The input buffer, which we are about to resize.
 // uint8_t  *Output                   The output buffer, where we will store the resized buffer.
@@ -31,8 +29,6 @@
 // uint32_t Y                         The previous Y size of the image.
 // uint32_t NewX                      The X to be resized to.
 // uint32_t NewY                      The Y to be resized to.
-/* NOTE: Credit to this goes to http://tech-algorithm.com/, whose algorithm has just been slightly tweaked
- * as to work with C, and 3-channel images */
 void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY);
 
 // Converts a buffer to the required BPP format, INTO the DrawBoard - and dithers if required too.

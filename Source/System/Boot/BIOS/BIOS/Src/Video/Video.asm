@@ -96,8 +96,8 @@ SetupPaletteVBE:
     int 0x10
     
     ; If successful, return.
-   ; cmp ax, 0x4F
-   ; je .Return
+    cmp ax, 0x4F
+    je .Return
     
     ; Else, use VGA.
     call SetupPaletteVGA
@@ -156,6 +156,46 @@ SetupPaletteVGA:
 VideoInit:
     pushad
 
+; Check for EDID support.
+.EDIDCheck:
+    ; AX=0x4F15, bl=0x00, int 0x10 is the installation check for EDID. If this fails,
+    ; then move on the VGA check.
+    mov ax, 0x4F15
+    xor bl, bl
+    int 0x10
+
+    ; If function isn't supported, al wouldn't be 0x4F.
+    cmp al, 0x4F
+    jne .VGACheck
+
+    ; Gives the status.
+    test ah, ah
+    jnz .VGACheck
+
+; So EDID is supported - get the EDID information.
+.EDIDGet:
+    ; AX=0x4F15, bl=0x01, cx=0x0000, dx=0x0000, di=destination buffer, int 0x10 gives
+    ; the EDID information block in the destination buffer.
+    mov ax, 0x4F15
+    mov di, BIT.EDIDInfo
+    xor cx, cx
+    xor dx, dx
+    xor bl, bl
+    inc bl
+    int 0x10
+
+    ; If function isn't supported, al wouldn't be 0x4F.
+    cmp al, 0x4F
+    jne .VGACheck
+
+    ; Gives the status.
+    test ah, ah
+    jnz .VGACheck
+    
+    ; So EDID is present, check the flag.
+    or byte [BIT.VideoFlags], EDID_PRESENT
+    
+; Check for VGA support.
 .VGACheck:
     ; AX=0x1A00, int 0x10 returns the display combination code.
     mov ax, 0x1A00

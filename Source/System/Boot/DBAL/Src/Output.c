@@ -28,10 +28,11 @@
 
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
+// VBEModeInfo_t *VBEMode             If a VBE mode, uses this to find out if VGA compatible mode or not. Can be zero if using a VGA mode.
 //     rc
 //                                    uint16_t - the status of the switch.
 //                                             - non zero values indicate errors.
-static uint16_t SwitchToMode(uint32_t Mode)
+static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *VBEMode)
 {
 	// The 8th bit specifies whether it's a VBE mode or not.
     if(Mode & (1 << 8))
@@ -40,10 +41,18 @@ static uint16_t SwitchToMode(uint32_t Mode)
         uint16_t Return = BIT.Video.SwitchVBE((uint16_t)Mode);
         
         // If the mode is 256 colors, then set up the palette.
-        if((BIT.Video.BPP == 8) && (Return == 0x4F)) 
-            // Setup the palette to a RGB thingy.
-            BIT.Video.SetupPaletteVBE();
-            
+        if((BIT.Video.BPP == 8) && (Return == 0x4F))
+        { 
+            // If the flag is zero, then it is VGA compatible.
+            // Use the VGA function ti setup the palette then.
+            // Else the VBE one.
+            if(!(VBEMode->ModeAttributes & VGA_COMPATIBLE))
+                BIT.Video.SetupPaletteVGA();
+
+            else 
+                BIT.Video.SetupPaletteVBE();
+        }
+           
         // Get rid of 0x4F - signifying function exists.
         Return &= ~0x4F;
         return Return;
@@ -295,7 +304,8 @@ static void ParseVBEInfo()
            ((VBEModeInfo->BitsPerPixel != 8)   &&
             (VBEModeInfo->BitsPerPixel != 15)  &&
             (VBEModeInfo->BitsPerPixel != 16)  &&
-            (VBEModeInfo->BitsPerPixel != 24)) ||
+            (VBEModeInfo->BitsPerPixel != 24)  &&
+            (VBEModeInfo->BitsPerPixel != 32)) ||
             
            ((VBEModeInfo->BytesPerScanLine * (
              VBEModeInfo->RsvdFieldPosition + 
@@ -320,7 +330,8 @@ static void ParseVBEInfo()
             VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
          
            ((VBEModeInfo->BitsPerPixel == 32) && 
-            VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)))
+            (VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                       ||
+            (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0)))))
         {
 		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
             memmove(VBEModeInfo, &VBEModeInfo[1], 
@@ -332,6 +343,15 @@ static void ParseVBEInfo()
             continue;
         }
         
+        // I've found out that certain video cards for 32-bpp modes set the 
+        // Rsvd* fields to 0. I'm not too sure why - but we'll just set them to
+        // the default value we want them to be.
+        if(VBEModeInfo->BitsPerPixel == 32)
+        {
+            VBEModeInfo->RsvdFieldPosition = 24;
+            VBEModeInfo->RsvdMaskSize = 8;
+        }
+
         if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
             // Set the use LFB bit.
             VBEModeInfo->Mode |= (1 << 14);
@@ -352,7 +372,7 @@ static void InitVGA()
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Go to the 320*200*256 colors mode.
-    SwitchToMode(0x13);    
+    SwitchToMode(0x13, (VBEModeInfo_t*)0);    
 }
         
 // Initializes VBE for a graphical mode.
@@ -381,10 +401,10 @@ static void InitVBE()
     BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
                             ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
         
-    // If we failed to allocate enough space, simply revert to VGA.
+    // If we failed to allocate enough space, simply revert to whatever we can revert to.
     if(!BIT.Video.VBEModeInfo)
     {
-        InitVGA();      
+        //Revert();      
         return;
     }
     
@@ -401,13 +421,20 @@ static void InitVBE()
     {
         // Fill information about available text modes.
         FillTextInfoVBE();    
-        InitVGA();
+        //Revert();
         return;
     }
     
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
     
+    // If no mode was defined "usable", then revert.
+    if(!BIT.Video.VBEModeInfoN)
+    {
+        //Revert();
+        return;
+    }
+
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
     VBEModeInfo_t *Best = FindBestVBEMode();
     
@@ -424,7 +451,7 @@ static void InitVBE()
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
 
     // Switch to the best mode - woohoo!
-    SwitchToMode(Best->Mode);
+    SwitchToMode(Best->Mode, Best);
 }
 
 // Initializes the first available serial port.

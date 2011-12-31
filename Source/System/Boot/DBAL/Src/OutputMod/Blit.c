@@ -63,5 +63,9 @@ void BlitBuffer(uint32_t *Buffer)
     // For 24BPP.
     else if(BIT.Video.BPP == 24)
         BlitBuffer24BPP(Buffer);
+
+    // For 32BPP.
+    else if(BIT.Video.BPP == 32)
+        BlitBuffer32BPP(Buffer);
 }
 

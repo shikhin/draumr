@@ -25,6 +25,68 @@
 // Define the timeout for now - and fix it later to use the PIT or something.
 #define MIN_TIMEOUT 100000
 
+// EDID Info - taken from the BIOS again.
+struct EDIDInfo
+{
+    // The header - to easily recognize it from other bytes (or so the EDID specs say).
+    uint8_t  Header[8];
+
+    // The vendor/product identification fields.
+    // A 3-character manufacturer ID - to identify the manufacturer.
+    uint8_t  ManufacturerID[2];
+    // Vendor asigned product code.
+    uint8_t  ProductCode[2];
+    // Serial number of the monitor.
+    uint32_t SerialNumber;
+    // Week and year of manufacture.
+    uint8_t  Week;
+    uint8_t  Year;
+
+    // EDID structure version.
+    // For 1.3 - would be Version 1, Revision 3.
+    uint8_t  Version;
+    uint8_t  Revision;
+
+    // Basic display parameters and features.
+    // Various flags which I won't be covering here.
+    uint8_t  InputDefinition;
+    // Defined in cm.
+    uint8_t  HorizontalSize;
+    uint8_t  VerticalSize;
+    // Gamma.
+    // Present as "(Gamma * 100) - 100"
+    uint8_t  Gamma;
+    // Some other flags.
+    uint8_t  Features;
+
+    // Filter chromacity.
+    uint8_t  Red;
+    uint8_t  Blue;
+    uint8_t  Red_x;
+    uint8_t  Red_y;
+    uint8_t  Green_x;
+    uint8_t  Green_y;
+    uint8_t  Blue_x;
+    uint8_t  Blue_y;
+    uint8_t  White_x;
+    uint8_t  White_y;
+
+    // Established timings - used to indicate support for some common timings.
+    uint8_t  EstablishedTiming[3];
+
+    // Standard timings - used to identify future standard timings not defined in 
+    // established timings.
+    uint8_t  StandardTimings[8][2];
+
+    // Detailed timings - used to identify timings not present in the above.
+    uint8_t  DetailedTimings[4][18];
+
+    // Number of optional 128-byte EDID blocks to follow.
+    uint8_t  ExtensionFlag;
+    // The checksum - makes the entire table 0.
+    uint8_t  Checksum;
+} __attribute__((packed));
+
 // VBE Controller Info - given by VBE.
 struct VBECntrlrInfo
 {
@@ -53,6 +115,7 @@ struct VBECntrlrInfo
 #define HARDWARE_INIT    (1 << 0)  // If set, can be initialized. Else, can't.
 #define GRAPHICAL_MODE   (1 << 4)  // If set, graphical mode. Else, text.
 #define LFB_AVAILABLE    (1 << 7)  // If set, LFB is supported.
+#define VGA_COMPATIBLE   (1 << 5)  // If zero, the mode is VGA compatible.
 
 // Flags for DirectColorModeInfo.
 #define COLOR_RAMP_PROGRAMMABLE (1 << 0)    // If set, color ramp is programmable.
@@ -134,6 +197,7 @@ struct VBEModeInfo
 
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;
 typedef struct VBEModeInfo   VBEModeInfo_t;
+typedef struct EDIDInfo      EDIDInfo_t;
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 // If no video card, initializes the serial port.
