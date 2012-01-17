@@ -25,6 +25,16 @@
 // Define the timeout for now - and fix it later to use the PIT or something.
 #define MIN_TIMEOUT 100000
 
+// Mode information gathered by what EDID gives us - used to organize info.
+struct EDIDModeInfo
+{
+    // The vertical and horizontal resolutions.
+    uint16_t XRes, YRes;
+
+    // The refresh rates in Hz.
+    uint16_t RefreshRate;
+} __attribute__((packed));
+
 // EDID Info - taken from the BIOS again.
 struct EDIDInfo
 {
@@ -72,7 +82,7 @@ struct EDIDInfo
     uint8_t  White_y;
 
     // Established timings - used to indicate support for some common timings.
-    uint8_t  EstablishedTiming[3];
+    uint8_t  EstablishedTimings[3];
 
     // Standard timings - used to identify future standard timings not defined in 
     // established timings.
@@ -198,6 +208,7 @@ struct VBEModeInfo
 typedef struct VBECntrlrInfo VBECntrlrInfo_t;
 typedef struct VBEModeInfo   VBEModeInfo_t;
 typedef struct EDIDInfo      EDIDInfo_t;
+typedef struct EDIDModeInfo  EDIDModeInfo_t;
 
 // Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
 // If no video card, initializes the serial port.

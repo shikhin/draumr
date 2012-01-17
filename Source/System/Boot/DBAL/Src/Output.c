@@ -164,31 +164,9 @@ static uint32_t DetectSerialPort()
 
 // Get the best mode from VBEModeInfo[] array using all factors neccessary.
 static VBEModeInfo_t *FindBestVBEMode()
-{
-	// Ok - so I find this the best place (other than official documentation),
-	// as to what's the algorithm I use to calculate score.
-	// I won't be commenting on it further, so, read carefully, buddy.
-	
-	// Currently, I use the pythagorean theorem to find the "distance" between
-	// all the factors in a xD axis - where x is the number of factors.
-	
-	// Currently, the factors are:
-	
-	// 				a) X Resolution - this is the X resolution of the mode. It's used
-	//				   as it is.
-	
-	//				b) Y Resolution - this is the Y resolution of the mode. It's used 
-	//				   as it is.
-	
-	//				c) Bits per pixel - this is the bits per pixel of the mode. Firstly,
-	//				   log 2 of the mode is taken. This is then scaled using a pre-calculated
-	//				   scaling factor. 
-	//				   NOTE: The current scaling factor has been decided by taking the highest
-	//				   possible BPP (32), taking the log 2 (5), and then dividing a good score (1200)
-	//				   by the log 2. This comes out as 240.
-	
-	// The best mode - to be returned.
-	VBEModeInfo_t *Best = &BIT.Video.VBEModeInfo[0];
+{ 
+    // No comments now - this is going under a major refactor.
+    VBEModeInfo_t *Best = &BIT.Video.VBEModeInfo[0];
 	Best->Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
 	Best->Score = sqrt((Best->Score * Best->Score) + 
 	                   (Best->XResolution * Best->XResolution) +
@@ -261,6 +239,186 @@ static void FillTextInfoVBE()
     }
     
     return;
+}
+
+static EDIDModeInfo_t EDIDModeInfo[29];
+static uint32_t EDIDModeInfoN;
+
+// Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
+// array out of it.
+static void ParseEDIDInfo()
+{
+    // Ok - so the most sensible thing to do would be to parse all the timings
+    // specified in Established timings, Standard timings and Detalied timings
+    // and put all the usable modes in a array consisting of the Horizontal resolution,
+    // Vertical resolution and Refresh rate.
+    
+    // Later, this could be used to find out how many timings are supported of the 
+    // "standard" (no - not the EDID standard, the standard standard) timings of 
+    // a mode, adding to the score.
+
+    // Currently, the number of EDIDModeInfo structures are 0.
+    EDIDModeInfoN = 0;
+
+    // Take care of the established modes.
+    for(uint32_t i = 0; i < 2; i++)
+    {
+        for(uint32_t j = 0; j < 8; j++)
+        {
+            if(BIT.Video.EDIDInfo.EstablishedTimings[i] &
+               (1 << j))
+            {
+                switch(i)
+                {
+                  // Handle established timings in byte 0 in EDIDInfo.EstablishedTimings.
+                  case 0:
+                  {  
+                    switch(j)
+                    {
+                      // Bit 1.
+                      case 0:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 2.
+                      case 1:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 56;
+
+                        EDIDModeInfoN++;
+                        break;
+                    
+                      // Bit 3.
+                      case 2:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 4.
+                      case 3:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
+                        
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 5.
+                      case 4:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 67;
+                        
+                        EDIDModeInfoN++;
+                        break;
+                        
+                      // Bit 6.
+                      case 5:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
+                        
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 7.
+                      case 6:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 720;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 400;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 88;
+                        
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 8.
+                      case 7:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 720;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 400;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
+                        
+                        EDIDModeInfoN++;
+                        break;
+                    }
+
+                    break;
+                  }
+
+                  // Handle established timings in byte 1 in EDIDInfo.EstablishedTimings.
+                  case 1:
+                  {
+                    switch(j)
+                    {
+                      // Bit 1.
+                      case 0:
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 2.
+                      case 1:
+
+                        EDIDModeInfoN++;
+                        break;
+                    
+                      // Bit 3.
+                      case 2:
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 4.
+                      case 3:
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 5.
+                      case 4:
+
+                        EDIDModeInfoN++;
+                        break;
+                        
+                      // Bit 6.
+                      case 5:
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 7.
+                      case 6:
+
+                        EDIDModeInfoN++;
+                        break;
+
+                      // Bit 8.
+                      case 7:
+                       
+                        EDIDModeInfoN++;
+                        break;
+                    }
+
+                    break;
+                  }
+                }
+            }
+        }
+    }
+
+    // Handle established timings in byte 2 in EDIDInfo.EstablishedTimings.
+    if(BIT.Video.EDIDInfo.EstablishedTimings[2] & (1 << 7))
+    {
+      
+    }
+
+    // NOTE: The rest bits in byte 2 are reserved (for OEM use and other such stuff) - so..
 }
 
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.
@@ -434,6 +592,9 @@ static void InitVBE()
         //Revert();
         return;
     }
+
+    // Parse EDID Information.
+    ParseEDIDInfo();
 
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
     VBEModeInfo_t *Best = FindBestVBEMode();

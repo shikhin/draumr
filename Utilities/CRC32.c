@@ -1,29 +1,41 @@
-/*Contains CRC32 generator - and expects to be present in root of tree.
-*
-* Copyright (c) 2011 Shikhin Sethi
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 3 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program; if not, write to the Free Software Foundation, Inc.,
-* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+/* 
+ * Contains CRC32 generator - and expects to be present in root of tree.
+ *
+ * Copyright (c) 2012, Shikhin Sethi
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <stdio.h>
 #include <stdint.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define GOOD_LENGTH (1024)
 
+// Use the lookup table pre-built, rather than pre-generating it.
 uint32_t Table[256] = 
 { 
     0x00000000,    0x77073096,    0xEE0E612C,    0x990951BA,
@@ -92,107 +104,185 @@ uint32_t Table[256] =
     0xB40BBE37,    0xC30C8EA1,    0x5A05DF1B,    0x2D02EF8D
 };
 
-// Creates CRC for any file data (of size size).
+/*
+ * Creates CRC for any file data (of 'size' size).
+ *     uint32_t Seed         -> the seed from where to generate the CRC value.
+ *     uint32_t Size         -> the size of the input data.
+ *     uint8_t  *InputBuffer -> the input buffer.
+ *
+ * Returns:
+ *     uint32_t              -> the CRC value.
+ */
 static uint32_t CRC(uint32_t Seed, uint32_t Size, uint8_t *InputBuffer) 
 {
     while(Size--) 
-        Seed = Table[((uint8_t)Seed ^ *(InputBuffer++))] ^ (Seed >> 8);
+        Seed = Table[((uint8_t)Seed ^ *InputBuffer++)] ^ (Seed >> 8);
 
     return Seed;
 }
 
-// Main entry point for CRC generator.
-// Expects only one file name as argument - for which it'd generate the CRC32 value.
+/*
+ * Main entry point for CRC generator.
+ *     int argc     -> the number of arguments.
+ *     char *argv[] -> the command line arguments.
+ *
+ * Returns:
+ *     int          -> EXIT_FAILURE for failure or EXIT_SUCCESS.
+ */
 int main(int argc, char *argv[])
 {
+    // Some variables.
+    FILE     *InFile;
+    uint8_t  *Buf;
+    char     Signature[5];
+    uint32_t Old, CRCValueOffset, HeaderOffset, BytesRead, Seed;
+
+    // Initialize values.
+    Old  = 0;
+    Seed = 0xFFFFFFFF;
+
     if(argc != 2)
-        return -1;
-
-    FILE *File;
-    uint8_t *Buf;
-    uint32_t Old = 0, Status = 0, BytesRead, i, Seed = 0xFFFFFFFF;
-    
-    File = fopen(argv[1], "r+b");
-    if(File == NULL)
-         return -1;    
-
-    char FileName[5];
-    FileName[4] = '\0';
-
-    fseek(File, 0, SEEK_SET);
-    fread(FileName, 4, 1, File);
-    
-    if((FileName[0] == 'B') && (FileName[1] == 'M'))
     {
-        Status = fseek(File, 50, SEEK_SET);          // Got to beginning + 50 (after header).
-        if(Status)
-            return -1;
-                
-        Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
-        if(!Buf)
-            return -1;
-                
-        do 
-        {
-            Status = fread(Buf, 1, GOOD_LENGTH, File);
-            if(Status > 0) 
-            {  
-                BytesRead = Status;
-                Seed = CRC(Seed, BytesRead, Buf);
-            }
-        } while(Status > 0);
-                
-        if(Status < 0) 
-            return -1;
-                
-        Seed ^= 0xFFFFFFFF;
-        fseek(File, 6, SEEK_SET);
-        fread(&Old, 1, sizeof(uint32_t), File);
-                
-        if(Old != Seed)
-        {
-            fseek(File, 6, SEEK_SET);
-            fwrite(&Seed, 1, sizeof(uint32_t), File);
-        }
+        // Print error.
+        printf("ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile.\n", argv[0], argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    InFile = fopen(argv[1], "r+b");
+    if(!InFile)
+    {
+        // Print error.
+        perror("Unable to open input file for which to generate CRC value");
+        exit(EXIT_FAILURE);
+    }
+
+    // The null-terminator.
+    Signature[4] = '\0';
+    fread(Signature, 4, 1, InFile);
+    if(ferror(InFile))
+    {
+        // Close the file.
+        fclose(InFile);  
+
+        // Print error.
+        perror("Unable to read Signature from input file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Allocate a buffer for what would be good length.
+    Buf = (uint8_t*)malloc(GOOD_LENGTH);      
+    if(!Buf)
+    {
+        // Close open files.
+        fclose(InFile);
+
+        // Print error.
+        perror("Unable to allocate buffer to read input file");
+        exit(EXIT_FAILURE);
+    }
+
+    // If the signature is for the image BMP, then assume the format for it.
+    if((Signature[0] == 'B') && (Signature[1] == 'M'))
+    {
+        // Offset to the header.
+        HeaderOffset = 50;
+        // Offset to the CRC value is 6.
+        CRCValueOffset = 6;
     }
         
     else
     {
-        Status = fseek(File, 28, SEEK_SET);          // Got to beginning + 24 (after header).
-        if(Status)
-            return -1;
-
-        Buf = (uint8_t*)calloc(GOOD_LENGTH, 1);      // Allocate a buffer for Length.
-        if(!Buf)
-            return -1;
-
-        do 
-        {
-            Status = fread(Buf, 1, GOOD_LENGTH, File);
-            if(Status > 0) 
-            {  
-                BytesRead = Status;
-                Seed = CRC(Seed, BytesRead, Buf);
-            }
-        } while(Status > 0);
-
-        if(Status < 0) 
-            return -1;
-    
-        Seed ^= 0xFFFFFFFF;
-        fseek(File, 24, SEEK_SET);
-        fread(&Old, 1, sizeof(uint32_t), File);
-	
-	    if(Old != Seed)
-	    {
-	        fseek(File, 24, SEEK_SET);
-	        fwrite(&Seed, 1, sizeof(uint32_t), File);
-	    }
+        // Offset to the header.
+        HeaderOffset = 28;     
+        // Set the offset of the CRC value in the file.
+        CRCValueOffset = 24;
     }
-    
-    fclose(File);
+
+    // Got to beginning + HeaderOffset (after header).
+    if(fseek(InFile, HeaderOffset, SEEK_SET))
+    {  
+        // Close the file.
+        fclose(InFile);  
+        free(Buf);
+
+        // Print error.
+        perror("Unable to advance to after the header in input file");
+        exit(EXIT_FAILURE);
+    }
+                
+    do 
+    {
+        BytesRead = fread(Buf, 1, GOOD_LENGTH, InFile);
+
+        // If some kind of error occured.
+        if(ferror(InFile))
+        {
+            // Close files and free allocations.
+            fclose(InFile);
+            free(Buf);
+                
+            // Print error.
+            perror("Unable to read from input file");
+            exit(EXIT_FAILURE);    
+        }
+
+        Seed = CRC(Seed, BytesRead, Buf);
+    } while(BytesRead > 0);
+                                
+    Seed ^= 0xFFFFFFFF;
+        
+    // If failed.
+    if(fseek(InFile, CRCValueOffset, SEEK_SET))
+    {  
+        // Close the file.
+        fclose(InFile);  
+        free(Buf);
+
+        // Print error.
+        perror("Unable to advance to required place in input file");
+        exit(EXIT_FAILURE);
+    }
+
+    fread(&Old, 1, sizeof(uint32_t), InFile);
+    if(ferror(InFile))
+    {
+        // Close files and free allocations.
+        fclose(InFile);
+        free(Buf);
+            
+        perror("Unable to read signature from input file");
+        exit(EXIT_FAILURE);    
+    }
+
     if(Old != Seed)
-        printf("  [CRC32] %s -> 0x%X\n", FileName, Seed);
+    {
+        if(fseek(InFile, CRCValueOffset, SEEK_SET))
+        {
+            // Close the file.
+            fclose(InFile);
+            free(Buf);   
+                
+            perror("Unable to advance to required place in input file");
+            exit(EXIT_FAILURE); 
+        }
+
+        fwrite(&Seed, 1, sizeof(uint32_t), InFile);
+        if(ferror(InFile))
+        {
+            // Close files and free allocations.
+            fclose(InFile);
+            free(Buf);
+
+            perror("Unable to write signature from input file");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    free(Buf);
+    fclose(InFile);
+
+    if(Old != Seed)
+        printf("  [CRC32] %s -> 0x%X\n", Signature, Seed);
     
     return 0;
 }

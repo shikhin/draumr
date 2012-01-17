@@ -1,4 +1,4 @@
-# -*- python -*-
+#!/bin/bash
 
  # Draumr build system.
  #
@@ -27,31 +27,50 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
+# Only one argument.
+ARGS=1
 
-Import("env")
-our_env = Environment()
+# Some variables - which we'd be testing case.
+PXE="pxe"
+CD="cd"
+Floppy="floppy"
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
+for Var in "$@"
+do
+    if [ "$Var" == "$PXE" ] 
+    then
+        echo "Compiling for PXE."
+        scons target=pxe build=release
 
-# Hide the ugly compiler command lines and display nice messages.
-our_env["ASCOMSTR"] = "  [AS]    $SOURCE"
-our_env["CCCOMSTR"] = "  [CC]    $SOURCE"
-our_env["LINKCOMSTR"] = "  [LINK]  $TARGET"
+        echo -e "\nOpening QEMU, using PXE."
+        qemu -s -monitor stdio -tftp /tftpboot/ -bootp /Stage1 -boot n -net user -net nic,model=rtl8139,macaddr=00:11:22:33:44:55
 
-CRC32 = our_env.Program("CRC32.util", "CRC32.c", CCFLAGS="-std=c99")
-ToSIF = our_env.Program("ToSIF.util", "ToSIF.c", CCFLAGS="-std=c99")
+    elif [ "$Var" == "$Floppy" ] 
+    then
+        echo "Compiling for Floppy."
+	    scons target=floppy build=release
 
-Depends(CRC32, ToSIF)
+        # Remove the Draumr iso file, in case it's already there.
+        rm Draumr.iso
 
-# Save the CRC32 target in the environment as we will need it later.
-env["CRC32"] = CRC32
-env["ToSIF"] = ToSIF
+	    echo -e "\nOpening bochs, using floppy."
+    	bochs -q
+
+        echo -e "\nOpening QEMU, using floppy."
+	    qemu -s -monitor stdio -fda Draumr.flp
+
+    elif [ "$Var" == "$CD" ] 
+    then
+        echo "Compiling for CD."
+        scons target=iso build=release
+       
+        rm Draumr.flp
+        echo -e "\nOpening bochs, using CD."
+        bochs -q
+
+        echo -e "\nOpening QEMU, using CD."
+        qemu -s -monitor stdio -cdrom Draumr.iso
+
+    fi
+done
+
