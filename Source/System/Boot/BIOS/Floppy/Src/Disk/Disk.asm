@@ -1,20 +1,29 @@
-; Contains functions to access the Floppy.
-;
-; Copyright (c) 2011 Shikhin Sethi
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License along
-; with this program; if not, write to the Free Software Foundation, Inc.,
-; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ ; Contains functions to access the Floppy.
+ ;
+ ; Copyright (c) 2012, Shikhin Sethi
+ ; All rights reserved.
+ ;
+ ; Redistribution and use in source and binary forms, with or without
+ ; modification, are permitted provided that the following conditions are met:
+ ;     * Redistributions of source code must retain the above copyright
+ ;       notice, this list of conditions and the following disclaimer.
+ ;     * Redistributions in binary form must reproduce the above copyright
+ ;       notice, this list of conditions and the following disclaimer in the
+ ;       documentation and/or other materials provided with the distribution.
+ ;     * Neither the name of the <organization> nor the
+ ;       names of its contributors may be used to endorse or promote products
+ ;       derived from this software without specific prior written permission.
+ ;
+ ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ ; DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SECTION .data
 
@@ -52,9 +61,10 @@ BootError db "ERROR: Boot file corrupt.", 0
 BootDrive         dd 0
 Retry             db 0                ; Number of times to retry a particular function - safety purposes.
 
-; Gets the complete the boot file (us).
-;     @rc
-;                 Aborts boot if any error occured.
+ ; Gets the complete the boot file (us).
+ ;
+ ; Returns:
+ ;      Boot -> aborts boot if any error occured.
 GetBootFile:
     ; Save some registers we are using in this function.
     push edi
@@ -103,16 +113,16 @@ GetBootFile:
     mov si, BootError
     jmp AbortBoot
 
-; Read a sector from the disk to a buffer.
-;     @edi        The buffer to where to read the disk sector to.
-
-;     @al         The number of sectors to read.
-;     @ch         The cylinder number.
-;     @cl         The sector number from 0-5 (bits).
-;                 The cylinder number from 6-7 (bits).
-;     @dh         The head number.
-;     @rc
-;                 Sets with carry if unsuccessful.
+ ; Read a sector from the disk to a buffer.
+ ;     EDI    -> the buffer to where to read the disk sector to.
+ ;      AL    -> the number of sectors to read.
+ ;      CH    -> the cylinder number.
+ ;      CL    -> the sector number from 0-5 (bits).
+ ;            -> the cylinder number from 6-7 (bits).
+ ;      DH    -> The head number.
+ ;
+ ; Returns:
+ ;      Carry -> set if unsuccessful.
 ReadFromFloppy:
     pushad
     push es
@@ -158,10 +168,9 @@ ReadFromFloppy:
 
     ret
 
-
 SECTION .text
 
-; Initializes the system so that files may be opened/closed later on (finds LBA).
+ ; Initializes the system so that files may be opened/closed later on (finds LBA).
 InitBootFiles:
     pushad
 
@@ -182,15 +191,15 @@ InitBootFiles:
     popad
     ret
 
-; Reads multiple sectors from floppy.
-; @eax            Expects the LBA from where to read in EAX.
-; @ecx            Expects the number of sectors to read in ECX.
-; @edi            The buffer to where to read the floppy sector(s) to.
-
-; @rc
-;                 @ecx contains the number of sectors actually read.
-;                 Aborts boot if nothing made it work.
-; M stands for Multiple (sectors).
+ ; Reads multiple sectors from floppy.
+ ;     EAX  -> expects the LBA from where to read in EAX.
+ ;     ECX  -> expects the number of sectors to read in ECX.
+ ;     EDI  -> the buffer to where to read the floppy sector(s) to.
+ ;
+ ; Returns:
+ ;     ECX  -> the number of sectors actually read.
+ ;     Boot -> aborts boot if nothing made it work.
+; NOTE: M stands for Multiple (sectors).
 ReadFromFloppyM:
     pushad
 
@@ -279,14 +288,15 @@ ReadFromFloppyM:
     mov si, DiskError
     jmp AbortBoot
 
-; Opens a file to be read from.
-; @al             Contains the code number of the file to FILE.
-;                 0 -> Common BIOS File.
-;                 1 -> DBAL.
-;                 2 -> Background image.
-;     @rc 
-;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
-;                 @ecx    The size of the file you want to FILE.
+ ; Opens a file to be read from.
+ ; @al             Contains the code number of the file to FILE.
+ ;                 0 -> Common BIOS File.
+ ;                 1 -> DBAL.
+ ;                 2 -> Background image.
+ ;
+ ; Returns: 
+ ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
+ ;                 @ecx    The size of the file you want to FILE.
 OpenFile:
     push eax
     
