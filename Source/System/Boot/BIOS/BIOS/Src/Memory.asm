@@ -1,20 +1,29 @@
-; Contains functions responsible for building the memory map.
-;
-; Copyright (c) 2011 Shikhin Sethi
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License along
-; with this program; if not, write to the Free Software Foundation, Inc.,
-; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ ; Contains functions responsible for building the memory map.
+ ;
+ ; Copyright (c) 2012, Shikhin Sethi
+ ; All rights reserved.
+ ;
+ ; Redistribution and use in source and binary forms, with or without
+ ; modification, are permitted provided that the following conditions are met:
+ ;     * Redistributions of source code must retain the above copyright
+ ;       notice, this list of conditions and the following disclaimer.
+ ;     * Redistributions in binary form must reproduce the above copyright
+ ;       notice, this list of conditions and the following disclaimer in the
+ ;       documentation and/or other materials provided with the distribution.
+ ;     * Neither the name of the <organization> nor the
+ ;       names of its contributors may be used to endorse or promote products
+ ;       derived from this software without specific prior written permission.
+ ;
+ ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ ; DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 %define BD_CD      0
 %define BD_FLOPPY  1
@@ -22,7 +31,7 @@
 
 SECTION .text
 
-; Tries to build a advanced, sophisticated, sorted, memory map.
+ ; Tries to build a advanced, sophisticated, sorted, memory map.
 MMapBuild:
     pushad
 
@@ -32,7 +41,6 @@ MMapBuild:
     mov di, MMap
     xor bp, bp                        ; The number of entries in the MMap.
 
-; TODO: Check if were booted from PXE, and if yes - mark the portion from 0x80000 to 0xC0000 as reclaimable.
     cmp byte [BIT.BDFlags], BD_PXE
     jne .BDA
     
@@ -349,12 +357,12 @@ MMapBuild:
 
 Dummy:            dd 0
 
-; Probe to see if there's RAM at a certain address (taken and modified from wiki.osdev.org)
-; 
-; @edx            Maximum number of bytes to test.
-; @esi            Starting address of blocks to probe. 
-;     @rc
-;                 @ecx contains the number of bytes of RAM found 
+ ; Probe to see if there's RAM at a certain address (taken and modified from wiki.osdev.org)
+ ;     EDX -> maximum number of bytes to test.
+ ;     ESI -> starting address of blocks to probe. 
+ ;
+ ; Returns:
+ ;     ECX -> the number of bytes of RAM found 
 Probe:  
     mov ebx, .TestStart
     jmp SwitchToPM
@@ -402,12 +410,13 @@ BITS 16
 .Return: 
     ret
 
-; Tries to use EAX=0x0000E8X1 method of generating a memory map
-; @di             Should point to the memory map area.
-; @bp             The number of entries already there.
-; @eax            EAX should either contain 0xE881 or 0xE801.
-;     @rc     
-;                 Returns with carry set if failed.
+ ; Tries to use EAX=0x0000E8X1 method of generating a memory map
+ ;     DI    -> the memory map area.
+ ;     BP    -> the number of entries already there.
+ ;     EAX   -> either contain 0xE881 or 0xE801.
+ ; 
+ ; Returns:     
+ ;     Carry -> set if failed.
 E8X1:
     pushad
 
@@ -461,12 +470,12 @@ E8X1:
     stc
     ret    
 
-
-; Tries to use EAX=0x0000E820 method of generating a memory map
-; @di             Should point to the memory map area.
-; @bp             The number of entries already there.
-;     @rc
-;                 Returns with carry set if failed.
+ ; Tries to use EAX=0x0000E820 method of generating a memory map
+ ;     DI    -> the memory map area.
+ ;     BP    -> the number of entries already there.
+ ;
+ ; Returns:
+ ;     Carry -> set if failed.
 E820:
     pushad
 
@@ -559,9 +568,9 @@ E820:
     stc
     ret    
 
-; Swaps the entry with its next entry.
-; @esi            The first entry.
-; @esi + 24       The second entry.
+ ; Swaps the entry with its next entry.
+ ;     ESI      -> the first entry.
+ ;     ESI + 24 -> the second entry.
 MMapSwap:
     pushad
     
@@ -602,9 +611,8 @@ MMapSwap:
     popad
     ret
 
-
-; Sorts the memory map using Bubble sort.
-; @esi            Points to the memory map.
+ ; Sorts the memory map using Bubble sort.
+ ;     ESI -> the memory map.
 MMapSort:
     pushad
     mov bp, [MMapHeader.Entries]      ; The number of entries in the memory map.

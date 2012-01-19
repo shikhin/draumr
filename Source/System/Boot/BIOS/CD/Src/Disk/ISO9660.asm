@@ -1,20 +1,29 @@
-; Contains functions related to the ISO9660 filesystem.
-;
-; Copyright (c) 2011 Shikhin Sethi
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License along
-; with this program; if not, write to the Free Software Foundation, Inc.,
-; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ ; Contains functions related to the ISO9660 filesystem.
+ ;
+ ; Copyright (c) 2012, Shikhin Sethi
+ ; All rights reserved.
+ ;
+ ; Redistribution and use in source and binary forms, with or without
+ ; modification, are permitted provided that the following conditions are met:
+ ;     * Redistributions of source code must retain the above copyright
+ ;       notice, this list of conditions and the following disclaimer.
+ ;     * Redistributions in binary form must reproduce the above copyright
+ ;       notice, this list of conditions and the following disclaimer in the
+ ;       documentation and/or other materials provided with the distribution.
+ ;     * Neither the name of the <organization> nor the
+ ;       names of its contributors may be used to endorse or promote products
+ ;       derived from this software without specific prior written permission.
+ ;
+ ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ ; DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SECTION .data
 
@@ -53,9 +62,10 @@ FILE:
     
 SECTION .text
 
-; Is responsible for finding boot files.
-;     @rc
-;                 Aborts boot if ANY error occurs.
+ ; Is responsible for finding boot files.
+ ;
+ ; Returns: 
+ ;     Boot -> aborted if ANY error occurs.
 FindBootFiles:
     pushad    
 
@@ -205,14 +215,15 @@ FindBootFiles:
     popad
     ret
 
-; Opens a file to be read from.
-; @al             Contains the code number of the file to open.
-;                 0 -> Common BIOS File.
-;                 1 -> DBAL.
-;                 2 -> Background image.
-;     @rc 
-;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
-;                 @ecx    The size of the file you want to open.
+ ; Opens a file to be read from.
+ ;     AL   -> contains the code number of the file to open.
+ ;      0   -> common BIOS File.
+ ;      1   -> DBAL.
+ ;      2   -> background image.
+ ;
+ ; Returns: 
+ ;    ECX   -> the size of the file you want to open.
+ ;    Carry -> set if any error occured.
 OpenFile:
     ; Save some variables.
     push eax
@@ -279,11 +290,12 @@ OpenFile:
     mov ecx, [FILE.Size] 
     ret
 
-; Reads the 'next LBA' of the file currently opened.
-; @edi            The destination address of where to read the file to.
-; @ecx            The number of bytes to read.
-;     @rc
-;                 Aborts boot if any error occured (during read, that is).
+ ; Reads the 'next LBA' of the file currently opened.
+ ;     EDI  -> the destination address of where to read the file to.
+ ;     ECX  -> the number of bytes to read.
+ ;
+ ; Returns:
+ ;     Boot -> aborted if any error occured.
 ReadFile:
     pushad
 
@@ -345,7 +357,7 @@ ReadFile:
     popad
     ret
 
-; Closes the file currently opened.
+ ; Closes the file currently opened.
 CloseFile:
     mov byte [FILE.Code], -1
     mov dword [FILE.Extra], 0

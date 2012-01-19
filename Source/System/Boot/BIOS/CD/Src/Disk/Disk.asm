@@ -1,21 +1,29 @@
-; Contains functions to access the Disk.
-;
-; Copyright (c) 2011 Shikhin Sethi
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License along
-; with this program; if not, write to the Free Software Foundation, Inc.,
-; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
+ ; Contains functions to access the Disk.
+ ;
+ ; Copyright (c) 2012, Shikhin Sethi
+ ; All rights reserved.
+ ;
+ ; Redistribution and use in source and binary forms, with or without
+ ; modification, are permitted provided that the following conditions are met:
+ ;     * Redistributions of source code must retain the above copyright
+ ;       notice, this list of conditions and the following disclaimer.
+ ;     * Redistributions in binary form must reproduce the above copyright
+ ;       notice, this list of conditions and the following disclaimer in the
+ ;       documentation and/or other materials provided with the distribution.
+ ;     * Neither the name of the <organization> nor the
+ ;       names of its contributors may be used to endorse or promote products
+ ;       derived from this software without specific prior written permission.
+ ;
+ ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ ; DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SECTION .data
 
@@ -52,7 +60,6 @@ DiskErrTable2:
     dw DiskErrCmdB5
     dw DiskErrCmdB6
 
-
 ; This section contains all the Strings.
 DiskErr0          db "ERROR: Read from CD failed.", 0
 DiskErr1          db "ERROR: Not able to find the Primary Volume Descriptor.", 0
@@ -79,7 +86,6 @@ DiskErrCmdB4      db "ERROR: Lock count exceeded.", 0
 DiskErrCmdB5      db "ERROR: Valid eject request failed.", 0
 DiskErrCmdB6      db "ERROR: Volume present but read protected.", 0
 
-
 SECTION .base
 
 ; Save the boot drive number here.
@@ -96,9 +102,10 @@ LBAPacket:
    .LBALow        dd 0                ; Lower DWORD of the LBA address to load.
    .LBAHigh       dd 0                ; Higher DWORD of the LBA address to load.
 
-; Initializes the boot disk drive, and finds the Primary Volume Descriptor.
-;     @rc
-;                 Returns no error code but halts initialization if any error occurs.
+ ; Initializes the boot disk drive, and finds the Primary Volume Descriptor.
+ ;
+ ; Returns:
+ ;     Boot -> aborted if any error occurs.
 InitDisk:
     ; Save some registers.
     push si
@@ -136,7 +143,7 @@ InitDisk:
     
     ret
 
-; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
+ ; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
 CheckBootFile:
     pushad
     xor si, si                        ; If any error occurs in the future - abort using basic method.
@@ -187,10 +194,10 @@ CheckBootFile:
     popad
     ret
  
-
-; Checks whether the BIOS supports Int 0x13 extensions or not.
-;     @rc         
-;                 Returns no error code, but halts initialization if error occurs.
+ ; Checks whether the BIOS supports Int 0x13 extensions or not.
+ ;
+ ; Returns:         
+ ;     Boot -> aborted if any error occurs.
 CheckInt13Ext:
     pushad                            ; Push all general purpose registers to save them.
 
@@ -208,15 +215,14 @@ CheckInt13Ext:
     popad
     ret                               
 
-
-; Read a sector from the disk to a buffer.
-;     @edi        The buffer to where to read the disk sector to.
-;                 If bit 0x80000000 is set, advanced error checking is used.
-
-;     @ebx        The LBA address from where to read to.
-;     @ecx        The number of sectors to read.
-;     @rc
-;                 Aborts boot if unsuccesful.
+ ; Read a sector from the disk to a buffer.
+ ;     EDI  -> the buffer to where to read the disk sector to.
+ ;          -> bit 0x80000000 indicates advanced error checking is used.
+ ;     EBX  -> the LBA address from where to read to.
+ ;     ECX  -> the number of sectors to read.
+ ;
+ ; Returns:
+ ;     Boot -> aborted if any error occurs.
 ReadFromDisk:
     pushad
 
@@ -269,14 +275,17 @@ ReadFromDisk:
     popad
     ret
 
-
 SECTION .text
 
-; Reads multiple sectors from disk.
-; Expects same arguments as that for the above.
-; M stands for Multiple (sectors).
-;     @rc
-;                 @ecx Returns the sector actually read.
+ ; Reads multiple sectors from disk.
+ ;     EDI  -> the buffer to where to read the disk sector to.
+ ;          -> bit 0x80000000 indicates advanced error checking is used.
+ ;     EBX  -> the LBA address from where to read to.
+ ;     ECX  -> the number of sectors to read.
+ ;
+ ; Returns:
+ ;     ECX  -> the number of sectors actually read.
+; NOTE: M stands for multiple sectors.
 ReadFromDiskM:
     pushad
    
@@ -345,12 +354,11 @@ ReadFromDiskM:
     mov ecx, [SectorRead]             ; We are going to return the sectors read in ECX - so get it!
     ret
 
-
-; Prints out error messages reported by the BIOS on disk operations.
-; @ah             Is supposed to contain the error code.
-;     @rc
-;     @si         Contains the address of the string to print (when disk error occured).
-;     @ax         The type of beep to produce.
+ ; Prints out error messages reported by the BIOS on disk operations.
+ ;     AH -> the error code.
+ ;
+ ; Returns:
+ ;     SI -> the address of the string to print.
 GetErrorMsg:
     test ah, ah                       ; If AH is zero, print a generic error message.
     je .Generic

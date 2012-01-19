@@ -1,20 +1,29 @@
-; Common definitions to get the Video Mode information list.
-;
-; Copyright (c) 2011 Shikhin Sethi
-;
-; This program is free software; you can redistribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 3 of the License, or
-; (at your option) any later version.
-;
-; This program is distributed in the hope that it will be useful,
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-; GNU General Public License for more details.
-;
-; You should have received a copy of the GNU General Public License along
-; with this program; if not, write to the Free Software Foundation, Inc.,
-; 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ ; Common definitions to get the Video Mode information list.
+ ;
+ ; Copyright (c) 2012, Shikhin Sethi
+ ; All rights reserved.
+ ;
+ ; Redistribution and use in source and binary forms, with or without
+ ; modification, are permitted provided that the following conditions are met:
+ ;     * Redistributions of source code must retain the above copyright
+ ;       notice, this list of conditions and the following disclaimer.
+ ;     * Redistributions in binary form must reproduce the above copyright
+ ;       notice, this list of conditions and the following disclaimer in the
+ ;       documentation and/or other materials provided with the distribution.
+ ;     * Neither the name of the <organization> nor the
+ ;       names of its contributors may be used to endorse or promote products
+ ;       derived from this software without specific prior written permission.
+ ;
+ ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ; ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ ; DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SECTION .bss
 ; Reserve space for the palette AND the VBE controller information, since we only do it one t a time - where we store it.
@@ -30,8 +39,8 @@ PaletteLookup2BITS    db 0, 21, 42, 63
 SECTION .text
 BITS 16
 
-; Performs a switch to a VGA mode, using the BIOS.
-; @ax             The mode to switch to.
+ ; Performs a switch to a VGA mode, using the BIOS.
+ ;     AX -> the mode to switch to.
 SwitchVGA:
     pushad
 
@@ -41,9 +50,10 @@ SwitchVGA:
     popad
     ret
 
-; Performs a switch to a VBE mode, using the VBE.
-;     rc
-;                                      @ax - contains the status return code.
+ ; Performs a switch to a VBE mode, using the VBE.
+ ;
+ ; Returns:
+ ;     AX -> the status return code.
 SwitchVBE:
     mov bx, ax
     mov ax, 0x4F02
@@ -53,7 +63,7 @@ SwitchVBE:
 .Return:
     ret
 
-; Set ups the palette for a 8bpp mode, using the VBE.
+ ; Set ups the palette for a 8bpp mode, using the VBE.
 SetupPaletteVBE:
     pushad
     
@@ -100,13 +110,19 @@ SetupPaletteVBE:
     je .Return
     
     ; Else, use VGA.
-    call SetupPaletteVGA
+    ; Start from register 0, set 256 registers, from the table 'Palette', using AX = 0x1012.
+    xor bx, bx
+    mov ax, 0x1012
+    mov cx, 256
+    mov dx, Palette
+
+    int 0x10
     
 .Return:
     popad
     ret
 
-; Set ups the palette for a 8bpp mode, using the BIOS.
+ ; Set ups the palette for a 8bpp mode, using the BIOS.
 SetupPaletteVGA:
     pushad
 
@@ -151,8 +167,7 @@ SetupPaletteVGA:
     popad
     ret
 
-
-; Checks for VGA, VBE, and if VBE supported, also gets the VBE information.
+ ; Checks for VGA, VBE, and if VBE supported, also gets the VBE information.
 VideoInit:
     pushad
 
@@ -276,9 +291,10 @@ VideoInit:
     ret
 
 
-; Get's video modes information from VBE and store it at VBEModeInfo.
-;     rc
-;                                     The number of entries in @eax.
+ ; Get's video modes information from VBE and store it at VBEModeInfo.
+ ;
+ ; Returns:
+ ;     EAX -> the number of entries.
 GetModeInfoVBE:
     ; Save es and fs.
     push es
