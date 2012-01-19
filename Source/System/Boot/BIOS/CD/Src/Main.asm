@@ -36,10 +36,12 @@ SECTION .data
 %define BD_PXE       2
 
 ; Abort boot if can't open file.
-ErrorFile db "ERROR: Error occured while trying to open file.", 0
+ErrorIO:
+    db "ERROR: Error occured during file Input/Output.", 0
 
 ; Or file is incorrect.
-ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", 0
+ErrorParse:
+    db "ERROR: Error occured while trying to parse common BIOS file.", 0
 
 SECTION .base
 
@@ -70,7 +72,7 @@ Main:
     mov gs, ax
 
     mov ss, ax
-    mov sp, Startup                   ; Set the stack to start from Startup (0x7C00) and continue below.
+    mov sp, 0x7C00                    ; Set the stack to start from Startup (0x7C00) and continue below.
     
     sti
     
@@ -84,8 +86,9 @@ Main:
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
-BootSignature: 
     times 510-($-$$) db 0
+
+BootSignature:
     dw 0xAA55
 
 SECTION .text
@@ -105,7 +108,7 @@ ExtMain:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     
     call OpenFile                     ; Open the File.
-    jc .Error
+    jc .ErrorIO
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -117,11 +120,11 @@ ExtMain:
 ; Check common BIOS file - basic first sector testing.
 .CheckCBIOSFirstSector:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
-    jne .Error2
+    jne .ErrorParse
 
     ; If the starting address isn't 0x9000, abort.
     cmp dword [0x9000 + 8], 0x9000
-    jne .Error2
+    jne .ErrorParse
     
     mov ecx, [0x9000 + 12]            ; Get the end of file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
@@ -134,7 +137,7 @@ ExtMain:
     shr edx, 11                       ; Here we have the number of sectors of the file (according to the fs).
 
     cmp ecx, edx
-    jne .Error2                       ; If they aren't equal, error.
+    jne .ErrorParse                   ; If they aren't equal, error.
   
 ; Load the rest of the file.
 .LoadRestFile:
@@ -143,6 +146,7 @@ ExtMain:
     ; Get back the stored ECX.
     pop ecx
     
+    ; If we already read the whole file, end.
     cmp ecx, 0x800
     jbe .Finish
 
@@ -155,9 +159,9 @@ ExtMain:
 ; Check rest of the common BIOS file.
 .CheckCBIOSRest:
     mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.
-    mov esi, 0x9000 + 28              ; Calculate CRC from above byte 24.
+    mov esi, 0x9000 + 28              ; Calculate CRC from above byte 28.
     
-    sub ecx, esi                      ; Subtract 0x9000 (address of start) + 24 (size of header) from it, to get the size.
+    sub ecx, esi                      ; Subtract 0x9000 (address of start) + 28 (size of header) from it, to get the size.
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
@@ -165,11 +169,11 @@ ExtMain:
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
         
-    jne .Error2                       ; Not equal? ERROR: Abort boot.
+    jne .ErrorParse                   ; If not equal, abort boot.
 
 .ZeroBSS:
     mov esi, 0x9000 
-    mov edi, [esi + 16]                ; Move the start of BSS section into EDI.
+    mov edi, [esi + 16]               ; Move the start of BSS section into EDI.
    
     mov ecx, [esi + 20]
     sub ecx, edi                      ; Calculate the length, and store it in ECX.
@@ -187,14 +191,15 @@ ExtMain:
     ; Reset esp and ebp.
     mov esp, 0x7C00
     xor ebp, ebp
+    
     jmp [0x9004]
     
-.Error:
-    mov si, ErrorFile
+.ErrorIO:
+    mov si, ErrorIO
     jmp AbortBoot
 
-.Error2:
-    mov si, ErrorBIOSFile
+.ErrorParse:
+    mov si, ErrorParse
     jmp AbortBoot
 
 SECTION .pad

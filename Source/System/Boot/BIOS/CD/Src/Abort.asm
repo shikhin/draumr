@@ -64,6 +64,5 @@ AbortBoot:
     sti
 
 .Halt:
-    pause
     hlt
     jmp .Halt

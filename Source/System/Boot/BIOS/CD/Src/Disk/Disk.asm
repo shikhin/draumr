@@ -263,10 +263,8 @@ ReadFromDisk:
     xor si, si
 
     test ebp, 0x80000000
-    jnz .AdvancedAbort
-
-    jmp AbortBoot
-
+    jz AbortBoot
+    
 .AdvancedAbort:
     call GetErrorMsg
     jmp AbortBoot

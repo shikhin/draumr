@@ -92,13 +92,10 @@ CloseFile:         dd 0
 %define EDID_PRESENT    (1 << 5)
 
 ; Abort boot if can't open file.
-ErrorFile db "ERROR: Error occured while trying to open file.", 0
+ErrorIO db "ERROR: Error occured during file Input/Output.", 0
 
 ; Or file is incorrect.
-ErrorBIOSFile db "ERROR: Error occured while trying to parse the DBAL file.", 0
-
-; Or we are trying to close a file which we haven't even opened.
-ClosingWhileNotOpened db "ERROR: Trying to close a file, while none has been opened yet.", 0
+ErrorParse db "ERROR: Error occured while trying to parse the DBAL file.", 0
 
 SECTION .text
 
@@ -135,7 +132,7 @@ Startup:
     inc ax
     
     call [OpenFile]                   ; Open the File.
-    jc .Error
+    jc .ErrorIO
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -146,10 +143,10 @@ Startup:
 
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
-    jne .Error2
+    jne .ErrorParse
     
     cmp dword [0xE008], 0xE000        ; Check the starting address.
-    jne .Error2
+    jne .ErrorParse
     
     mov ecx, [0xE000 + 12]            ; Get the end of file in ECX - actual file size.
     sub ecx, 0xE000                   ; Subtract 0xE000 from it to get it's size.
@@ -162,7 +159,7 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
     
     cmp ecx, edx
-    jne .Error2                       ; If they aren't equal, error.
+    jne .ErrorParse                   ; If they aren't equal, error.
   
 .LoadRestFile:
     add edi, 0x200
@@ -198,7 +195,7 @@ BITS 32
     je .ZeroBSS
     
     ; If error occured, switch to Real Modee
-    mov ebx, .Error2
+    mov ebx, .ErrorParse
     call SwitchToRM
 
 .ZeroBSS:
@@ -214,14 +211,13 @@ BITS 32
 
     jmp .Cont
 
-
 BITS 16
-.Error:
-    mov si, ErrorFile
+.ErrorIO:
+    mov si, ErrorIO
     jmp AbortBoot
 
-.Error2:
-    mov si, ErrorBIOSFile
+.ErrorParse:
+    mov si, ErrorParse
     jmp AbortBoot
 
 BITS 32
@@ -239,8 +235,8 @@ BITS 32
 
 %include "Source/System/Boot/Lib/CRC32/CRC32.asm"
 
-; A wrapper to the SwitchVGA function - to be done from 32-bit code.
-; Argument pushed                     A 16-byte word, defining the mode to switch to.
+ ; A wrapper to the SwitchVGA function - to be done from 32-bit code.
+ ;     uint16_t -> the mode to switch to.
 SwitchVGAWrapper:
     push ebx
    
@@ -260,7 +256,7 @@ BITS 32
     pop ebx
     ret
 
-; A wrapper to the SetupPaletteVGA function - to be done from 32-bit code.
+ ; A wrapper to the SetupPaletteVGA function - to be done from 32-bit code.
 SetupPaletteVGAWrapper:
     push ebx
    
@@ -279,10 +275,11 @@ BITS 32
     pop ebx
     ret
 
-; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
-; Argument pushed                     A 32-bit dword, defining the address where to write.
-;     rc
-;                                     The number of entries in @eax.
+ ; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
+ ;     uint32_t -> the address where to write.
+ ;
+ ; Returns:
+ ;     EAX      -> the number of entries.
 GetModeInfoVBEWrapper:
     push ebx
    
@@ -306,10 +303,11 @@ BITS 32
     pop ebx
     ret
 
-; A wrapper to the SwitchVBE function - to be done from 32-bit code.
-; Argument pushed                     A 16-byte word, defining the mode to switch to.
-;     rc
-;                                     uint16_t - the status of the call to VBE.
+ ; A wrapper to the SwitchVBE function - to be done from 32-bit code.
+ ;     uint16_t -> the mode to switch to.
+ ;
+ ; Returns:
+ ;     AX       -> the status of the call to VBE.
 SwitchVBEWrapper:
     push ebx
    
@@ -331,7 +329,7 @@ BITS 32
     pop ebx
     ret
 
-; A wrapper to the SetupPaletteVBE function - to be done from 32-bit code.
+ ; A wrapper to the SetupPaletteVBE function - to be done from 32-bit code.
 SetupPaletteVBEWrapper:
     push ebx
    
@@ -350,10 +348,11 @@ BITS 32
     pop ebx
     ret
 
-; A wrapper to the OpenFile function - to be done from 32-bit code.
-; Argument pushed                     A 32-bit dword, defining the "code" of the file to open.
-;     rc
-;                                     The size of the file opened in @eax.
+ ; A wrapper to the OpenFile function - to be done from 32-bit code.
+ ;     uint32_t -> the "code" of the file to open.
+ ;
+ ; Returns:
+ ;     EAX      -> the size of the file opened.
 OpenFileWrapper:
     push ebx
    
@@ -384,12 +383,12 @@ BITS 32
     pop ebx
     ret
 
-
-; A wrapper to the ReadFile function - to be done from 32-bit code.
-; Argument pushed                     A 32-bit dword, defining the length to read.
-;                                     A 32-bit dword, defining the address to read to.
-;     rc
-;                                     The size of the file opened in @eax.
+ ; A wrapper to the ReadFile function - to be done from 32-bit code.
+ ;     uint32_t -> the length to read.
+ ;     uint32_t -> the address to read to.
+ ;
+ ; Returns:
+ ;     EAX      -> the size of the file opened.
 ReadFileWrapper:
     push ebx
     push edi
@@ -414,8 +413,7 @@ BITS 32
     
     ret
 
-
-; A wrapper to the CloseFile function - to be done from 32-bit code.
+ ; A wrapper to the CloseFile function - to be done from 32-bit code.
 CloseFileWrapper:
     push ebx
    
@@ -425,11 +423,7 @@ CloseFileWrapper:
 BITS 16
 .CloseFile:
     call word [CloseFile]            ; Close the file.
-    jnc .BackToPM
-
-    ; And if we failed for some reason, we got to abort boot.
-    mov si, ClosingWhileNotOpened
-    jmp AbortBoot
+    jc ErrorIO
     
 .BackToPM:
     mov ebx, .Return
@@ -441,8 +435,8 @@ BITS 32
     ret
 
 BITS 16
-; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
-; @ebx            Would sound dumb - but found no better way (without messing with the stack) - the return address here.
+ ; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
+ ;     EBX -> the return address here.
 SwitchToPM:
     cli
 
@@ -467,7 +461,7 @@ BITS 32
 .Return:
     jmp ebx
 
-; Switch to Real mode back for future generations.
+ ; Switch to Real mode back for future generations.
 SwitchToRM:
     lgdt [GDTR16]                     ; Load the 16-bit GDT.
     

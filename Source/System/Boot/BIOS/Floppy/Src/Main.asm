@@ -36,10 +36,10 @@ SECTION .data
 %define BD_PXE       2
 
 ; Abort boot if can't open file.
-ErrorFile db "ERROR: Error occured while trying to open file.", 0
+ErrorIO db "ERROR: Error occured during file Input/Output.", 0
 
 ; Or file is incorrect.
-ErrorBIOSFile db "ERROR: Error occured while trying to parse common BIOS file.", 0
+ErrorParse db "ERROR: Error occured while trying to parse common BIOS file.", 0
 
 SECTION .base
 
@@ -77,8 +77,9 @@ Main:
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
-BIOSSignature:
     times 510-($-$$) db 0
+
+BIOSSignature:
     dw 0xAA55
 
 ExtMain:
@@ -89,7 +90,7 @@ ExtMain:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     call OpenFile                     ; Open the File.
 
-    jc .Error
+    jc .ErrorIO
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -102,10 +103,10 @@ ExtMain:
 ; Does all checks related to the first sector of the common BIOS file.
 .CheckCBIOS1:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
-    jne .Error2
+    jne .ErrorParse
     
     cmp dword [0x9008], 0x9000        ; If the starting of the file isn't 0x9000, abort.
-    jne .Error2
+    jne .ErrorParse
 
     mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
@@ -118,7 +119,7 @@ ExtMain:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
 
     cmp ecx, edx
-    jne .Error2                       ; If not equal, error.
+    jne .ErrorParse                       ; If not equal, error.
 
 .LoadRestFile:
     add edi, 0x200
@@ -145,7 +146,7 @@ ExtMain:
     
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
-    jne .Error2                       ; Not equal? ERROR: Abort boot.
+    jne .ErrorParse                   ; Not equal? ERROR: Abort boot.
 
 .ZeroBSS:
     mov esi, 0x9000 
@@ -166,14 +167,15 @@ ExtMain:
        
     mov esp, 0x7C00
     xor ebp, ebp
+
     jmp [0x9004]
 
-.Error:
-    mov si, ErrorFile
+.ErrorIO:
+    mov si, ErrorIO
     jmp AbortBoot
 
-.Error2:
-    mov si, ErrorBIOSFile
+.ErrorParse:
+    mov si, ErrorParse
     jmp AbortBoot
 
 SECTION .pad

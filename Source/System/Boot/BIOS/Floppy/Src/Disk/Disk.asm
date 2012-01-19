@@ -289,14 +289,14 @@ ReadFromFloppyM:
     jmp AbortBoot
 
  ; Opens a file to be read from.
- ; @al             Contains the code number of the file to FILE.
- ;                 0 -> Common BIOS File.
- ;                 1 -> DBAL.
- ;                 2 -> Background image.
+ ;      AL   -> contains the code number of the file to FILE.
+ ;       0   -> common BIOS File.
+ ;       1   -> DBAL.
+ ;       2   -> background image.
  ;
  ; Returns: 
- ;                 Returns with carry set if ANY error occured (technically, no error should be happening, but still).
- ;                 @ecx    The size of the file you want to FILE.
+ ;     Carry -> set if any error occured.
+ ;     ECX   -> the size of the file you want to FILE.
 OpenFile:
     push eax
     
@@ -347,11 +347,12 @@ OpenFile:
     pop eax
     ret
 
-; Reads the 'next LBA' of the file currently opened.
-; @edi            The destination address of where to read the file to.
-; @ecx            The number of bytes to read.
-;     @rc
-;                 Aborts boot if any error occured (during read, that is).
+ ; Reads the 'next LBA' of the file currently opened.
+ ;     EDI  -> the destination address of where to read the file to.
+ ;     ECX  -> the number of bytes to read.
+ ;
+ ; Returns:
+ ;     Boot -> aborted if any error occured.
 ReadFile:
     pushad
     
@@ -396,7 +397,7 @@ ReadFile:
     popad
     ret
 
-; Closes the file currently opened.
+ ; Closes the file currently opened.
 CloseFile:
     mov byte [FILE.Code], -1
     ret

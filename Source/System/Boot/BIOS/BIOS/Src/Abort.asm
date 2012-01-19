@@ -44,7 +44,6 @@ AbortBoot:
     jmp $+2
     jmp $+2
 
-
     mov al, 0xD1                      ; Send lower 16-bits of count for frequency to play.            
     out 0x42, al            
 
@@ -63,6 +62,5 @@ AbortBoot:
     sti
 
 .Halt:
-    pause
     hlt
     jmp .Halt

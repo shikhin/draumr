@@ -35,7 +35,13 @@ SECTION .data
 %define BD_FLOPPY    1
 %define BD_PXE       2
 
-BIOSError db "ERROR: Error occured while trying to read, open or parse common BIOS File.", 0
+; Error in IO.
+ErrorIO:
+    db "ERROR: Error occured during file Input/Output.", 0
+
+; Error while parsing file.
+ErrorParse:
+    db "ERROR: Error occured while trying to parse common BIOS File.", 0
 
 ; Prepare the PXENV_GET_CACHED_INFO structure.
 PXENV_GET_CACHED_INFO:
@@ -101,7 +107,7 @@ Main:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     
     call OpenFile                     ; Open the File.
-    jc .Error
+    jc .ErrorIO
 
     ; ECX contains size of file we are opening.
     push ecx
@@ -113,10 +119,10 @@ Main:
 ; Checks common BIOS file from first sector.
 .CheckCBIOSFirstSector:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
-    jne .Error2
+    jne .ErrorParse
 
     cmp dword [0x9008], 0x9000        ; Check whether starting address is 0x9000 or not.
-    jne .Error2                       ; If no, abort boot.
+    jne .ErrorParse                   ; If no, abort boot.
         
     mov ecx, [0x9000 + 12]            ; Get the end of file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
@@ -129,7 +135,7 @@ Main:
     shr edx, 11                       ; Here we have the number of sectors of the file (according to the fs).
 
     cmp ecx, edx
-    jne .Error2                       ; If they aren't equal, error.
+    jne .ErrorParse                   ; If they aren't equal, error.
 
 .LoadRestFile:
     add edi, 512
@@ -158,7 +164,7 @@ Main:
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
         
-    jne .Error2                       ; Not equal? ERROR: Abort boot.
+    jne .ErrorParse                   ; Not equal? ERROR: Abort boot.
 
 .ZeroBSS:
     mov esi, 0x9000 
@@ -193,6 +199,10 @@ Main:
     mov si, PXEAPIError               ; Accessing the API error occured.
     jmp AbortBoot                     ; Abort boot now!
 
-.Error2:
-    mov si, BIOSError                 ; Unable to open/find the common BIOS file.
+.ErrorIO:
+    mov si, ErrorIO
+    jmp AbortBoot                     ; Abort boot now!
+
+.ErrorParse:
+    mov si, ErrorParse                ; Unable to parse the common BIOS file.
     jmp AbortBoot
