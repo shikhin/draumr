@@ -109,7 +109,7 @@ struct BIT
 typedef struct BIT BIT_t;
 
 // The BIT structure defined in BIT.c - where we back this up.
-extern volatile BIT_t BIT;
+extern BIT_t BIT;
 
 /*
  * Initializes the BIT structure, copying it to somewhere appropriate.
