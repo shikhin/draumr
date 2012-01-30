@@ -68,8 +68,8 @@ typedef struct MMapEntry MMapEntry_t;
 // The types - some macros to make it easy and more beautiful :-)
 #define FREE_RAM  1
 
-#define BASE_STACK                    0
-#define POOL_STACK                    1
+#define BASE_BITMAP                    0
+#define POOL_BITMAP                    1
 
 // Define the pointers to the headers and entries.
 extern MMapHeader_t *MMapHeader;
@@ -82,7 +82,7 @@ void PMMInit();
 
 /*
  * Allocates a frame in the PMM, and returns it's address.
- *     uint32_t Type -> the type of the frame to allocate - BASE_STACK or POOL_STACK
+ *     uint32_t Type -> the type of the frame to allocate - BASE_BITMAP or POOL_BITMAP
  *
  * Returns:
  *     uint32_t      -> the address of the frame allocated.
@@ -105,11 +105,11 @@ void PMMFreeFrame(uint32_t Addr);
  */
 uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number);
 
-
 /*
  * Frees contiguous number of 'Number' frames.
+ *     uint32_t Addr   -> the starting address from where to free.
  *     uint32_t Number -> the number of frames to free.
  */
-void PMMAllocContigFrames(uint32_t Type, uint32_t Number);
+void PMMFreeContigFrames(uint32_t Addr, uint32_t Number);
 
 #endif                                /* PMM.h */

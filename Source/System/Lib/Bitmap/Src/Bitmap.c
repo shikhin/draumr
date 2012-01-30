@@ -190,7 +190,7 @@ static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
     		    ContigBitsFound++;
     		    if(ContigBitsFound == Count)
     		    {
-    		    	return ((Bitmap->Size & ~32) + j) - (Count - 1);
+    		    	return ((Bitmap->Size & ~31) + j) - (Count - 1);
     		    }	
     		}
     	}
@@ -230,6 +230,12 @@ Bitmap_t BitmapInit(uint32_t *Data, int64_t Size)
  */
 void BitmapSetBit(Bitmap_t *Bitmap, int64_t Index)
 {
+    // If index isn't in bitmap, then return.
+    if(Index >= Bitmap->Size)
+    {
+        return;
+    }
+
 	// Set the bit.
 	Bitmap->Data[INDEX_BIT(Index)] |= (1 << OFFSET_BIT(Index));
 
@@ -247,6 +253,12 @@ void BitmapSetBit(Bitmap_t *Bitmap, int64_t Index)
  */
 void BitmapClearBit(Bitmap_t *Bitmap, int64_t Index)
 {
+    // If index isn't in bitmap, then return.
+    if(Index >= Bitmap->Size)
+    {
+        return;
+    }
+
 	// Clear the bit.
 	Bitmap->Data[INDEX_BIT(Index)] &= ~(1 << OFFSET_BIT(Index));
 
@@ -267,6 +279,12 @@ void BitmapClearBit(Bitmap_t *Bitmap, int64_t Index)
  */
 uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index)
 {
+    // If index isn't in bitmap, then return.
+    if(Index >= Bitmap->Size)
+    {
+        return;
+    }
+
 	return Bitmap->Data[INDEX_BIT(Index)] & (1 << OFFSET_BIT(Index));
 }
 
@@ -331,4 +349,19 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
 
     // Return the first zero bit's index.
     return ContiguousBits;
+}
+
+/*
+ * Clears a contiguous series of zero bits. 
+ *     Bitmap_t *Bitmap -> the bitmap in which to find the series of bits.
+ *     int64_t From     -> the area from where to start clearing the series of bits.
+ *     int64_t Count    -> the number of contiguous bits to clear.
+ */
+void BitmapClearContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
+{
+    // Clear the contiguous bits.
+    for(int64_t i = From; (i < (From + Count)) && (i < Bitmap->Size); i++)
+    {
+        Bitmap->Data[INDEX_BIT(i)] &= ~(1 << OFFSET_BIT(i));
+    }
 }

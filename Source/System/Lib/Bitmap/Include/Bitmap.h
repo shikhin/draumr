@@ -100,4 +100,12 @@ int64_t BitmapFindFirstZero(Bitmap_t *Bitmap);
  */
 int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count);
 
+/*
+ * Clears a contiguous series of zero bits. 
+ *     Bitmap_t *Bitmap -> the bitmap in which to find the series of bits.
+ *     int64_t From     -> the area from where to start clearing the series of bits.
+ *     int64_t Count    -> the number of contiguous bits to clear.
+ */
+void BitmapClearContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count);
+
 #endif										/* Bitmap.h */
