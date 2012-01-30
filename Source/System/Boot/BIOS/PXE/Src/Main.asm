@@ -67,7 +67,7 @@ Startup:
 %include "Source/System/Boot/BIOS/PXE/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/PXE/Src/PXE/PXE.asm"
 %include "Source/System/Boot/BIOS/PXE/Src/PXE/Disk.asm"
-%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+%include "Source/System/Lib/CRC32/CRC32.asm"
 
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.

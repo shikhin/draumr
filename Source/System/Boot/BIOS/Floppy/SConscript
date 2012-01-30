@@ -31,21 +31,17 @@ import os
 
 Import("env", "sys_env")
 
-
 src = ["Src/Main.asm",
        "Src/Abort.asm",
        "Src/Screen.asm",
        "Src/Disk/Disk.asm",
        "Link.ld"]
 
-
 # A target for building the Stage 1 binary.
-stage1obj = sys_env.Object("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Floppy/Link.ld")
-stage1 = sys_env.Program("Stage1", "Stage1", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Floppy/Link.ld")
+Stage1 = sys_env.Program("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Floppy/Link.ld")
 
-Depends(stage1obj, src)
-Depends(stage1, stage1obj)
+Depends(Stage1, src)
 
 # Save the stage 1 target in the environment as we will need it later.
-env["FLOPPY_STAGE1"] = stage1
+env["FLOPPY_STAGE1"] = Stage1
 

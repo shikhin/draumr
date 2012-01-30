@@ -1,3 +1,5 @@
+# -*- python -*-
+
  # Draumr build system.
  #
  # Copyright (c) 2012, Shikhin Sethi
@@ -25,37 +27,16 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from SCons.Errors import StopError
+import os
 
-class Config :
-    params = {
-        "build" : ["debug", "release"],
-        "target" : ["iso", "pxe", "floppy", "all"],
-    }
+Import("env", "sys_env")
 
-    def __init__(self) :
-        self.arch = "i486"
-        self.build = "debug"
-        self.target = "all"
-	
-    def get_arch(self) :
-        return self.arch
+src = ["Src/Bitmap.c"]
 
-    def get_build(self) :
-        return self.build
+# A target for building the DBAL binary.
+Bitmap = sys_env.Library("#Source/System/Lib/Bitmap", [x for x in src], CCFLAGS = ["-march=i486", "-m32"])
 
-    def parse(self, args) :
-        for k in args.keys() :
-            v = args[k]
+Depends(Bitmap, src)
 
-            if not self._validate(k, v) :
-                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (k, ", ".join(self.params[k])))
-
-            if k == "build" : self.build = v
-            if k == "target" : self.target = v
-
-    def _validate(self, key, value) :
-        if not key in self.params :
-            return False
-
-        return value in self.params[key]
+# Save the Bitmap target in the environment as we will need it later.
+env["LIB_BITMAP"] = Bitmap

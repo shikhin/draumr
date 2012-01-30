@@ -41,12 +41,8 @@ src = ["Link.ld",
        "Src/Tables/Tables.asm"]
 
 # A target for building the Stage 1 binary.
-BIOSobj = sys_env.Object("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
-BIOS = sys_env.Program("BIOS", "BIOS", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
+BIOS = sys_env.Program("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
 
-Depends(BIOSobj, src)
-Depends(BIOS, BIOSobj)
+Depends(BIOS, src)
 
 env["BIOS"] = BIOS
-
-Depends(env["BIOS"], env["CRC32"])

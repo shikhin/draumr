@@ -55,7 +55,7 @@ SECTION .text
 %include "Source/System/Boot/BIOS/Floppy/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/Floppy/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/Floppy/Src/Disk/Disk.asm"
-%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+%include "Source/System/Lib/CRC32/CRC32.asm"
 
 SECTION .base
 Main:

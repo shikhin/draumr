@@ -65,16 +65,11 @@ typedef struct MMapEntry MMapEntry_t;
 // The USABLE flag - is the first bit.
 #define USABLE    (1 << 0)
 
-// We'll be allocating this much for a start.
-#define MIN_ALLOC 0x4000000
-
 // The types - some macros to make it easy and more beautiful :-)
 #define FREE_RAM  1
 
 #define BASE_STACK                    0
 #define POOL_STACK                    1
-
-#define NULL                          0x00000000
 
 // Define the pointers to the headers and entries.
 extern MMapHeader_t *MMapHeader;
@@ -96,10 +91,9 @@ uint32_t PMMAllocFrame(uint32_t Type);
 
 /*
  * Frees a frame in the PMM.
- *     uint32_t Type -> the region where to free the frame to - BASE_STACK or POOL_STACK
  *     uint32_t Addr -> the address of the frame to free.
  */
-void PMMFreeFrame(uint32_t Type, uint32_t Addr);            
+void PMMFreeFrame(uint32_t Addr);            
 
 /*
  * Allocates contiguous number of 'Number' frames.
@@ -110,5 +104,12 @@ void PMMFreeFrame(uint32_t Type, uint32_t Addr);
  *     uint32_t        -> the address of the contiguous frames allocated.
  */
 uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number);
+
+
+/*
+ * Frees contiguous number of 'Number' frames.
+ *     uint32_t Number -> the number of frames to free.
+ */
+void PMMAllocContigFrames(uint32_t Type, uint32_t Number);
 
 #endif                                /* PMM.h */

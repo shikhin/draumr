@@ -1,5 +1,5 @@
-/*
- * Entry point for DBAL file.
+/* 
+ * Contains some commonly used macros.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,40 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <String.h>
-#include <BIT.h>
-#include <PMM.h>
-#include <Log.h>
-#include <FPU.h>
-#include <BootFiles.h>
-#include <Output.h>
-#include <OutputMod/OutputMod.h>
+// The MAX macro - to find the maximum of two values.
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-/* 
- * The Main function for the DBAL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
-void Main(uint32_t *BITPointer)
-{
-    // Initialize the FPU, without which, we can't proceed.
-    FPUInit();
-    
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
-    
-    // Initialize the PMM.
-    PMMInit();
-    
-    // Initialize the bouncer for the boot files.
-    InitBootFiles();
-        
-    // Initialize 'output' thingy.
-    OutputInit(); 
-    
-    // Just a temporary thingy to init the OutputMod.
-    OutputModInit();
-    
-    for(;;)
-        __asm__ __volatile__("hlt");
-}
+// The MIN macro - to find the minimum of two values.
+#define MIN(a, b) (((a) > (b)) ? (a) : (b))

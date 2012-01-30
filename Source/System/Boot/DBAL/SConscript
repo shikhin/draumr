@@ -53,9 +53,8 @@ src = ["Src/Header.asm",
        "Src/OutputMod/Enhance/Scale.c",
        "Src/OutputMod/Enhance/Dither.c" ]
 
-
 # A target for building the DBAL binary.
-DBAL = sys_env.Program("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = "-m32 -ISource/System/Boot/DBAL/Include/")
+DBAL = sys_env.Program("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = ["-march=i486", "-m32"], LIBS=['Bitmap'])
 
 Depends(DBAL, src)
 

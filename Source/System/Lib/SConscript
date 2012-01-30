@@ -1,3 +1,5 @@
+# -*- python -*-
+
  # Draumr build system.
  #
  # Copyright (c) 2012, Shikhin Sethi
@@ -25,37 +27,6 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from SCons.Errors import StopError
+Import("env", "sys_env")
 
-class Config :
-    params = {
-        "build" : ["debug", "release"],
-        "target" : ["iso", "pxe", "floppy", "all"],
-    }
-
-    def __init__(self) :
-        self.arch = "i486"
-        self.build = "debug"
-        self.target = "all"
-	
-    def get_arch(self) :
-        return self.arch
-
-    def get_build(self) :
-        return self.build
-
-    def parse(self, args) :
-        for k in args.keys() :
-            v = args[k]
-
-            if not self._validate(k, v) :
-                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (k, ", ".join(self.params[k])))
-
-            if k == "build" : self.build = v
-            if k == "target" : self.target = v
-
-    def _validate(self, key, value) :
-        if not key in self.params :
-            return False
-
-        return value in self.params[key]
+SConscript(dirs=["Bitmap"], exports=["env", "sys_env"])

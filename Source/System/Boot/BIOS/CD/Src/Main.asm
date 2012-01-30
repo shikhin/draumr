@@ -94,7 +94,7 @@ BootSignature:
 SECTION .text
 
 ; Include some files.
-%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+%include "Source/System/Lib/CRC32/CRC32.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Disk/Disk.asm"

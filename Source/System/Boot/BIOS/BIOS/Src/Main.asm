@@ -233,7 +233,7 @@ BITS 32
     
     call [0xE004]
 
-%include "Source/System/Boot/Lib/CRC32/CRC32.asm"
+%include "Source/System/Lib/CRC32/CRC32.asm"
 
  ; A wrapper to the SwitchVGA function - to be done from 32-bit code.
  ;     uint16_t -> the mode to switch to.
