@@ -32,3 +32,6 @@
 
 // The MIN macro - to find the minimum of two values.
 #define MIN(a, b) (((a) > (b)) ? (a) : (b))
+
+// The NULL macro.
+#define NULL       0x00000000

@@ -28,8 +28,8 @@
  */
 
 #include <stdint.h>
+#include <Macros.h>
 #include <Bitmap.h>
-#include <stdio.h>
 
 /*
  * Finds the first bit which is zero.
@@ -39,7 +39,7 @@
  * Returns:
  *     int64_t          -> the new "first zero bit". -1 if none found. 
  */
-static int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From)
+int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From)
 {
 	uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
 	uint32_t ClearedBit = 0;
@@ -97,7 +97,7 @@ static int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From)
  */
 static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
 {
-    // If count is 1, return with a call to FindFirstZero
+    // If count is 1, return with a call to BitmapFindFirstZero
     if(Count == 1)
     {
         return FindFirstZero(Bitmap, From);
@@ -204,11 +204,12 @@ static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
  * Initializes a bitmap.
  *     uint32_t *Data -> the area where to keep the data for the bitmap.
  *     int64_t Size   -> the size of the new bitmap.
+ *     uint32_t Seed  -> the data to initialize the bitmap to.
  *
  * Returns:
  *     Bitmap_t       -> a bitmap structure containing the newly initialized bitmap.
  */
-Bitmap_t BitmapInit(uint32_t *Data, int64_t Size)
+Bitmap_t BitmapInit(uint32_t *Data, int64_t Size, uint32_t Seed)
 {
 	Bitmap_t Bitmap;
 
@@ -219,8 +220,18 @@ Bitmap_t BitmapInit(uint32_t *Data, int64_t Size)
 	Bitmap.Size = Size;
 
     Bitmap.FirstZero = 0;
+    
+    for(int64_t i = 0; i < INDEX_BIT(Size) - 1; i++)
+    {
+        Data[i] = Seed;
+    }
 
-	return Bitmap;
+    for(uint32_t j = 0, BitToSet = 1; j < OFFSET_BIT(Size); j++, BitToSet <<= 1)
+    {
+        Data[INDEX_BIT(Size)] |= BitToSet;
+    }
+
+    return Bitmap;
 }
 
 /*
@@ -282,7 +293,7 @@ uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index)
     // If index isn't in bitmap, then return.
     if(Index >= Bitmap->Size)
     {
-        return;
+        return NULL;
     }
 
 	return Bitmap->Data[INDEX_BIT(Index)] & (1 << OFFSET_BIT(Index));

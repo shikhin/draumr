@@ -48,14 +48,26 @@ typedef struct
 } Bitmap_t;
 
 /*
+ * Finds the first bit which is zero.
+ *     Bitmap_t *Bitmap -> the bitmap in which to find the new first zero bit.
+ *     int64_t From     -> the index from where to start looking for the first "zero bit".
+ *
+ * Returns:
+ *     int64_t          -> the new "first zero bit". -1 if none found. 
+ */
+// NOTE: This finds the first zero bit for local usage.
+int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From);
+
+/*
  * Initializes a bitmap.
  *     uint32_t *Data -> the area where to keep the data for the bitmap.
  *     int64_t Size   -> the size of the new bitmap.
+ *     uint32_t Seed  -> the data to initialize the bitmap to.
  *
  * Returns:
  *     Bitmap_t       -> a bitmap structure containing the newly initialized bitmap.
  */
-Bitmap_t BitmapInit(uint32_t *Data, int64_t Size);
+Bitmap_t BitmapInit(uint32_t *Data, int64_t Size, uint32_t Seed);
 
 /*
  * Set a particular bit in the bitmap.

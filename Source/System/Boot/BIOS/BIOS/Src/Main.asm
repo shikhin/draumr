@@ -120,7 +120,7 @@ Startup:
     mov [ReadFile], ebx
     mov [CloseFile], ecx
     mov [BIT.BDFlags], edx
-    
+
     ; Enable A20, then try to generate memory map.
     call EnableA20
     call MMapBuild

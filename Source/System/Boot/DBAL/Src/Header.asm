@@ -54,6 +54,6 @@ GLOBAL Start
  ;     ESP -> this should be equal to 0x7C00 - for clearing.
 Start:
     push eax
-    jmp Main
+    call Main
 
     ; We wouldn't be returning here.

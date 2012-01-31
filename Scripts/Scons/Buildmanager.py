@@ -63,7 +63,7 @@ class BuildManager :
         env = Environment()
         env["AS"] = "nasm"
         env["CC"] = "gcc"
-        env["CPPFLAGS"] = ["-std=c99", "-Wno-attributes", "-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin"]
+        env["CPPFLAGS"] = ["-std=c99", "-Wno-attributes", "-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
         env["LINK"] = "ld" 
         env["BUILDERS"]["ISO"] = ISOBuilder
         env["BUILDERS"]["PXE"] = PXEBuilder
@@ -81,7 +81,9 @@ class BuildManager :
         # Hide the ugly compiler command lines and display nice messages.
         env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (colors['green'], colors['end'])
         env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (colors ['green'], colors['end'])
+        env["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (colors ['green'], colors['end'])
         env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (colors['green'], colors['end'])
+        env["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (colors['green'], colors['end'])
 
         # Use LD_LIBRARY_PATH if it is specified in the environment where SCons was executed
         if "LD_LIBRARY_PATH" in os.environ :

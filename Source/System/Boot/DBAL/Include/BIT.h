@@ -60,7 +60,7 @@ struct BIT
     uint32_t (*OpenFile)(uint32_t FileCode);
     void     (*ReadFile)(void *Destination, uint32_t Bytes);
     void     (*CloseFile)();
-    
+
     uint64_t IPS;                     // Number of instructions, executed per second.
     uint8_t  HrdwreFlags;             // The "hardware" flags.
     uint8_t  BDFlags;                 // The boot device flags.

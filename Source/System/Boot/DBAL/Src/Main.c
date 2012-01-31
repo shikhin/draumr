@@ -45,21 +45,21 @@ void Main(uint32_t *BITPointer)
 {
     // Initialize the FPU, without which, we can't proceed.
     FPUInit();
-    
+
     // Initialize the BIT - especially copy it to our side.
     BITInit(BITPointer);
-    
+        
     // Initialize the PMM.
     PMMInit();
-    
+    DebugPrintText("Done.\n");
     // Initialize the bouncer for the boot files.
-    InitBootFiles();
+    //InitBootFiles();
         
     // Initialize 'output' thingy.
-    OutputInit(); 
+    //OutputInit(); 
     
     // Just a temporary thingy to init the OutputMod.
-    OutputModInit();
+    //OutputModInit();
     
     for(;;)
         __asm__ __volatile__("hlt");

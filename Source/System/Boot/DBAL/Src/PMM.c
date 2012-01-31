@@ -48,7 +48,7 @@ static Bitmap_t PoolBitmap;
  */
 static void PMMFixMMap()
 {
-    // Fix all entries not starting on page boundaries.
+	// Fix all entries not starting on page boundaries.
     for(uint16_t i = 0; i < MMapHeader->Entries; i++)
     {
         // Align the start address to the highest page boundary, while the length to the lowest.
@@ -332,8 +332,8 @@ void PMMInit()
 
     // Fix overlapping entries.
     PMMFixMMap();
- 
-    // Find the highest address (last region) described by the bitmap.
+
+    // Find the highest address (last region) described by the pool bitmap.
     uint64_t HighestAddress = (MMapEntries[MMapHeader->Entries - 1].Length +
                         MMapEntries[MMapHeader->Entries - 1].Start);
 
@@ -344,14 +344,90 @@ void PMMInit()
     // Try to find a region in the memory map to hold that much space. 
     for(uint16_t i = 0; i < MMapHeader->Entries; i++)
     {
-        // If, the entry can accomodate the bitmap, and, the address doesn't go over the 4GiB boundary, then use that area.
-    	if((MMapEntries[i].Length >= BitmapSize) &&
-    	   ((MMapEntries[i].Start + BitmapSize) <= 0xFFFF0000))
+        // If it isn't free RAM, then continue.
+    	if(MMapEntries[i].Type != FREE_RAM)
     	{
-    		MMapEntries[i].Start += BitmapSize;
+    		continue;
+    	}
 
+    	// If the starting address is over 0xFFFF0000, then simply continue.
+    	else if(MMapEntries[i].Length > 0xFFFF0000)
+    	{
+    		continue;
+    	}
+        
+        // If, the entry can accomodate the bitmap, and, the address doesn't go over the 4GiB boundary, then use that area.
+    	else if((MMapEntries[i].Length >= BitmapSize) &&
+    	        ((MMapEntries[i].Start + BitmapSize) <= 0xFFFF0000))
+    	{
+    		// Asign the 'data' and 'size' of the pool and base bitmap.
+    		BaseBitmap.Data = (uint32_t*)((uint32_t)MMapEntries[i].Start);
+    		BaseBitmap.Size = (0x100000 / 0x1000);
+
+    		PoolBitmap.Data = BaseBitmap.Data + (BaseBitmap.Size / 32);
+    		PoolBitmap.Size = (HighestAddress - 0x100000) / 0x1000;
+    		
+    		// Increase the start, and decrease the length, accordingly.
+            MMapEntries[i].Length -= BitmapSize;
+            MMapEntries[i].Start += BitmapSize;
+
+    	   	// If length is zero, remove the entry.
+            if(!MMapEntries[i].Length)
+            {
+                // Move the required number of entries from i + 1 to i.
+	            memmove(&MMapEntries[i], &MMapEntries[i + 1], 
+		                sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
+	            MMapHeader->Entries--;
+	    
+	            // Here, we don't know about the current entry, so, move to previous, and continue.
+	            i--; 	
+            }
+
+            break;
     	}
     }
+
+    // If the a suitable entry wasn't found, abort with error.
+    if(!BaseBitmap.Size)
+    {
+    	AbortBoot("ERROR: Unable to allocate enough space for boot bitmaps.\n");
+    }
+
+    // Initialize the bitmaps (to 0xFFFFFFFF).
+    BaseBitmap = BitmapInit(BaseBitmap.Data, BaseBitmap.Size, 0xFFFFFFFF);
+    PoolBitmap = BitmapInit(PoolBitmap.Data, PoolBitmap.Size, 0xFFFFFFFF);
+    
+    // Initialize the bitmaps, now.
+    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
+    {
+    	// If it isn't free RAM, loop.
+    	if(MMapEntries[i].Type != FREE_RAM)
+    	{
+    		continue;
+    	}
+
+    	// Loop over each entry.
+    	for(uint64_t Addr = MMapEntries[i].Start / 0x1000;
+    	    Addr < (MMapEntries[i].Start + MMapEntries[i].Length) / 0x1000;
+    	    Addr += 0x1)
+    	{
+    		// If address is smaller than 1MiB, initialize it in the base bitmap.
+    		if(Addr < 0x100)
+    		{
+    		    BaseBitmap.Data[INDEX_BIT(Addr)] &= ~(1 << OFFSET_BIT(Addr));
+    		}
+
+            // Else, in the pool bitmap.
+    		else
+    		{
+    			BaseBitmap.Data[INDEX_BIT(Addr - 0x100)] &= ~(1 << OFFSET_BIT(Addr - 0x100));
+    		}
+    	}
+    }
+
+    // Update the instance of the first zero bit in both the bitmaps.
+    BaseBitmap.FirstZero = FindFirstZero(&BaseBitmap, BaseBitmap.FirstZero);
+    PoolBitmap.FirstZero = FindFirstZero(&PoolBitmap, PoolBitmap.FirstZero);
 }
 
 /*
@@ -359,11 +435,47 @@ void PMMInit()
  *     uint32_t Type -> the type of the frame to allocate - BASE_BITMAP or POOL_BITMAP
  *
  * Returns:
- *     uint32_t      -> the address of the frame allocated.
+ *     uint32_t      -> the address of the frame allocated. 0 indicates error.
  */
 uint32_t PMMAllocFrame(uint32_t Type)
 {
-     
+	Bitmap_t *Bitmap;
+	uint32_t Frame;
+    int64_t  Bit;
+
+    // If it's the base bitmap, then point to the base bitmap.
+    if(Type == BASE_BITMAP)
+    {
+        Bitmap = &BaseBitmap; 
+    }
+
+    // Else, the pool bitmap.
+    else
+    {
+    	Bitmap = &PoolBitmap;
+    }
+
+    // Get the bit returned by the bitmap.
+    Bit = BitmapFindFirstZero(Bitmap);
+    if(Bit == -1)
+    {
+        return NULL;	
+    }
+    
+    if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
+    {
+        BitmapClearBit(Bitmap, Bit);
+        return NULL;	
+    }
+
+    Frame = Bit * 0x1000;
+    if(Type == POOL_BITMAP)
+    {
+    	// The pool bitmap internally starts from 1MiB above - so increase the Frame's address.
+    	Frame += 0x100000;
+    }
+
+    return Frame;
 }
 
 /*
@@ -372,7 +484,24 @@ uint32_t PMMAllocFrame(uint32_t Type)
  */
 void PMMFreeFrame(uint32_t Addr)
 {
+    Bitmap_t *Bitmap;
 
+    // If it's the base bitmap, then point to the base bitmap.
+    if(Addr < 0x100000)
+    {
+    	Bitmap = &BaseBitmap;
+    }
+
+    // Else, point to the pool bitmap.
+    else
+    {
+    	Bitmap = &PoolBitmap;
+
+    	// And since the pool bitmap internally starts from 1MiB above, decrease the frame's address.
+    	Addr -= 0x100000;
+    }
+
+    BitmapClearBit(Bitmap, Addr / 0x1000);
 }
 
 /*
@@ -385,7 +514,48 @@ void PMMFreeFrame(uint32_t Addr)
  */
 uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
 {
-	
+   	Bitmap_t *Bitmap;
+	uint32_t Frame;
+    int64_t  Bit;
+
+    // If it's the base bitmap, then point to the base bitmap.
+    if(Type == BASE_BITMAP)
+    {
+        Bitmap = &BaseBitmap; 
+    }
+
+    // Else, the pool bitmap.
+    else
+    {
+    	Bitmap = &PoolBitmap;
+    }
+
+    // Get the bit returned by the bitmap.
+    Bit = BitmapFindContigZero(Bitmap, Number);
+
+    // If was unable to allocate the bit, or it spans above 4GiB.
+    if(Bit == -1)
+    {
+        return NULL;	
+    } 
+
+    Bit += Number;
+    if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
+    {
+    	BitmapClearContigZero(Bitmap, Bit - Number, Number);
+    	return NULL;
+    }
+
+    Bit -= Number;
+    Frame = Bit * 0x1000;
+
+    if(Type == POOL_BITMAP)
+    {
+    	// The pool bitmap internally starts from 1MiB above - so increase the Frame's address.
+    	Frame += 0x100000;
+    }
+
+    return Frame;
 }
 
 /*
@@ -395,5 +565,22 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
  */
 void PMMFreeContigFrames(uint32_t Addr, uint32_t Number)
 {
-	
+    Bitmap_t *Bitmap;
+
+    // If it's the base bitmap, then point to the base bitmap.
+    if(Addr < 0x100000)
+    {
+    	Bitmap = &BaseBitmap;
+    }
+
+    // Else, point to the pool bitmap.
+    else
+    {
+    	Bitmap = &PoolBitmap;
+
+    	// And since the pool bitmap internally starts from 1MiB above, decrease the frame's address.
+    	Addr -= 0x100000;
+    }
+
+    BitmapClearContigZero(Bitmap, Addr / 0x1000, Number);	
 }

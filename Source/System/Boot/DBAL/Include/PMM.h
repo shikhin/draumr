@@ -85,7 +85,7 @@ void PMMInit();
  *     uint32_t Type -> the type of the frame to allocate - BASE_BITMAP or POOL_BITMAP
  *
  * Returns:
- *     uint32_t      -> the address of the frame allocated.
+ *     uint32_t      -> the address of the frame allocated. 0 indicates error.
  */
 uint32_t PMMAllocFrame(uint32_t Type);
 

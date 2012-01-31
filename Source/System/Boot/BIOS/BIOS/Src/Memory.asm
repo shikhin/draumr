@@ -35,8 +35,6 @@ SECTION .text
 MMapBuild:
     pushad
 
-    mov dword [BIT.MMap], MMapHeader
-
 .Prepare:
     mov di, MMap
     xor bp, bp                        ; The number of entries in the MMap.
