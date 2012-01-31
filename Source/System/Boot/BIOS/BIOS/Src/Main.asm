@@ -230,7 +230,7 @@ BITS 32
     mov esp, 0x7C00
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
     mov eax, BIT
-    
+
     call [0xE004]
 
 %include "Source/System/Lib/CRC32/CRC32.asm"

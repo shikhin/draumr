@@ -221,7 +221,7 @@ Bitmap_t BitmapInit(uint32_t *Data, int64_t Size, uint32_t Seed)
 
     Bitmap.FirstZero = 0;
     
-    for(int64_t i = 0; i < INDEX_BIT(Size) - 1; i++)
+    for(int64_t i = 0; i < INDEX_BIT(Size); i++)
     {
         Data[i] = Seed;
     }

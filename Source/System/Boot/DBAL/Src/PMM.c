@@ -47,27 +47,7 @@ static Bitmap_t PoolBitmap;
  * Fixes the PMM memory map - including the overlapping regions, merging consecutive regions, and others.
  */
 static void PMMFixMMap()
-{
-	// Fix all entries not starting on page boundaries.
-    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
-    {
-        // Align the start address to the highest page boundary, while the length to the lowest.
-        MMapEntries[i].Start = (MMapEntries[i].Start + 0xFFF) & ~0xFFF;
-	    MMapEntries[i].Length &= ~0xFFF;
-	
-	    // If the length is zero, then remove the entry.
-        if(!MMapEntries[i].Length)
-        {
-            // Move the required number of entries from i + 1 to i.
-	        memmove(&MMapEntries[i], &MMapEntries[i + 1], 
-		            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
-	        MMapHeader->Entries--;
-	    
-	        // Here, we don't know about the current entry, so, move to previous, and continue.
-	        i--;
-        }
-    }
-    
+{    
     // Fix all entries in all possible ways here, making a clean sweep!
     for(uint16_t i = 0; i < (MMapHeader->Entries - 1); i++)
     {
@@ -319,6 +299,26 @@ static void PMMFixMMap()
 	        continue;
 	    }
     }
+    
+    // Fix all entries not starting on page boundaries.
+    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
+    {
+        // Align the start address to the highest page boundary, while the length to the lowest.
+        MMapEntries[i].Start = (MMapEntries[i].Start + 0xFFF) & ~0xFFF;
+	    MMapEntries[i].Length &= ~0xFFF;
+	
+	    // If the length is zero, then remove the entry.
+        if(!MMapEntries[i].Length)
+        {
+            // Move the required number of entries from i + 1 to i.
+	        memmove(&MMapEntries[i], &MMapEntries[i + 1], 
+		            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
+	        MMapHeader->Entries--;
+	    
+	        // Here, we don't know about the current entry, so, move to previous, and continue.
+	        i--;
+        }
+    }
 }
 
 /*
@@ -405,28 +405,30 @@ void PMMInit()
     	{
     		continue;
     	}
-
-    	// Loop over each entry.
-    	for(uint64_t Addr = MMapEntries[i].Start / 0x1000;
-    	    Addr < (MMapEntries[i].Start + MMapEntries[i].Length) / 0x1000;
-    	    Addr += 0x1)
+        
+        // Loop over each entry.
+    	for(uint64_t Addr = MMapEntries[i].Start;
+    	    Addr < (MMapEntries[i].Start + MMapEntries[i].Length);
+    	    Addr += 0x1000)
     	{
     		// If address is smaller than 1MiB, initialize it in the base bitmap.
-    		if(Addr < 0x100)
+    		if(Addr < 0x100000)
     		{
-    		    BaseBitmap.Data[INDEX_BIT(Addr)] &= ~(1 << OFFSET_BIT(Addr));
+    		    BaseBitmap.Data[INDEX_BIT(Addr / 0x1000)] &= ~(1 << OFFSET_BIT(Addr / 0x1000));
     		}
 
             // Else, in the pool bitmap.
     		else
     		{
-    			BaseBitmap.Data[INDEX_BIT(Addr - 0x100)] &= ~(1 << OFFSET_BIT(Addr - 0x100));
+    			PoolBitmap.Data[INDEX_BIT((Addr - 0x100000) / 0x1000)] &= ~(1 << OFFSET_BIT((Addr - 0x100000) / 0x1000));
     		}
     	}
     }
 
     // Update the instance of the first zero bit in both the bitmaps.
     BaseBitmap.FirstZero = FindFirstZero(&BaseBitmap, BaseBitmap.FirstZero);
+    if(BaseBitmap.FirstZero == 0)
+    DebugPrintText("U!");
     PoolBitmap.FirstZero = FindFirstZero(&PoolBitmap, PoolBitmap.FirstZero);
 }
 
