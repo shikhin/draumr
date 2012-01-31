@@ -324,7 +324,7 @@ int64_t BitmapFindFirstZero(Bitmap_t *Bitmap)
     // Return the first zero bit's index.
     return FirstZero;
 }
-
+extern void DebugPrintText(char *Fmt, ...);
 /*
  * Finds a contiguous series of zero bits. Sets and returns them if found. Else, returns -1.
  *     Bitmap_t *Bitmap -> the bitmap in which to find the particular bit.
@@ -342,7 +342,7 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
     }
 
     // Find the contiguous bits, starting from FirstZero.
-    int64_t ContiguousBits = FindContigZero(Bitmap, Bitmap->FirstZero, Count);
+    int64_t From, ContiguousBits = From = FindContigZero(Bitmap, Bitmap->FirstZero, Count);
     if(ContiguousBits == -1)
     {
         // If unable to find contiguous bits, then return with -1.
@@ -350,9 +350,30 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
     }
 
     // Set the contiguous bits as one.
-    for(int64_t i = ContiguousBits; i < (ContiguousBits + Count); i++)
+    uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
+
+    // Do the first odd bits.
+    for(uint32_t j = OFFSET_BIT(From), BitToSet = 1 << j;
+        // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
+        (j < 32) && (Count);                                       
+        BitToSet <<= 1, Count--, j++)
     {
-        Bitmap->Data[INDEX_BIT(i)] |= (1 << OFFSET_BIT(i));
+        *Data |= BitToSet;
+    }
+
+    // Move to the next dword.
+    Data++;
+
+    // Do in dwords.
+    for(; Count >= 32; Count -= 32)
+    {
+        *Data++ = 0xFFFFFFFF;
+    }
+
+    // Do the last odd bits.
+    for(uint32_t BitToSet = (1 << 0); Count; BitToSet <<= 1, Count--)
+    {
+        *Data |= BitToSet;
     }
 
     // And find the new "first zero" bit.
@@ -371,8 +392,35 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
 void BitmapClearContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
 {
     // Clear the contiguous bits.
-    for(int64_t i = From; (i < (From + Count)) && (i < Bitmap->Size); i++)
+    uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
+    
+    // If the first zero counter is -1, or it is above the area we are clearing, then update it.
+    if((Bitmap->FirstZero == -1) || (From < Bitmap->FirstZero))
     {
-        Bitmap->Data[INDEX_BIT(i)] &= ~(1 << OFFSET_BIT(i));
+        Bitmap->FirstZero = From;
+    }
+
+    // Do the first odd bits.
+    for(uint32_t j = OFFSET_BIT(From), BitToClear = 1 << j;
+        // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
+        (j < 32) && (Count);                                       
+        BitToClear <<= 1, Count--, j++)
+    {
+        *Data &= ~BitToClear;
+    }
+
+    // Move to the next dword.
+    Data++;
+
+    // Do in dwords.
+    for(; Count >= 32; Count -= 32)
+    {
+        *Data++ = 0x00000000;
+    }
+
+    // Do the last odd bits.
+    for(uint32_t BitToClear = (1 << 0); Count; BitToClear <<= 1, Count--)
+    {
+        *Data &= ~BitToClear;
     }
 }

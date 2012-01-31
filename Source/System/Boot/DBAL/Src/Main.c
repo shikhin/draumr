@@ -51,13 +51,7 @@ void Main(uint32_t *BITPointer)
         
     // Initialize the PMM.
     PMMInit();
-
-    for(uint32_t i = 0; i < 10; i++)
-        DebugPrintText("%x\n", PMMAllocFrame(POOL_BITMAP));
-
-    for(uint32_t i = 0; i < 10; i++)
-        DebugPrintText("%x\n", PMMAllocFrame(BASE_BITMAP));
-
+DebugPrintText("Done.");
     // Initialize the bouncer for the boot files.
     //InitBootFiles();
         

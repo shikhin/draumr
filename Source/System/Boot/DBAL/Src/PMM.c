@@ -427,8 +427,6 @@ void PMMInit()
 
     // Update the instance of the first zero bit in both the bitmaps.
     BaseBitmap.FirstZero = FindFirstZero(&BaseBitmap, BaseBitmap.FirstZero);
-    if(BaseBitmap.FirstZero == 0)
-    DebugPrintText("U!");
     PoolBitmap.FirstZero = FindFirstZero(&PoolBitmap, PoolBitmap.FirstZero);
 }
 
