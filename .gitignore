@@ -2,6 +2,7 @@
 *.flp
 *.todo
 *.o
+*.a
 *~
 *.sif
 *.bmp
