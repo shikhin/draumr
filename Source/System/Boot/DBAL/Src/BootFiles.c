@@ -24,8 +24,12 @@
 #include <Abort.h>
 #include <BIT.h>
 #include <Log.h>
+#include <Macros.h>
 
-void *Bouncer = (void*)0;
+// The bouncer where we'd load files.
+static void *Bouncer = (void*)NULL;
+
+// The size of the bouncer.
 static uint32_t BouncerSize = BOUNCER_SIZE;
 
 // For CRC checking of boot files.
@@ -97,7 +101,15 @@ uint32_t Table[256] =
     0xB40BBE37,    0xC30C8EA1,    0x5A05DF1B,    0x2D02EF8D
 };
 
-// Creates CRC for any file data (of size size).
+/*
+ * Creates CRC for file data.
+ *     uint32_t Seed        -> the seed from which to start calculating the CRC value.
+ *     uint32_t Size        -> the size of the input buffer.
+ *     uint8_t *InputBuffer -> the input buffer for which to calculate the CRC value.
+ *
+ * Returns:
+ *     uint32_t             -> the CRC value.
+ */
 static uint32_t CRC(uint32_t Seed, uint32_t Size, uint8_t *InputBuffer) 
 {
     while(Size--) 
@@ -106,70 +118,97 @@ static uint32_t CRC(uint32_t Seed, uint32_t Size, uint8_t *InputBuffer)
     return Seed;
 }
 
-// Initializes the bouncer in which we would be reading the required boot files.
-void InitBootFiles()
+/*
+ * Initializes the bouncer in which we would be reading the required boot files.
+ */
+void BootFilesInit()
 {
     // Try to allocate the big size - recommended.
-    Bouncer = (void*)PMMAllocContigFrames(BASE_STACK, BOUNCER_PAGES);
+    Bouncer = (void*)PMMAllocContigFrames(BASE_BITMAP, BOUNCER_PAGES);
+
+    // If we were unable to allocate a page, then, try the small size.
     if(!Bouncer)
     {
-        // If the failed, try to allocate small size.
-        Bouncer = (void*)PMMAllocContigFrames(BASE_STACK, BOUNCER_SMALL_PAGES);
+        Bouncer = (void*)PMMAllocContigFrames(BASE_BITMAP, BOUNCER_SMALL_PAGES);
+
+        // If we were unable to allocate the small size, then abort boot.
         if(!Bouncer)
+        {
             AbortBoot("ERROR: Can't allocate enough pages for bouncer.\n");
-        
+        }
+
         BouncerSize = BOUNCER_SMALL_SIZE;
     }
 }
 
-// Clears up everything initialized in the Init().
-void ClearBootFiles()
+/*
+ * Clears up everything initialized in the Init().
+ */
+void BootFilesClear()
 {
-    // TODO: Implement this.
-    //PMMFreeContigFrames(BASE_STACK, Bouncer, BOUNCER_PAGES);
+    // Free the bouncer, of size, BouncerSize.
+    PMMFreeContigFrames((uint32_t)Bouncer, BouncerSize);
 }
 
-// Gets the background image, verifying what we are getting to.
-//     rc
-//                                    FILE_t - the file structure containing address and length of the file.
+/*
+ * Gets the background image, verifying what we are getting to.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ */
 FILE_t BootFilesBGImg()
 {
+    // The file structure in which we'd store data about the Background image file.
     FILE_t File;
-    File.Size = BIT.OpenFile(0x02);
+
+    // Open the file, with code, BACKGROUND_SIF.
+    File.Size = BIT.OpenFile(BACKGROUND_SIF);
+
+    // If we were unable to open it, return blank file structure.
     if(!File.Size)
     {
         return File;
     }
 
-    // Read 2048 bytes at the bouncer
+    // Read 2048 bytes at the bouncer.
     BIT.ReadFile((uint32_t*)Bouncer, 2048);
     
     uint8_t *Signature = (uint8_t*)Bouncer;
-    // So the file isn't valid.
-    if((Signature[0] != 'B') ||
-       (Signature[1] != 'M'))
+
+    // Check the file signature.
+    if((Signature[0] != 'S') ||
+       (Signature[1] != 'I'))
     {
+        // If it didn't match, make size 0.
 		File.Size = 0;
+
         return File;
     }
     
-    File.Location = (void*)PMMAllocContigFrames(POOL_STACK, (File.Size + 0xFFF)/0x1000);
+    // Allocate enough space to hold the file.
+    File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP, (File.Size + 0xFFF)/0x1000);
+
     // So we can't allocate space for the image.
     if(!File.Location)
     {
+        // Make size 0.
         File.Size = 0;
+
+        // Return with the file structure.
         return File;
     }
     
-    // Reduce the 2048 bytes we left.
+    // Reduce the 2048 bytes we left and read the rest of the file.
     uint32_t Size = File.Size - 2048;
+
     uint8_t *OutputBuffer = (uint8_t*)File.Location;
   
+    // Copy the 2048 bytes we read.
     memcpy(OutputBuffer, Bouncer, 2048);
     OutputBuffer += 2048;
   
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
-    while(Size > BouncerSize)
+    while(Size >= BouncerSize)
     {
 		BIT.ReadFile((uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
@@ -190,7 +229,7 @@ FILE_t BootFilesBGImg()
     if(CRC32 != ~CRC(0xFFFFFFFF, File.Size - 50, (uint8_t*)File.Location + 50))
     {
         // TODO: Implement this.
-        //PMMFreeContigFrames(POOL_STACK, File.Location, File.Size);
+        //PMMFreeContigFrames(POOL_BITMAP, File.Location, File.Size);
         File.Size = 0;
     }
 

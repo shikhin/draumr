@@ -324,7 +324,7 @@ int64_t BitmapFindFirstZero(Bitmap_t *Bitmap)
     // Return the first zero bit's index.
     return FirstZero;
 }
-extern void DebugPrintText(char *Fmt, ...);
+
 /*
  * Finds a contiguous series of zero bits. Sets and returns them if found. Else, returns -1.
  *     Bitmap_t *Bitmap -> the bitmap in which to find the particular bit.

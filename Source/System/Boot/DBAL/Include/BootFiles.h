@@ -37,33 +37,48 @@
 #define BACKGROUND_SIF 0x02
 
 // Bouncer has size of 64KiB.
-#define BOUNCER_SIZE   (64 * 1024)
-#define BOUNCER_SMALL_SIZE (16 * 1024)
+#define BOUNCER_SIZE        (64 * 1024)
+#define BOUNCER_SMALL_SIZE  (16 * 1024)
 
 // Pages used by bouncer.
-#define BOUNCER_PAGES  ((64 * 1024)/4096)
+#define BOUNCER_PAGES       ((64 * 1024)/4096)
 #define BOUNCER_SMALL_PAGES ((16 * 1024)/4096)
 
-// The file structure, which is returned by opening files.
-struct FILE
+// The SIF image file format's header.
+struct SIFHeader
 {
-    void *Location;
-    uint32_t Size;
+    uint8_t  Type[3];
+    uint32_t FileSize;
+    uint32_t CRC32;
+    uint32_t Offset;
+    
+    uint16_t Plane, BPP;
+    uint32_t Compression, ImageSize;
+    uint32_t XRes, YRes;
 } __attribute__((packed));
 
-typedef struct FILE FILE_t;
+// The file structure, which is returned by opening files.
+typedef struct
+{
+	// The size of the file.
+	uint32_t Size;
 
-extern void *Bouncer;
+	// The location of the file.
+    void *Location;
+} FILE_t;
+
+// Some typedef's to make stuff easier.
+typedef struct SIFHeader SIFHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
  */
-void InitBootFiles();
+void BootFilesInit();
 
 /*
  * Clears up everything initialized in the Init().
  */
-void ClearBootFiles();
+void BootFilesClear();
 
 /*
  * Gets the background image, verifying what we are getting to.

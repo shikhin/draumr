@@ -53,6 +53,19 @@ struct BMPHeader
     uint16_t NColors, ImpColors;
 } __attribute__((packed));
 
+// The SIF image file format's header.
+struct SIFHeader
+{
+    uint8_t  Type[3];
+    uint32_t FileSize;
+    uint32_t CRC32;
+    uint32_t Offset;
+    
+    uint16_t Plane, BPP;
+    uint32_t Compression, ImageSize;
+    uint32_t XRes, YRes;
+} __attribute__((packed));
+
 // Some data about the image.
 struct ImageData
 {
@@ -65,16 +78,18 @@ struct ImageData
 
 typedef struct BMPHeader BMPHeader_t;
 typedef struct ImageData ImageData_t;
+typedef struct SIFHeader SIFHeader_t;
 
 // Globally define ImageData.
 static ImageData_t ImageData;
-static BMPHeader_t BMPHeader;
+static SIFHeader_t SIFHeader;
 
 /*
  * The function to convert BMP to the universal buffer, and fill in the details in ImageData.
  */
 static void BMPToBuf()
 {
+    BMPHeader_t BMPHeader;
     uint32_t Status, BytesRead = 0;
     
     if(!fread(&BMPHeader, sizeof(BMPHeader_t), 1, ImageData.InFile))
@@ -334,20 +349,26 @@ static void BufToSIF()
 
         ResizeBilinear(TempBuffer, Buffer, ImageData.XSize, ImageData.YSize, ImageData.ScaledX, ImageData.ScaledY);
         free(TempBuffer);
-    
-        // Get the scaled size.
-        BMPHeader.XSize = ImageData.ScaledX;
-        BMPHeader.YSize = ImageData.ScaledY;
     }
-       
+
+    // Fill in the type.
+    SIFHeader.Type[0] = 'S';
+    SIFHeader.Type[1] = 'I';
+    SIFHeader.Type[2] = 'F';
+
+    // Get the scaled size.
+    SIFHeader.XRes = ImageData.ScaledX;
+    SIFHeader.YRes = ImageData.ScaledY;
+
     // And other factors.
-    BMPHeader.FileSize = sizeof(BMPHeader_t) + ImageData.ScaledX * ImageData.ScaledY * 3;
-    BMPHeader.Offset = sizeof(BMPHeader_t);
-    BMPHeader.Compression = 0;
-    BMPHeader.ImageSize = ImageData.ScaledX * ImageData.ScaledY * 3;
+    SIFHeader.ImageSize = SIFHeader.XRes * SIFHeader.YRes * 3;
+    SIFHeader.Offset = sizeof(SIFHeader_t);
+    SIFHeader.FileSize = SIFHeader.Offset + SIFHeader.ImageSize;
+    SIFHeader.Compression = SIFHeader.Plane = 0;
+    SIFHeader.BPP = 24;
 
     // Write the header, and the image.
-    fwrite(&BMPHeader, sizeof(BMPHeader_t), 1, ImageData.OutFile);
+    fwrite(&SIFHeader, sizeof(SIFHeader_t), 1, ImageData.OutFile);
     if(ferror(ImageData.OutFile))
     {
         // Free temporary buffer, and close file.
@@ -360,7 +381,7 @@ static void BufToSIF()
         exit(EXIT_FAILURE);
     }
 
-    fwrite(Buffer, ImageData.ScaledX * ImageData.ScaledY * 3, 1, ImageData.OutFile);
+    fwrite(Buffer, SIFHeader.ImageSize, 1, ImageData.OutFile);
     if(ferror(ImageData.OutFile))
     {
         // Free temporary buffer, and close file.

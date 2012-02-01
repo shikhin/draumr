@@ -156,8 +156,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // The null-terminator.
-    Signature[4] = '\0';
     fread(Signature, 4, 1, InFile);
     if(ferror(InFile))
     {
@@ -168,6 +166,9 @@ int main(int argc, char *argv[])
         perror("Unable to read Signature from input file");
         exit(EXIT_FAILURE);
     }
+
+    // The null-terminator.
+    Signature[4] = '\0';
 
     // Allocate a buffer for what would be good length.
     Buf = (uint8_t*)malloc(GOOD_LENGTH);      
@@ -181,13 +182,13 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // If the signature is for the image BMP, then assume the format for it.
-    if((Signature[0] == 'B') && (Signature[1] == 'M'))
+    // If the signature is for the image SIF, then assume the format for it.
+    if((Signature[0] == 'S') && (Signature[1] == 'I') && (Signature[2] == 'F'))
     {
         // Offset to the header.
-        HeaderOffset = 50;
-        // Offset to the CRC value is 6.
-        CRCValueOffset = 6;
+        HeaderOffset = 35;
+        // Offset to the CRC value is 7.
+        CRCValueOffset = 7;
     }
         
     else

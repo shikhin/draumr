@@ -44,5 +44,6 @@ src = ["Link.ld",
 BIOS = sys_env.Program("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
 
 Depends(BIOS, src)
+Depends(BIOS, env["CRC32"])
 
 env["BIOS"] = BIOS

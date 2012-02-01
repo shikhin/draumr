@@ -51,9 +51,9 @@ void Main(uint32_t *BITPointer)
         
     // Initialize the PMM.
     PMMInit();
-DebugPrintText("Done.");
+    
     // Initialize the bouncer for the boot files.
-    //InitBootFiles();
+    BootFilesInit();
         
     // Initialize 'output' thingy.
     //OutputInit(); 
