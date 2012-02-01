@@ -1,5 +1,5 @@
 /*
- * Definitions of functions to open boot file.
+ * Definitions of functions to open, close and read boot files.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
