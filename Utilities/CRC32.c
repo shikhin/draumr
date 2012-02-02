@@ -189,6 +189,8 @@ int main(int argc, char *argv[])
         HeaderOffset = 35;
         // Offset to the CRC value is 7.
         CRCValueOffset = 7;
+
+        Signature[3] = '\0';
     }
         
     else

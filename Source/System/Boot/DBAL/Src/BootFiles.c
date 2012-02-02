@@ -171,6 +171,9 @@ FILE_t BootFilesBGImg()
     // The file structure in which we'd store data about the Background image file.
     FILE_t File;
 
+    // The SIFFile header.
+    SIFHeader_t *SIFHeader;
+
     // Open the file, with code, BACKGROUND_SIF.
     File.Size = BIT.OpenFile(BACKGROUND_SIF);
 
@@ -183,11 +186,12 @@ FILE_t BootFilesBGImg()
     // Read 2048 bytes at the bouncer.
     BIT.ReadFile((uint32_t*)Bouncer, 2048);
     
-    uint8_t *Signature = (uint8_t*)Bouncer;
+    SIFHeader = (SIFHeader_t*)Bouncer;
 
     // Check the file signature.
-    if((Signature[0] != 'S') ||
-       (Signature[1] != 'I'))
+    if((SIFHeader->Type[0] != 'S') ||
+       (SIFHeader->Type[1] != 'I') ||
+       (SIFHeader->Type[2] != 'F'))
     {
         // If it didn't match, make size 0.
 		File.Size = 0;
@@ -195,6 +199,14 @@ FILE_t BootFilesBGImg()
         return File;
     }
     
+    if(((File.Size + 0xFFF) / 0x1000) != ((SIFHeader->FileSize + 0xFFF) / 0x1000))
+    {
+        // File size returned by FS, and in the image, didn't match.
+        File.Size = 0;
+
+        return File;
+    }
+
     // Allocate enough space to hold the file.
     File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP, (File.Size + 0xFFF)/0x1000);
 
@@ -233,14 +245,17 @@ FILE_t BootFilesBGImg()
         BIT.ReadFile((uint32_t*)Bouncer, Size);   
         memcpy(OutputBuffer, Bouncer, Size);
     }
-    
-    uint32_t CRC32 = *(uint32_t*)((uint8_t*)File.Location + 6);
 
-    if(CRC32 != ~CRC(0xFFFFFFFF, File.Size - 50, (uint8_t*)File.Location + 50))
+    // If CRC values are not equal.    
+    if(SIFHeader->CRC32 != ~CRC(0xFFFFFFFF, SIFHeader->ImageSize, (uint8_t*)File.Location + SIFHeader->Offset))
     {
-        // TODO: Implement this.
-        //PMMFreeContigFrames(POOL_BITMAP, File.Location, File.Size);
+        // Free the space we allocated for the Image.
+        PMMFreeContigFrames((uint32_t)File.Location, (File.Size + 0xFFF) / 0x1000);
+
+        // Make file size 0.
         File.Size = 0;
+
+        return File;
     }
 
     return File;
