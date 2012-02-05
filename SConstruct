@@ -35,60 +35,61 @@ sys.path.insert(0, "Scripts/Scons")
 # Parse command line parameters.
 from Config import Config
 
-cfg = Config()
-cfg.parse(ARGUMENTS)
+Cfg = Config()
+Cfg.Parse(ARGUMENTS)
 
-# Create an environment with the toolchain for building.
+# Create an Environment with the toolchain for building.
 from Buildmanager import BuildManager
-bldmgr = BuildManager(cfg)
-env = bldmgr.create_env()
-env["BACK"] = "Background.bmp"
+BldMgr = BuildManager(Cfg)
+Env = BldMgr.CreateEnv()
+Env["BACK"] = "Background.bmp"
 
 # Run through the SConscript files.
-Utils = SConscript(dirs=["Utilities"], exports=["env"])
-Source = SConscript(dirs=["Source"], exports=["env"])
+Utils = SConscript(dirs=["Utilities"], exports=["Env"])
+Source = SConscript(dirs=["Source"], exports=["Env"])
 Depends(Source, Utils)
 
-image = env.Image("BootImage.comp", None)
-Depends(image, Utils)
-if cfg.target == "all":
-    iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
+Image = Env.Image("BootImage.comp", None)
+Depends(Image, Utils)
 
-    pxe = env.PXE("/tftpboot/Stage1", None) 
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
+if Cfg.Target == "all":
+    ISO = Env.ISO("Draumr.ISO", None)
+    Depends(ISO, [Env["CD_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
 
-    floppy = env.Floppy("Draumr.flp", None)
-    Depends(floppy, [env["FLOPPY_STAGE1"], env["BIOS"], env["DBAL"], image])
+    PXE = Env.PXE("/tftpboot/Stage1", None) 
+    Depends(PXE, [Env["PXE_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
+
+    Floppy = Env.Floppy("Draumr.flp", None)
+    Depends(Floppy, [Env["FLOPPY_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
     
-    Clean("Draumr.iso", "Background.sif")
+    Clean("Draumr.ISO", "Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
     Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
    
-    Default([iso, pxe, floppy])
+    Default([ISO, PXE, Floppy])
 
-elif cfg.target == "iso" :
-    iso = env.ISO("Draumr.iso", None)
-    Depends(iso, [env["CD_STAGE1"], env["BIOS"], env["DBAL"], image])
+elif Cfg.Target == "iso" :
+    ISO = Env.ISO("Draumr.ISO", None)
+    Depends(ISO, [Env["CD_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
      
-    Clean("Draumr.iso", "Background.sif")
-    Default(iso)
+    Clean("Draumr.ISO", "Background.sif")
+    Default(ISO)
 
-elif cfg.target == "pxe" :
-    pxe = env.PXE("/tftpboot/Stage1", None)
-    Depends(pxe, [env["PXE_STAGE1"], env["BIOS"], env["DBAL"], image])
+elif Cfg.Target == "pxe" :
+    PXE = Env.PXE("/tftpboot/Stage1", None)
+    Depends(PXE, [Env["PXE_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
 
     Clean("/tftpboot/Stage1", "Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
     Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
    
-    Default(pxe)
+    Default(PXE)
 
-elif cfg.target == "floppy" :
-    floppy = env.Floppy("Draumr.flp", None)
-    Depends(floppy, [env["FLOPPY_STAGE1"], env ["BIOS"], env["DBAL"], image])
+elif Cfg.Target == "floppy" :
+    Floppy = Env.Floppy("Draumr.flp", None)
+    Depends(Floppy, [Env["FLOPPY_STAGE1"], Env ["BIOS"], Env["DBAL"], Image])
 
     Clean("Draumr.flp", "Background.sif")
-    Default(floppy)
+    Default(Floppy)

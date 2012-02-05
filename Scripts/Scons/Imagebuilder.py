@@ -3,9 +3,9 @@
  # Copyright (c) 2012, Shikhin Sethi
  # All rights reserved.
  #
- # Redistribution and use in source and binary forms, with or without
+ # Redistribution and use in Source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
- #     * Redistributions of source code must retain the above copyright
+ #     * Redistributions of Source code must retain the above copyright
  #       notice, this list of conditions and the following disclaimer.
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
@@ -32,20 +32,19 @@ import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
-from Isobuilder import _path
 from Config import Config
 
-def _image_builder(target, source, env) :    
-    os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
+def _image_builder(Target, Source, Env) :    
+    os.system("%s %s" % (Env["CRC32"][0], Env["BIOS"][0]))
+    os.system("%s %s" % (Env["CRC32"][0], Env["DBAL"][0]))
     
-    if os.path.isfile(env["BACK"]) :
-        os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
-        env["BACK"] = "Background.sif"              
-        os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
+    if os.path.isfile(Env["BACK"]) :
+        os.system("%s %s Background.sif" % (Env["ToSIF"][0], Env["BACK"]))
+        Env["BACK"] = "Background.sif"              
+        os.system("%s %s" % (Env["CRC32"][0], Env["BACK"]))
         
     else :
-        env["BACK"] = 0
+        Env["BACK"] = 0
         
     return 0
 

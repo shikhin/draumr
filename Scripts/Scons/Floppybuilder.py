@@ -32,34 +32,26 @@ import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
-from Isobuilder import _path
+from Isobuilder import Path
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
-
-def _floppy_builder(target, source, env) :
+def _floppy_builder(Target, Source, Env) :
     # Create a temporary directory to build the Floppy image structure.
-    d = tempfile.mkdtemp()
+    Dir = tempfile.mkdtemp()
 
-    stage1 = str(env["FLOPPY_STAGE1"][0])
-    bios = str(env["BIOS"][0])
-    dbal = str(env["DBAL"][0])
-    combined = _path([d, "Combined"])
-    combined2 = _path([d, "Combined2"])
+    Stage1 = str(Env["FLOPPY_STAGE1"][0])
+    BIOS = str(Env["BIOS"][0])
+    DBAL = str(Env["DBAL"][0])
+    
+    Combined1 = Path([Dir, "Combined"])
+    Combined2 = Path([Dir, "Combined2"])
 
-    os.system("cat %s %s > %s" % (stage1, bios, combined))
-    os.system("cat %s %s > %s" % (combined, dbal, combined2))
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (combined2, target[0]))
-    print("  [FLP]   %s" % (target[0]) ) 
-    shutil.rmtree(d)
+    os.system("cat %s %s > %s" % (Stage1, BIOS, Combined1))
+    os.system("cat %s %s > %s" % (Combined1, DBAL, Combined2))
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined2, Target[0]))
+
+    print("  [FLP]   %s" % (Target[0]) ) 
+    
+    shutil.rmtree(Dir)
     return 0
 
 FloppyBuilder = Builder(action = Action(_floppy_builder, None))
-

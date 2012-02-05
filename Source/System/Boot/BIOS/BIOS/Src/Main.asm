@@ -46,9 +46,9 @@ CRC32_DEFINE
 SECTION .data
 
 BIT:
-    .OpenFile     dd OpenFileWrapper
-    .ReadFile     dd ReadFileWrapper
-    .CloseFile    dd CloseFileWrapper
+    .FileOpen     dd FileOpenWrapper
+    .FileRead     dd FileReadWrapper
+    .FileClose    dd FileCloseWrapper
     
     .IPS          dq 0                ; The intstructions executed per second.
     .HrdwreFlags  db 0                ; The "hardware" flags.
@@ -68,17 +68,17 @@ BIT:
 
     .EDIDInfo        times 128 db 0   ; The EDID information block.
 
-    .SwitchVGA       dd SwitchVGAWrapper        ; The 32-bit address of the function to switch to a VGA mode.
-    .SetupPaletteVGA dd SetupPaletteVGAWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
-    .GetModeInfoVBE  dd GetModeInfoVBEWrapper	; The 32-bit address of the function to get mode information from VBE.
+    .VGASwitchMode   dd VGASwitchModeWrapper    ; The 32-bit address of the function to switch to a VGA mode.
+    .VGASetupPalette dd VGASetupPaletteWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
+    .VBEGetModeInfo  dd VBEGetModeInfoWrapper	; The 32-bit address of the function to get mode information from VBE.
     
-    .SwitchVBE       dd SwitchVBEWrapper        ; The 32-bit address of the function to switch to a VBE mode.
-    .SetupPaletteVBE dd SetupPaletteVBEWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
+    .VBESwitchMode   dd VBESwitchModeWrapper    ; The 32-bit address of the function to switch to a VBE mode.
+    .VBESetupPalette dd VBESetupPaletteWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
 
 ; Put all the real-mode functions to handle files here.
-OpenFile:          dd 0
-ReadFile:          dd 0
-CloseFile:         dd 0
+FileOpen:          dd 0
+FileRead:          dd 0
+FileClose:         dd 0
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -111,14 +111,14 @@ GLOBAL Startup
 
  ; Point where the Stage 1 boot loader handles control.
  ;     SS:SP -> the linear address 0x7C00.
- ;     EAX   -> the OpenFile function.
- ;     EBX   -> the ReadFile function.
- ;     ECX   -> the CloseFile function.
+ ;     EAX   -> the FileOpen function.
+ ;     EBX   -> the FileRead function.
+ ;     ECX   -> the FileClose function.
  ;     EDX   -> the BD flags.
 Startup:
-    mov [OpenFile], eax
-    mov [ReadFile], ebx
-    mov [CloseFile], ecx
+    mov [FileOpen], eax
+    mov [FileRead], ebx
+    mov [FileClose], ecx
     mov [BIT.BDFlags], edx
 
     ; Enable A20, then try to generate memory map.
@@ -131,7 +131,7 @@ Startup:
     xor ax, ax                        ; Open File 1, or DBAL file.
     inc ax
     
-    call [OpenFile]                   ; Open the File.
+    call [FileOpen]                   ; Open the File.
     jc .ErrorIO
     
     ; ECX contains size of file we are opening.
@@ -139,7 +139,7 @@ Startup:
     
     mov ecx, 512                      ; Read only 512 bytes.
     mov edi, 0xE000
-    call [ReadFile]                   ; Read the entire file.
+    call [FileRead]                   ; Read the entire file.
 
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
@@ -170,10 +170,10 @@ Startup:
     
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
    
-    call [ReadFile]                   ; Read the rest of the file.
+    call [FileRead]                   ; Read the rest of the file.
     
 .Finish:
-    call [CloseFile]                  ; And then close the file.
+    call [FileClose]                  ; And then close the file.
 
     ; Switch to protected mode - since we might be crossing our boundary here.
     mov ebx, .CheckDBAL2
@@ -235,9 +235,9 @@ BITS 32
 
 %include "Source/System/Lib/CRC32/CRC32.asm"
 
- ; A wrapper to the SwitchVGA function - to be done from 32-bit code.
+ ; A wrapper to the VGASwitchMode function - to be done from 32-bit code.
  ;     uint16_t -> the mode to switch to.
-SwitchVGAWrapper:
+VGASwitchModeWrapper:
     push ebx
    
     mov ebx, .GetInfo
@@ -246,7 +246,7 @@ SwitchVGAWrapper:
 BITS 16
 .GetInfo:
     mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
-    call SwitchVGA                    ; Switch to the VGA mode defined.
+    call VGASwitchMode                    ; Switch to the VGA mode defined.
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.
@@ -256,8 +256,8 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the SetupPaletteVGA function - to be done from 32-bit code.
-SetupPaletteVGAWrapper:
+ ; A wrapper to the VGASetupPalette function - to be done from 32-bit code.
+VGASetupPaletteWrapper:
     push ebx
    
     mov ebx, .SetupPalette
@@ -265,7 +265,7 @@ SetupPaletteVGAWrapper:
 
 BITS 16
 .SetupPalette:
-    call SetupPaletteVGA              ; Set up the palette.
+    call VGASetupPalette              ; Set up the palette.
 
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.
@@ -275,23 +275,23 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the GetModeInfoVBE function - to be done from 32-bit code.
+ ; A wrapper to the VBEGetModeInfo function - to be done from 32-bit code.
  ;     uint32_t -> the address where to write.
  ;
  ; Returns:
  ;     EAX      -> the number of entries.
-GetModeInfoVBEWrapper:
+VBEGetModeInfoWrapper:
     push ebx
    
-    mov ebx, .GetModeInfoVBE
-    jmp SwitchToRM                    ; Switch to Real mode, and return to GetModeInfoVBE.
+    mov ebx, .VBEGetModeInfo
+    jmp SwitchToRM                    ; Switch to Real mode, and return to VBEGetModeInfo.
 
 BITS 16
-.GetModeInfoVBE:
+.VBEGetModeInfo:
     mov eax, [esp + 8]                ; Get the address into EAX.
     mov [BIT.VBEModeInfo], eax
 
-    call GetModeInfoVBE               ; Get mode information from VBE.
+    call VBEGetModeInfo               ; Get mode information from VBE.
     push eax
 
     mov ebx, .Return
@@ -303,12 +303,12 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the SwitchVBE function - to be done from 32-bit code.
+ ; A wrapper to the VBESwitchMode function - to be done from 32-bit code.
  ;     uint16_t -> the mode to switch to.
  ;
  ; Returns:
  ;     AX       -> the status of the call to VBE.
-SwitchVBEWrapper:
+VBESwitchModeWrapper:
     push ebx
    
     mov ebx, .GetInfo
@@ -317,7 +317,7 @@ SwitchVBEWrapper:
 BITS 16
 .GetInfo:
     mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
-    call SwitchVBE                    ; Switch to the VBE mode defined.
+    call VBESwitchMode                ; Switch to the VBE mode defined.
     push eax
     
     mov ebx, .Return
@@ -329,8 +329,8 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the SetupPaletteVBE function - to be done from 32-bit code.
-SetupPaletteVBEWrapper:
+ ; A wrapper to the VBESetupPalette function - to be done from 32-bit code.
+VBESetupPaletteWrapper:
     push ebx
    
     mov ebx, .SetupPalette
@@ -338,7 +338,7 @@ SetupPaletteVBEWrapper:
 
 BITS 16
 .SetupPalette:
-    call SetupPaletteVBE              ; Set up the palette.
+    call VBESetupPalette              ; Set up the palette.
     
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.
@@ -348,22 +348,22 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the OpenFile function - to be done from 32-bit code.
+ ; A wrapper to the FileOpen function - to be done from 32-bit code.
  ;     uint32_t -> the "code" of the file to open.
  ;
  ; Returns:
  ;     EAX      -> the size of the file opened.
-OpenFileWrapper:
+FileOpenWrapper:
     push ebx
    
-    mov ebx, .OpenFile
-    jmp SwitchToRM                    ; Switch to Real mode, and return to OpenFile.
+    mov ebx, .FileOpen
+    jmp SwitchToRM                    ; Switch to Real mode, and return to FileOpen.
 
 BITS 16
-.OpenFile:
+.FileOpen:
     mov eax, [esp + 8]                ; Get the "file code" into EAX.
     
-    call word [OpenFile]              ; Open the file.   
+    call word [FileOpen]              ; Open the file.   
    
     mov eax, ecx                      ; Get the size into @eax.
     jnc .BackToPM
@@ -383,25 +383,25 @@ BITS 32
     pop ebx
     ret
 
- ; A wrapper to the ReadFile function - to be done from 32-bit code.
+ ; A wrapper to the FileRead function - to be done from 32-bit code.
  ;     uint32_t -> the length to read.
  ;     uint32_t -> the address to read to.
  ;
  ; Returns:
  ;     EAX      -> the size of the file opened.
-ReadFileWrapper:
+FileReadWrapper:
     push ebx
     push edi
    
-    mov ebx, .ReadFile
-    jmp SwitchToRM                    ; Switch to Real mode, and return to ReadFile.
+    mov ebx, .FileRead
+    jmp SwitchToRM                    ; Switch to Real mode, and return to FileRead.
 
 BITS 16
-.ReadFile:
+.FileRead:
     mov ecx, [esp + 16]                ; Get the length into EAX.
     mov edi, [esp + 12]                ; And the address into EDI.
     
-    call word [ReadFile]              ; Read the file.
+    call word [FileRead]              ; Read the file.
     
     mov ebx, .Return
     jmp SwitchToPM                    ; And switch back to protected mode for the return.
@@ -413,16 +413,16 @@ BITS 32
     
     ret
 
- ; A wrapper to the CloseFile function - to be done from 32-bit code.
-CloseFileWrapper:
+ ; A wrapper to the FileClose function - to be done from 32-bit code.
+FileCloseWrapper:
     push ebx
    
-    mov ebx, .CloseFile
-    jmp SwitchToRM                    ; Switch to Real mode, and return to CloseFile.
+    mov ebx, .FileClose
+    jmp SwitchToRM                    ; Switch to Real mode, and return to FileClose.
 
 BITS 16
-.CloseFile:
-    call word [CloseFile]            ; Close the file.
+.FileClose:
+    call word [FileClose]            ; Close the file.
     jc ErrorIO
     
 .BackToPM:

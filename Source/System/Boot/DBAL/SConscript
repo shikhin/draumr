@@ -29,9 +29,9 @@
 
 import os
 
-Import("env", "sys_env")
+Import("Env", "SysEnv")
 
-src = ["Src/Header.asm",
+Src = ["Src/Header.asm",
        "Src/Main.c",
        "Src/BIT.c",
        "Src/String.c",
@@ -39,24 +39,14 @@ src = ["Src/Header.asm",
        "Src/Log/Debug.c",
        "Src/Abort.c",
        "Src/BootFiles.c",
-#       "Src/Output.c",
+       "Src/Output.c",
        "Src/FPU.asm",
-       "Src/Math.c",]
-#       "Src/OutputMod/OutputMod.c",
-#       "Src/OutputMod/Blit.c",
-#       "Src/OutputMod/Blit8BPP.c",
-#       "Src/OutputMod/Blit15BPP.c",
-#       "Src/OutputMod/Blit16BPP.c",
-#       "Src/OutputMod/Blit24BPP.c",
-#       "Src/OutputMod/Blit32BPP.c",
-#       "Src/OutputMod/Serial.c",
-#       "Src/OutputMod/Enhance/Scale.c",
-#       "Src/OutputMod/Enhance/Dither.c" ]
+       "Src/Math.c"]
 
 # A target for building the DBAL binary.
-DBAL = sys_env.Program("DBAL", [x for x in src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = ["-march=i486", "-m32"], LIBS=['Bitmap'])
+DBAL = SysEnv.Program("DBAL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = ["-march=i486", "-m32"], LIBS=['Bitmap'])
 
-Depends(DBAL, src)
+Depends(DBAL, Src)
 
-# Save the DBAL target in the environment as we will need it later.
-env["DBAL"] = DBAL
+# Save the DBAL target in the Environment as we will need it later.
+Env["DBAL"] = DBAL

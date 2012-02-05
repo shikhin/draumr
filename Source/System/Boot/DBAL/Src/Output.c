@@ -1,21 +1,31 @@
-/* Contains common Ouput definitions.
-* 
-*  Copyright (c) 2011 Shikhin Sethi
-* 
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation;  either version 3 of the License, or
-*  (at your option) any later version.
-* 
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-*  GNU General Public License for more details.
-* 
-*  You should have received a copy of the GNU General Public License along
-*  with this program; if not, write to the Free Software Foundation, Inc.,
-*  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*/
+/* 
+ * Contains common Output definitions.
+ *
+ * Copyright (c) 2012, Shikhin Sethi
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the <organization> nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include <stdint.h>
 #include <String.h>
@@ -25,7 +35,8 @@
 #include <PMM.h>
 #include <Log.h>
 #include <Math.h>
-
+#include <Macros.h>
+  
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
 // VBEModeInfo_t *VBEMode             If a VBE mode, uses this to find out if VGA compatible mode or not. Can be zero if using a VGA mode.
@@ -518,9 +529,13 @@ static void ParseVBEInfo()
     return;
 }
 
-// Initializes VGA for a 320*200*256 color mode.
+/*
+ * Initializes VGA for a graphical color mode.
+ */
 static void InitVGA()
 { 
+    // NOTE: Support 640x480x16 colors mode - since that offers higher resolution.
+
     // Fill in some general details of the video mode.
     BIT.Video.Address = (uint32_t*)0xA0000;
     BIT.Video.XRes = 320;
@@ -530,48 +545,58 @@ static void InitVGA()
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Go to the 320*200*256 colors mode.
-    SwitchToMode(0x13, (VBEModeInfo_t*)0);    
+    SwitchToMode(320_200_256, (VBEModeInfo_t*)NULL);    
 }
-        
-// Initializes VBE for a graphical mode.
-// If something fails, automatically reverts to VGA.
-static void InitVBE()
-{    
-    // Get the segment and the offset.
+      
+/*  
+ * Initializes VBE for a graphical mode.
+ * If something fails, automatically reverts to VGA.
+ */
+static void VBEInit()
+{   
+    // If mode number is below 0x0102, then, revert. 
+    if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
+    {
+        // TODO: Implement this.
+        //OutputRevert();
+        return;
+    }
+
+    // Get the segment and the offset of the list of the modes.
     uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
     uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
         
-    // Flat pointer, from segment and offset = (segment * 0x10) + offset;
+    // Make flat pointer, from segment and offset = (segment * 0x10) + offset;
     uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
     uint16_t Mode = *VideoModesFlat++;
     uint32_t Entries = 0;
         
-    // Keep looping till we reach the End of Entries thingy.
+    // Keep looping till we reach the End of Entries.
     do
     {
         // So we got one more entry.
         Entries++;
-        // Get the mode into Mode, and move on to the next video mode thingy.
+        // Get the mode into Mode, and move on to the next video mode.
         Mode = *VideoModesFlat++;
     } while(Mode != 0xFFFF);
         
-    // Allocate some memory from the Base Stack to hold all the mode information.
-    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_STACK, 
+    // Allocate some memory from the Base Bitmap to hold all the mode information.
+    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_BITMAP, 
                             ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
         
-    // If we failed to allocate enough space, simply revert to whatever we can revert to.
+    // If we failed to allocate enough space, simply revert back.
     if(!BIT.Video.VBEModeInfo)
     {
-        //Revert();      
+        // TODO: Implement this.
+        //OutputReturn();      
         return;
     }
     
     // If version number is 1.0, zero out the array. 
-    if(BIT.Video.VBECntrlrInfo->Version == 0x0100)
-        memset(BIT.Video.VBEModeInfo, 0, (sizeof(VBEModeInfo_t) * Entries));
+
     
     // Get mode information from VBE, and the number of entries in VBEModeInfoN.
-    BIT.Video.VBEModeInfoN = BIT.Video.GetModeInfoVBE(BIT.Video.VBEModeInfo);
+    BIT.Video.VBEModeInfoN = BIT.Video.VBEGetModeInfo(BIT.Video.VBEModeInfo);
 
     // If version number is below 1.2, then, certainly, only text modes would be available.
     // Thus, fill all the text mode information in VBEModeInfo[], and revert to VGA.
@@ -625,19 +650,21 @@ static void InitSerial()
         BIT.Serial.SerialFlags = SERIAL_USED;    
 }
 
-// Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
+/*
+ * Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
+ * If no video card, initializes the serial port.
+ */
 void OutputInit()
 {
     // If VBE is present, initialize VBE for a graphical mode.
-    // If something fails in there, it automatically reverts t VGA.
     if(BIT.Video.VideoFlags & VBE_PRESENT)
-        InitVBE();
+        VBEInit();
         
-    // Else If VGA is present initialize VGA for a 320*200*256 color mode.
+    // Else, if VGA is present, initialize VGA for a graphical mode.
     else if(BIT.Video.VideoFlags & VGA_PRESENT)
         InitVGA();
 
-    // Initialize the serial port thingy.
+    // Else, initialize the serial port (if found).
     else
         InitSerial();
     

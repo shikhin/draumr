@@ -3,9 +3,9 @@
  # Copyright (c) 2012, Shikhin Sethi
  # All rights reserved.
  #
- # Redistribution and use in source and binary forms, with or without
+ # Redistribution and use in Source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
- #     * Redistributions of source code must retain the above copyright
+ #     * Redistributions of Source code must retain the above copyright
  #       notice, this list of conditions and the following disclaimer.
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
@@ -33,38 +33,32 @@ import glob
 from SCons.Builder import Builder
 from SCons.Action import Action
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
-
-def _path(p) :
+def Path(p) :
     return os.path.sep.join(p)
 
-def _iso_builder(target, source, env) :
+def _iso_builder(Target, Source, Env) :
     # Create a temporary directory to build the ISO image structure.
-    d = tempfile.mkdtemp()
+    Dir = tempfile.mkdtemp()
 
     # Copy the kernel to the image.
-    s = _path([d, "Boot"])
-    os.makedirs(s)
-    stage1 = str(env["CD_STAGE1"][0])
-    bios = str(env["BIOS"][0])
-    dbal = str(env["DBAL"][0])
-    background = str(env["BACK"])
-    shutil.copy(stage1, s)
-    shutil.copy(bios, s)
-    shutil.copy(dbal, s)
-    if env["BACK"] != 0:
-        shutil.copy(background, s)
+    Boot = Path([Dir, "Boot"])
 
-    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], d))
-    print("  [ISO]   %s" % (target[0]))
+    os.makedirs(Boot)
+
+    Stage1 = str(Env["CD_STAGE1"][0])
+    BIOS = str(Env["BIOS"][0])
+    DBAL = str(Env["DBAL"][0])
+    Background = str(Env["BACK"])
+
+    shutil.copy(Stage1, Boot)
+    shutil.copy(BIOS, Boot)
+    shutil.copy(DBAL, Boot)
+    if Env["BACK"] != 0:
+        shutil.copy(Background, Boot)
+
+    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", Target[0], d))
+    
+    print("  [ISO]   %s" % (Target[0]))
     # Clean up our mess. :)
     shutil.rmtree(d)
 

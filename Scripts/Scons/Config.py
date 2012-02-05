@@ -28,34 +28,34 @@
 from SCons.Errors import StopError
 
 class Config :
-    params = {
+    Params = {
         "build" : ["debug", "release"],
         "target" : ["iso", "pxe", "floppy", "all"],
     }
 
     def __init__(self) :
-        self.arch = "i486"
-        self.build = "debug"
-        self.target = "all"
+        self.Arch = "i486"
+        self.Build = "debug"
+        self.Target = "all"
 	
-    def get_arch(self) :
-        return self.arch
+    def GetArch(self) :
+        return self.Arch
 
-    def get_build(self) :
-        return self.build
+    def GetBuild(self) :
+        return self.Build
 
-    def parse(self, args) :
-        for k in args.keys() :
-            v = args[k]
+    def Parse(self, Args) :
+        for Key in Args.keys() :
+            Value = Args[Key]
 
-            if not self._validate(k, v) :
-                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (k, ", ".join(self.params[k])))
+            if not self.Validate(Key, Value) :
+                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (Key, ", ".join(self.Params[Value])))
 
-            if k == "build" : self.build = v
-            if k == "target" : self.target = v
+            if Key == "build" : self.Build = Value
+            if Key == "target" : self.Target = Value
 
-    def _validate(self, key, value) :
-        if not key in self.params :
+    def Validate(self, Key, Value) :
+        if not Key in self.Params :
             return False
 
-        return value in self.params[key]
+        return Value in self.Params[Key]

@@ -29,29 +29,26 @@
 
 import os
 
-Import("env")
-our_env = Environment()
+Import("Env")
+SysEnv = Environment()
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
+# Some Colors we'd be using.
+Colors = {}
+Colors['Green']  = '\033[92m'
+Colors['End']    = '\033[0m'
 
 # Hide the ugly compiler command lines and display nice messages.
-our_env["ASCOMSTR"] = "  [AS]    $SOURCE"
-our_env["CCCOMSTR"] = "  [CC]    $SOURCE"
-our_env["LINKCOMSTR"] = "  [LINK]  $TARGET"
+SysEnv["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
+SysEnv["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
+SysEnv["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
+SysEnv["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
+SysEnv["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End'])
 
-CRC32 = our_env.Program("CRC32.util", "CRC32.c", CCFLAGS="-std=c99")
-ToSIF = our_env.Program("ToSIF.util", "ToSIF.c", CCFLAGS="-std=c99")
+CRC32 = SysEnv.Program("CRC32.util", "CRC32.c", CCFLAGS = "-std=c99")
+ToSIF = SysEnv.Program("ToSIF.util", "ToSIF.c", CCFLAGS = "-std=c99")
 
 Depends(CRC32, ToSIF)
 
-# Save the CRC32 target in the environment as we will need it later.
-env["CRC32"] = CRC32
-env["ToSIF"] = ToSIF
+# Save the CRC32 target in the Environment as we will need it later.
+Env["CRC32"] = CRC32
+Env["ToSIF"] = ToSIF

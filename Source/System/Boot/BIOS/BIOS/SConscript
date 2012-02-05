@@ -29,9 +29,9 @@
 
 import os
 
-Import("env", "sys_env")
+Import("Env", "SysEnv")
 
-src = ["Link.ld",
+Src = ["Link.ld",
        "Format/Format.inc",
        "Src/Main.asm",
        "Src/A20.asm",
@@ -41,9 +41,9 @@ src = ["Link.ld",
        "Src/Tables/Tables.asm"]
 
 # A target for building the Stage 1 binary.
-BIOS = sys_env.Program("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
+BIOS = SysEnv.Program("BIOS", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
 
-Depends(BIOS, src)
-Depends(BIOS, env["CRC32"])
+Depends(BIOS, Src)
+Depends(BIOS, Env["CRC32"])
 
-env["BIOS"] = BIOS
+Env["BIOS"] = BIOS

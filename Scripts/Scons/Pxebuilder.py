@@ -3,9 +3,9 @@
  # Copyright (c) 2012, Shikhin Sethi
  # All rights reserved.
  #
- # Redistribution and use in source and binary forms, with or without
+ # Redistribution and use in Source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
- #     * Redistributions of source code must retain the above copyright
+ #     * Redistributions of Source code must retain the above copyright
  #       notice, this list of conditions and the following disclaimer.
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
@@ -32,37 +32,29 @@ import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
-from Isobuilder import _path
+from Isobuilder import Path
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
-
-def _pxe_builder(target, source, env) :
+def _pxe_builder(Target, Source, Env) :
     # Create a temporary directory to build the ISO image structure.
     if not os.path.exists('/tftpboot'):
         raise StopError("The /tftpboot directory, which would contain the PXE files, isn't present.")
 
     # Copy the kernel to the image.
-    s = "/tftpboot"
+    TftpBoot = "/tftpboot"
     
-    stage1 = str(env["PXE_STAGE1"][0])
-    bios = str(env["BIOS"][0])
-    dbal = str(env["DBAL"][0])
-    background = str(env["BACK"])
-    shutil.copy(stage1, s)
-    shutil.copy(bios, s)
-    shutil.copy(dbal, s)
-    if env["BACK"] != 0:
-        shutil.copy(background, s)
+    Stage1 = str(Env["PXE_STAGE1"][0])
+    BIOS = str(Env["BIOS"][0])
+    DBAL = str(Env["DBAL"][0])
+    Background = str(Env["BACK"])
     
-    print("  [PXE]   %s" % (target[0]))
+    shutil.copy(Stage1, TftpBoot)
+    shutil.copy(BIOS, TftpBoot)
+    shutil.copy(DBAL, TftpBoot)
+
+    if Env["BACK"] != 0:
+        shutil.copy(Background, TftpBoot)
+    
+    print("  [PXE]   %s" % (Target[0]))
     return 0
 
 PXEBuilder = Builder(action = Action(_pxe_builder, None))

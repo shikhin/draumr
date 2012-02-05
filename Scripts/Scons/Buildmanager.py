@@ -36,60 +36,55 @@ from Imagebuilder import ImageBuilder
 from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
-# Some colors we'd be using.
-colors = {}
-colors['cyan']   = '\033[96m'
-colors['purple'] = '\033[95m'
-colors['blue']   = '\033[94m'
-colors['green']  = '\033[92m'
-colors['yellow'] = '\033[93m'
-colors['red']    = '\033[91m'
-colors['end']    = '\033[0m'
+# Some Colors we'd be using.
+Colors = {}
+Colors['Green']  = '\033[92m'
+Colors['End']    = '\033[0m'
 
 class BuildManager :
 
-    def __init__(self, config) :
-        self.config = config
+    def __init__(self, Config) :
+        self.Config = Config
 
-    def create_env(self) :
-       #If the output is not a terminal, remove the colors
+    def CreateEnv(self) :
+        # If the output is not a terminal, remove the colors.
         if not sys.stdout.isatty():
-            for key, value in colors.iteritems():
-               colors[key] = ''     
+            for Key, Value in Colors.iteritems():
+               Colors[Key] = ''     
 	
-	arch = self.config.get_arch()
+	Arch = self.Config.GetArch()
 
-        # Create an environment with our own tools.
-        env = Environment()
-        env["AS"] = "nasm"
-        env["CC"] = "gcc"
-        env["CPPFLAGS"] = ["-std=c99", "-Wno-attributes", "-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
-        env["LINK"] = "ld" 
-        env["BUILDERS"]["ISO"] = ISOBuilder
-        env["BUILDERS"]["PXE"] = PXEBuilder
-        env["BUILDERS"]["Image"] = ImageBuilder
-        env["BUILDERS"]["Floppy"] = FloppyBuilder
+        # Create an Environment with our own tools.
+        Env = Environment()
+        Env["AS"] = "nasm"
+        Env["CC"] = "gcc"
+        Env["CPPFLAGS"] = ["-std=c99", "-Wno-attributes", "-Wall", "-Werror", "-Wextra", "-Wshadow", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+        Env["LINK"] = "ld" 
+        Env["BUILDERS"]["ISO"] = ISOBuilder
+        Env["BUILDERS"]["PXE"] = PXEBuilder
+        Env["BUILDERS"]["Image"] = ImageBuilder
+        Env["BUILDERS"]["Floppy"] = FloppyBuilder
 
         # Add build specific flags
-        b = self.config.get_build()
+        Build = self.Config.GetBuild()
 
-        if b == "debug" :
-            env["CPPFLAGS"] += ["-O0"]
+        if Build == "debug" :
+            Env["CPPFLAGS"] += ["-O0"]
         else :
-            env["CPPFLAGS"] += ["-O2"]
+            Env["CPPFLAGS"] += ["-O2"]
 
         # Hide the ugly compiler command lines and display nice messages.
-        env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (colors['green'], colors['end'])
-        env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (colors ['green'], colors['end'])
-        env["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (colors ['green'], colors['end'])
-        env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (colors['green'], colors['end'])
-        env["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (colors['green'], colors['end'])
+        Env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
+        Env["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
+        Env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
+        Env["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End'])
 
-        # Use LD_LIBRARY_PATH if it is specified in the environment where SCons was executed
+        # Use LD_LIBRARY_PATH if it is specified in the Environment where SCons was executed
         if "LD_LIBRARY_PATH" in os.environ :
-            env["ENV"]["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+            Env["Env"]["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 
-        # Save some information in the environment.
-        env["ARCH"] = arch
+        # Save some information in the Environment.
+        Env["ARCH"] = Arch
 
-        return env
+        return Env

@@ -27,13 +27,13 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("env")
+Import("Env")
 
 # Setup system specific environment
-sys_env = env.Clone()
-sys_env["CPPPATH"] = ["#Source/System/Include", "Include"]
-sys_env["LIBPATH"] = ["#Source/System/Lib"]
-sys_env["ASFLAGS"] += ["-felf"]
+SysEnv = Env.Clone()
+SysEnv["CPPPATH"] = ["#Source/System/Include", "Include"]
+SysEnv["LIBPATH"] = ["#Source/System/Lib"]
+SysEnv["ASFLAGS"] += ["-felf"]
 
-Export("sys_env")
-SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Lib"], exports=["env", "sys_env"])
+Export("SysEnv")
+SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Lib"], exports=["Env", "SysEnv"])

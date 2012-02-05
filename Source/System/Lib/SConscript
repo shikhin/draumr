@@ -27,6 +27,6 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("env", "sys_env")
+Import("Env", "SysEnv")
 
-SConscript(dirs=["Bitmap"], exports=["env", "sys_env"])
+SConscript(dirs=["Bitmap"], exports=["Env", "SysEnv"])

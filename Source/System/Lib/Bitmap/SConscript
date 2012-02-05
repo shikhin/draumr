@@ -29,14 +29,14 @@
 
 import os
 
-Import("env", "sys_env")
+Import("Env", "SysEnv")
 
-src = ["Src/Bitmap.c"]
+Src = ["Src/Bitmap.c"]
 
 # A target for building the DBAL binary.
-Bitmap = sys_env.Library("#Source/System/Lib/Bitmap", [x for x in src], CCFLAGS = ["-march=i486", "-m32"])
+Bitmap = SysEnv.Library("#Source/System/Lib/Bitmap", [File for File in Src], CCFLAGS = ["-march=i486", "-m32"])
 
-Depends(Bitmap, src)
+Depends(Bitmap, Src)
 
-# Save the Bitmap target in the environment as we will need it later.
-env["LIB_BITMAP"] = Bitmap
+# Save the Bitmap target in the Environment as we will need it later.
+Env["LIB_BITMAP"] = Bitmap

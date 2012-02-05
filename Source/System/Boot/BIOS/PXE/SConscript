@@ -29,9 +29,9 @@
 
 import os
 
-Import("env", "sys_env")
+Import("Env", "SysEnv")
 
-src = ["Src/Main.asm",
+Src = ["Src/Main.asm",
        "Src/Screen.asm",
        "Src/Abort.asm",
        "Src/PXE/PXE.asm",
@@ -39,11 +39,9 @@ src = ["Src/Main.asm",
        "Link.ld"]
 
 # A target for building the Stage 1 binary.
-stage1obj = sys_env.Object("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/PXE/Link.ld")
-stage1 = sys_env.Program("Stage1", "Stage1", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/PXE/Link.ld")
+Stage1 = SysEnv.Program("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/PXE/Link.ld")
 
-Depends(stage1obj, src)
-Depends(stage1, stage1obj)
+Depends(Stage1, Src)
 
-# Save the stage 1 target in the environment as we will need it later.
-env["PXE_STAGE1"] = stage1
+# Save the stage 1 target in the Environment as we will need it later.
+Env["PXE_STAGE1"] = Stage1

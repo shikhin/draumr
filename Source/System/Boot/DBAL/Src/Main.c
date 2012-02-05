@@ -55,7 +55,7 @@ void Main(uint32_t *BITPointer)
     // Initialize the bouncer for the boot files.
     BootFilesInit();
         
-    // Initialize 'output' thingy.
+    // Initialize support for 'output'.
     //OutputInit(); 
     
     // Just a temporary thingy to init the OutputMod.

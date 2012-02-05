@@ -57,9 +57,9 @@
 struct BIT
 {
     // The open, read and close file functions.
-    uint32_t (*OpenFile)(uint32_t FileCode);
-    void     (*ReadFile)(void *Destination, uint32_t Bytes);
-    void     (*CloseFile)();
+    uint32_t (*FileOpen)(uint32_t FileCode);
+    void     (*FileRead)(void *Destination, uint32_t Bytes);
+    void     (*FileClose)();
 
     uint64_t IPS;                     // Number of instructions, executed per second.
     uint8_t  HrdwreFlags;             // The "hardware" flags.
@@ -81,12 +81,12 @@ struct BIT
         
         EDIDInfo_t EDIDInfo;                             // The EDID information.
 
-        void     (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
-	    void     (*SetupPaletteVGA)();               // The function which sets up a palette for a 8bpp mode.
-	    uint32_t (*GetModeInfoVBE)(VBEModeInfo_t *); // The function which gets Video mode information from VBE.
+        void     (*VGASwitchMode)(uint16_t Mode);        // The function which performs the switch to a vga mode.
+	    void     (*VGASetupPalette)();                   // The function which sets up a palette for a 8bpp mode.
+	    uint32_t (*VBEGetModeInfo)(VBEModeInfo_t *);     // The function which gets Video mode information from VBE.
 
-	    uint16_t (*SwitchVBE)(uint16_t Mode);        // The function which performs the switch to a vbe mode.
-        void     (*SetupPaletteVBE)();               // The function which sets up a palette for a 8bpp mode.	    
+	    uint16_t (*VBESwitchMode)(uint16_t Mode);        // The function which performs the switch to a vbe mode.
+        void     (*VBESetupPalette)();                   // The function which sets up a palette for a 8bpp mode.	    
 	    
 	    uint32_t *Address;                       // The address of the video display. 
    	    uint32_t XRes;                           // X resolution.
