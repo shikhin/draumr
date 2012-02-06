@@ -65,7 +65,7 @@ Retry             db 0                ; Number of times to retry a particular fu
  ;
  ; Returns:
  ;      Boot -> aborts boot if any error occured.
-GetBootFile:
+BootFileGet:
     ; Save some registers we are using in this function.
     push edi
     push eax
@@ -79,7 +79,7 @@ GetBootFile:
     mov dh, 0
 
 .LoopGet:
-    call ReadFromFloppy
+    call FloppyReadSector
     jc .Fail1
     
     inc cl                            ; Jump to the next sector.
@@ -123,7 +123,7 @@ GetBootFile:
  ;
  ; Returns:
  ;      Carry -> set if unsuccessful.
-ReadFromFloppy:
+FloppyReadSector:
     pushad
     push es
     
@@ -171,14 +171,14 @@ ReadFromFloppy:
 SECTION .text
 
  ; Initializes the system so that files may be opened/closed later on (finds LBA).
-InitBootFiles:
+BootFilesInit:
     pushad
 
     mov eax, [DBAL.LBA]               ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
     
-    call ReadFromFloppyM              ; Read from the floppy - multiple sectors, with advanced error checking.
+    call FloppyReadSectorM              ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
     sub ecx, 0xE000                   ; Subtract Start of File to get the size of the file.
@@ -200,7 +200,7 @@ InitBootFiles:
  ;     ECX  -> the number of sectors actually read.
  ;     Boot -> aborts boot if nothing made it work.
 ; NOTE: M stands for Multiple (sectors).
-ReadFromFloppyM:
+FloppyReadSectorM:
     pushad
 
     mov [Info.Read], ecx              ; And if we take the single path soon, put it here.
@@ -251,7 +251,7 @@ ReadFromFloppyM:
     mov dh, [Info.Head]
     mov cl, [Info.Sector]
 
-    call ReadFromFloppy
+    call FloppyReadSector
     jnc .Return                       ; If the carry flag wasn't set, return.
 
 .Fail:
@@ -267,7 +267,7 @@ ReadFromFloppyM:
     
 ; The single loop, reading EBX times.
 .LoopSingle:
-    call ReadFromFloppy
+    call FloppyReadSector
     jc .Error
 
     ; Decrease the count of sectors to read.
@@ -297,7 +297,7 @@ ReadFromFloppyM:
  ; Returns: 
  ;     Carry -> set if any error occured.
  ;     ECX   -> the size of the file you want to FILE.
-OpenFile:
+FileOpen:
     push eax
     
     ; If file code isn't -1, then return with error.
@@ -353,7 +353,7 @@ OpenFile:
  ;
  ; Returns:
  ;     Boot -> aborted if any error occured.
-ReadFile:
+FileRead:
     pushad
     
     add ecx, 0x1FF
@@ -376,7 +376,7 @@ ReadFile:
 
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
-    call ReadFromFloppyM              ; Do the CALL!
+    call FloppyReadSectorM              ; Do the CALL!
    
     add eax, ecx                      ; Advance the LBA by read sectors count.
 
@@ -398,6 +398,6 @@ ReadFile:
     ret
 
  ; Closes the file currently opened.
-CloseFile:
+FileClose:
     mov byte [FILE.Code], -1
     ret

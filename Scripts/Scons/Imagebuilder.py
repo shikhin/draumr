@@ -34,17 +34,17 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from Config import Config
 
-def _image_builder(Target, Source, Env) :    
-    os.system("%s %s" % (Env["CRC32"][0], Env["BIOS"][0]))
-    os.system("%s %s" % (Env["CRC32"][0], Env["DBAL"][0]))
+def _image_builder(target, source, env) :   
+    os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
     
-    if os.path.isfile(Env["BACK"]) :
-        os.system("%s %s Background.sif" % (Env["ToSIF"][0], Env["BACK"]))
-        Env["BACK"] = "Background.sif"              
-        os.system("%s %s" % (Env["CRC32"][0], Env["BACK"]))
+    if os.path.isfile(env["BACK"]) :
+        os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
+        env["BACK"] = "Background.sif"              
+        os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
         
     else :
-        Env["BACK"] = 0
+        env["BACK"] = 0
         
     return 0
 

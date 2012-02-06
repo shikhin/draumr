@@ -27,7 +27,7 @@
 
 SECTION .data
 
-; The sectors read - used to return from ReadFromDiskM.
+; The sectors read - used to return from DiskReadSectorM.
 SectorRead:       dd 0
 
 ; Provide a table for disk error messages such that printing them becomes easier.
@@ -106,7 +106,7 @@ LBAPacket:
  ;
  ; Returns:
  ;     Boot -> aborted if any error occurs.
-InitDisk:
+DiskInit:
     ; Save some registers.
     push si
     push edi
@@ -114,13 +114,13 @@ InitDisk:
     push ebx
 
     xor si, si                        ; If any error occurs in the future - abort using basic method.
-    call CheckInt13Ext                ; Check whether Int 13 extensions are present or not.
+    call Int13ExtCheck                ; Check whether Int 13 extensions are present or not.
 
     mov edi, 0x9000                   ; Read the following sector at 0x9000.
     mov ecx, 1                        ; Only read 1 sector (2KiB).
     mov ebx, [BootInfo.PVD]           ; Read the sector containing the PVD.
     
-    call ReadFromDisk                 ; Read the sector containing the Primary Volume Descriptor.
+    call DiskReadSector                 ; Read the sector containing the Primary Volume Descriptor.
     jc AbortBoot                      ; Abort boot if read failed.
 
     cmp byte [0x9000], 1              ; Check whether we loaded a PVD or not.
@@ -144,7 +144,7 @@ InitDisk:
     ret
 
  ; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
-CheckBootFile:
+BootFileCheck:
     pushad
     xor si, si                        ; If any error occurs in the future - abort using basic method.
 
@@ -172,7 +172,7 @@ CheckBootFile:
     shr eax, 11                       ; Find out the number of 2KiB sectors.
 
 .LoadSector:
-    call ReadFromDisk                 ; Read the sector from disk.
+    call DiskReadSector                 ; Read the sector from disk.
 
 .NextSector: 
     inc ebx                           ; Increment the LBA of sector to read.
@@ -198,7 +198,7 @@ CheckBootFile:
  ;
  ; Returns:         
  ;     Boot -> aborted if any error occurs.
-CheckInt13Ext:
+Int13ExtCheck:
     pushad                            ; Push all general purpose registers to save them.
 
     mov eax, 0x4100
@@ -223,7 +223,7 @@ CheckInt13Ext:
  ;
  ; Returns:
  ;     Boot -> aborted if any error occurs.
-ReadFromDisk:
+DiskReadSector:
     pushad
 
     ; Retry 3 times before failing.
@@ -266,7 +266,7 @@ ReadFromDisk:
     jz AbortBoot
     
 .AdvancedAbort:
-    call GetErrorMsg
+    call DiskErrorMsg
     jmp AbortBoot
 
 .Success:
@@ -284,7 +284,7 @@ SECTION .text
  ; Returns:
  ;     ECX  -> the number of sectors actually read.
 ; NOTE: M stands for multiple sectors.
-ReadFromDiskM:
+DiskReadSectorM:
     pushad
    
     mov ebp, edi
@@ -336,7 +336,7 @@ ReadFromDiskM:
     mov edi, ebp
     
 .Loop:
-    call ReadFromDisk
+    call DiskReadSector
     
     ; Decrease the count of sectors to read.
     ; If read all sectors, end.
@@ -357,7 +357,7 @@ ReadFromDiskM:
  ;
  ; Returns:
  ;     SI -> the address of the string to print.
-GetErrorMsg:
+DiskErrorMsg:
     test ah, ah                       ; If AH is zero, print a generic error message.
     je .Generic
 

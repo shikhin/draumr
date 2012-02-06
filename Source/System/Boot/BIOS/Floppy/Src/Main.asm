@@ -73,7 +73,7 @@ Main:
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
    
-    call GetBootFile                  ; Get the complete boot file (us).
+    call BootFileGet                  ; Get the complete boot file (us).
     jmp ExtMain
 
 ; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
@@ -83,12 +83,12 @@ BIOSSignature:
     dw 0xAA55
 
 ExtMain:
-    call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
-    call InitBootFiles                ; Initialize boot file data - get the size currently.
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
+    call BootFilesInit                ; Initialize boot file data - get the size currently.
 
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
-    call OpenFile                     ; Open the File.
+    call FileOpen                     ; Open the File.
 
     jc .ErrorIO
     
@@ -98,7 +98,7 @@ ExtMain:
     mov ecx, 0x200                    ; Read only 0x200 bytes.
     mov edi, 0x9000
     
-    call ReadFile                     ; Read the entire file.
+    call FileRead                     ; Read the entire file.
 
 ; Does all checks related to the first sector of the common BIOS file.
 .CheckCBIOS1:
@@ -130,10 +130,10 @@ ExtMain:
 
     sub ecx, 0x200                    ; Read the rest 0x200 bytes.
     
-    call ReadFile                     ; Read the rest of the file.
+    call FileRead                     ; Read the rest of the file.
 
 .Finish:
-    call CloseFile                    ; And then close the file.
+    call FileClose                    ; And then close the file.
 
 .CheckCommonBIOS2:
     mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.
@@ -160,9 +160,9 @@ ExtMain:
     rep stosd                         ; Clear out the BSS section.
  
 .JmpToBIOS:
-    mov eax, OpenFile
-    mov ebx, ReadFile
-    mov ecx, CloseFile
+    mov eax, FileOpen
+    mov ebx, FileRead
+    mov ecx, FileClose
     mov edx, BD_FLOPPY
        
     mov esp, 0x7C00

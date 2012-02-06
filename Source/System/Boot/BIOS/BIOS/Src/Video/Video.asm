@@ -41,7 +41,7 @@ BITS 16
 
  ; Performs a switch to a VGA mode, using the BIOS.
  ;     AX -> the mode to switch to.
-SwitchVGA:
+VGASwitchMode:
     pushad
 
     int 0x10                          ; Since the mode is in AX, AH should be cleared. So, switch!
@@ -54,7 +54,7 @@ SwitchVGA:
  ;
  ; Returns:
  ;     AX -> the status return code.
-SwitchVBE:
+VBESwitchMode:
     mov bx, ax
     mov ax, 0x4F02
     
@@ -64,7 +64,7 @@ SwitchVBE:
     ret
 
  ; Set ups the palette for a 8bpp mode, using the VBE.
-SetupPaletteVBE:
+VBESetupPalette:
     pushad
     
     ; Clear the counter, and point edi at the output buffer.
@@ -123,7 +123,7 @@ SetupPaletteVBE:
     ret
 
  ; Set ups the palette for a 8bpp mode, using the BIOS.
-SetupPaletteVGA:
+VGASetupPalette:
     pushad
 
     ; Clear the counter, and point edi at the output buffer.
@@ -295,7 +295,7 @@ VideoInit:
  ;
  ; Returns:
  ;     EAX -> the number of entries.
-GetModeInfoVBE:
+VBEGetModeInfo:
     ; Save es and fs.
     push es
     push fs

@@ -26,7 +26,7 @@
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  ; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
-InitScreen:
+ScreenInit:
     pushad                            ; Push all general purpose registers to save them.
     push es                           ; And es.
    

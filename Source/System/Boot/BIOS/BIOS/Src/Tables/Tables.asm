@@ -31,7 +31,7 @@ BITS 32
 
  ; Finds the ACPI, MPS and SMBIOS tables, and stores them in the BIT.
 ; NOTE: If unable to find any one of them, it lets the address remain to a default 0:0.
-FindTables:
+TablesFind:
     pushad
 
     movzx esi, word [0x40E]

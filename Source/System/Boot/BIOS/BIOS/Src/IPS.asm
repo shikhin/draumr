@@ -40,7 +40,7 @@ SECTION .text
  ; Finds the Instructions executed in each second by the machine.
 ; NOTE: Might not be entirely accurate. I just take an average of few
 ; instructions executed in a loop.
-FindIPS:
+IPSCalculate:
     pushad
     
 ; Synchronize the system time, so that we start the loop *immediately after*

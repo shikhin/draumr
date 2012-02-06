@@ -72,8 +72,8 @@ Startup:
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.
 
-    call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
-    call InitPXE
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
+    call PXEInit
    
     xor ax, ax                        ; Set all the segment registers to 0x0000.
     mov ds, ax
@@ -85,7 +85,7 @@ Main:
     mov di, PXENV_GET_CACHED_INFO
     mov bx, GET_CACHED_INFO
     
-    call UsePXEAPI                    ; Ask for the cached info.
+    call PXEAPICall                   ; Ask for the cached info.
     
     or ax, [PXENV_GET_CACHED_INFO]    ; Get the status into BX.
     jnz .Error
@@ -106,7 +106,7 @@ Main:
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     
-    call OpenFile                     ; Open the File.
+    call FileOpen                     ; Open the File.
     jc .ErrorIO
 
     ; ECX contains size of file we are opening.
@@ -114,7 +114,7 @@ Main:
     
     mov ecx, 512                      ; Read only 512 bytes.
     mov edi, 0x9000
-    call ReadFile                     ; Read the entire file.
+    call FileRead                     ; Read the entire file.
 
 ; Checks common BIOS file from first sector.
 .CheckCBIOSFirstSector:
@@ -146,10 +146,10 @@ Main:
 
     sub ecx, 512                      ; Read the rest bytes.
     
-    call ReadFile                     ; Read the rest of the file.
+    call FileRead                     ; Read the rest of the file.
 
 .Finish:
-    call CloseFile                    ; And then close the file.
+    call FileClose                    ; And then close the file.
 
 ; Check the rest of the common BIOS file.
 .CheckCBIOSRest:
@@ -182,9 +182,9 @@ Main:
     xor dx, dx
     mov ss, dx
 
-    mov eax, OpenFile
-    mov ebx, ReadFile
-    mov ecx, CloseFile
+    mov eax, FileOpen
+    mov ebx, FileRead
+    mov ecx, FileClose
     mov edx, BD_PXE
        
     mov esp, 0x7C00

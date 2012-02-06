@@ -66,7 +66,7 @@ SECTION .text
  ;
  ; Returns: 
  ;     Boot -> aborted if ANY error occurs.
-FindBootFiles:
+BootFilesFind:
     pushad    
 
     mov eax, [0x9000 + 156 + 10]      ; Get the size of the PVD root directory into EAX.
@@ -80,7 +80,7 @@ FindBootFiles:
 
 .LoadSectorRD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
-    call ReadFromDisk
+    call DiskReadSector
 
 .CheckRecordRD:
     cmp byte [di], 0                  ; If zero, we have finished this sector. Move on to next sector.
@@ -117,7 +117,7 @@ FindBootFiles:
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
-    call ReadFromDisk
+    call DiskReadSector
 
 .CheckRecordBD:
     cmp byte [di], 0                  ; If zero, we have finished this sector. Move on to next sector.
@@ -224,7 +224,7 @@ FindBootFiles:
  ; Returns: 
  ;    ECX   -> the size of the file you want to open.
  ;    Carry -> set if any error occured.
-OpenFile:
+FileOpen:
     ; Save some variables.
     push eax
     push ebx
@@ -296,7 +296,7 @@ OpenFile:
  ;
  ; Returns:
  ;     Boot -> aborted if any error occured.
-ReadFile:
+FileRead:
     pushad
 
     mov edx, ecx                      ; Get the original number of bytes in EDX.
@@ -333,7 +333,7 @@ ReadFile:
 
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
-    call ReadFromDiskM                ; Do the CALL!
+    call DiskReadSectorM                ; Do the CALL!
     
     add ebx, ecx                      ; Advance the LBA by read sectors count.
    
@@ -358,7 +358,7 @@ ReadFile:
     ret
 
  ; Closes the file currently opened.
-CloseFile:
+FileClose:
     mov byte [FILE.Code], -1
     mov dword [FILE.Extra], 0
     mov dword [FILE.Size], 0

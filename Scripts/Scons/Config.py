@@ -49,7 +49,7 @@ class Config :
             Value = Args[Key]
 
             if not self.Validate(Key, Value) :
-                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (Key, ", ".join(self.Params[Value])))
+                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (Key, ", ".join(self.Params[Key])))
 
             if Key == "build" : self.Build = Value
             if Key == "target" : self.Target = Value

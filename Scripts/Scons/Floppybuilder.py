@@ -34,22 +34,22 @@ from SCons.Builder import Builder
 from SCons.Action import Action
 from Isobuilder import Path
 
-def _floppy_builder(Target, Source, Env) :
+def _floppy_builder(target, source, env) :
     # Create a temporary directory to build the Floppy image structure.
     Dir = tempfile.mkdtemp()
 
-    Stage1 = str(Env["FLOPPY_STAGE1"][0])
-    BIOS = str(Env["BIOS"][0])
-    DBAL = str(Env["DBAL"][0])
+    Stage1 = str(env["FLOPPY_STAGE1"][0])
+    BIOS = str(env["BIOS"][0])
+    DBAL = str(env["DBAL"][0])
     
     Combined1 = Path([Dir, "Combined"])
     Combined2 = Path([Dir, "Combined2"])
 
     os.system("cat %s %s > %s" % (Stage1, BIOS, Combined1))
     os.system("cat %s %s > %s" % (Combined1, DBAL, Combined2))
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined2, Target[0]))
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined2, target[0]))
 
-    print("  [FLP]   %s" % (Target[0]) ) 
+    print("  [FLP]   %s" % (target[0]) ) 
     
     shutil.rmtree(Dir)
     return 0

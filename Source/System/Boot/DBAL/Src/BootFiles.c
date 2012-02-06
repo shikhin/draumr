@@ -175,7 +175,7 @@ FILE_t BootFilesBGImg()
     SIFHeader_t *SIFHeader;
 
     // Open the file, with code, BACKGROUND_SIF.
-    File.Size = BIT.OpenFile(BACKGROUND_SIF);
+    File.Size = BIT.FileAPI(FILE_OPEN, BACKGROUND_SIF);
 
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
@@ -184,7 +184,7 @@ FILE_t BootFilesBGImg()
     }
 
     // Read 2048 bytes at the bouncer.
-    BIT.ReadFile((uint32_t*)Bouncer, 2048);
+    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
     
     SIFHeader = (SIFHeader_t*)Bouncer;
 
@@ -232,7 +232,7 @@ FILE_t BootFilesBGImg()
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
     while(Size >= BouncerSize)
     {
-		BIT.ReadFile((uint32_t*)Bouncer, BouncerSize);
+		BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
         
         Size -= BouncerSize;
@@ -242,7 +242,7 @@ FILE_t BootFilesBGImg()
     // If they are any left over bytes, read them.
     if(Size)
     {
-        BIT.ReadFile((uint32_t*)Bouncer, Size);   
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, Size);   
         memcpy(OutputBuffer, Bouncer, Size);
     }
 
@@ -258,5 +258,7 @@ FILE_t BootFilesBGImg()
         return File;
     }
 
+    // TODO: Close files in the required places in here.
+    DebugPrintText("Reached\n");
     return File;
 }

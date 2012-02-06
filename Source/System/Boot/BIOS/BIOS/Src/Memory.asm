@@ -363,13 +363,13 @@ Dummy:            dd 0
  ;     ECX -> the number of bytes of RAM found 
 Probe:  
     mov ebx, .TestStart
-    jmp SwitchToPM
+    jmp PMSwitch
 
 BITS 32
 .TestStart:
     xor ecx, ecx                      ; The "number of bytes" of RAM found.
     test edx, edx                     ; If @edx is zero, then no need to do anything.
-    jz .SwitchToRM
+    jz .RMSwitch
 
     or esi, 0x00003FFC                ; @esi is the address of the last dword in the first block.
     shr edx, 14                       ; Shift right EDX by 14, to "divide it by 0x4000".
@@ -388,7 +388,7 @@ BITS 32
     mov [esi], ebx                    ; Restore the original value (even if it's not RAM, in case it's a memory mapped device or something)
     
     cmp ebp, eax                      ; Has the value changed over there - if yes, just quit before we make something more bad.  
-    jne .SwitchToRM                   ; Let's return.
+    jne .RMSwitch                   ; Let's return.
  
     ; Increase the bytes found counter, and the "address to test" pointer.
     add ecx, 0x00004000     
@@ -399,9 +399,9 @@ BITS 32
     test edx, edx
     jnz .TestBlock
 
-.SwitchToRM:   
+.RMSwitch:   
     mov ebx, .Return
-    jmp SwitchToRM
+    jmp RMSwitch
 
 BITS 16
     ; Reload the segment registers, and enable interrupts.

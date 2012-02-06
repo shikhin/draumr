@@ -53,7 +53,7 @@ Image = Env.Image("BootImage.comp", None)
 Depends(Image, Utils)
 
 if Cfg.Target == "all":
-    ISO = Env.ISO("Draumr.ISO", None)
+    ISO = Env.ISO("Draumr.iso", None)
     Depends(ISO, [Env["CD_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
 
     PXE = Env.PXE("/tftpboot/Stage1", None) 
@@ -62,7 +62,7 @@ if Cfg.Target == "all":
     Floppy = Env.Floppy("Draumr.flp", None)
     Depends(Floppy, [Env["FLOPPY_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
     
-    Clean("Draumr.ISO", "Background.sif")
+    Clean("Draumr.iso", "Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
     Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
     Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
@@ -70,10 +70,10 @@ if Cfg.Target == "all":
     Default([ISO, PXE, Floppy])
 
 elif Cfg.Target == "iso" :
-    ISO = Env.ISO("Draumr.ISO", None)
+    ISO = Env.ISO("Draumr.iso", None)
     Depends(ISO, [Env["CD_STAGE1"], Env["BIOS"], Env["DBAL"], Image])
      
-    Clean("Draumr.ISO", "Background.sif")
+    Clean("Draumr.iso", "Background.sif")
     Default(ISO)
 
 elif Cfg.Target == "pxe" :

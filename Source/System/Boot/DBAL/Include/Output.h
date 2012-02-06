@@ -205,8 +205,8 @@ struct VBEModeInfo
 } __attribute__((packed));
 
 // The "video mode numbers" for the video modes we support in VGA.
-#define 640_480_16     0x12
-#define 320_200_256    0x13
+#define MODE_640_480_16     0x12
+#define MODE_320_200_256    0x13
 
 // To verify that the video mode is in the standard RGB format - else, removes the video mode entry.
 #define VERIFY_RGB_MODE(RsvdSize, RsvdPos, RedSize, RedPos,	GreenSize, GreenPos, BlueSize, BluePos) \

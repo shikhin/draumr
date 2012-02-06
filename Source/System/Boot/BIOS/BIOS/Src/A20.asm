@@ -29,10 +29,10 @@
  ; 
  ; Returns:            
  ;     BIT.HrdwreFlags -> Sets A20_DISABLED flag if unable to enable A20.
-EnableA20:
+A20Enable:
     pushad
 
-    call CheckA20
+    call A20Check
     jc .Return                        ; If A20 is already enabled, then return. 
 
 ; Try the BIOS here to enable A20.
@@ -40,7 +40,7 @@ EnableA20:
     mov ax, 0x2401
     int 0x15
 
-    call CheckA20
+    call A20Check
     jc .Return
 
 ; Try the keyboard controller.
@@ -77,7 +77,7 @@ EnableA20:
     test al, 2
     jnz .D3
 
-    call CheckA20
+    call A20Check
     jc .Return
 
 .FastA20:
@@ -88,7 +88,7 @@ EnableA20:
     or al, 02                         ; Enable Fast A20.
     out 0x92, al      
 
-    call CheckA20
+    call A20Check
     jc .Return
 
 .Disabled:
@@ -103,7 +103,7 @@ EnableA20:
  ;
  ; Returns:
  ;     Carry -> set if A20 is ENABLED, else DISABLED.
-CheckA20:
+A20Check:
     pushad
     push ds
     push es

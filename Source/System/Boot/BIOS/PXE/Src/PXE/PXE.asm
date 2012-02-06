@@ -49,7 +49,7 @@ SECTION .text
  ;     DS:DI -> the address of the input buffer.
  ;     BX    -> the opcode.
 ; NOTE: The above registers are what the legacy API also used, so it should cause no problem with it.
-UsePXEAPI:
+PXEAPICall:
     ; And we push it over here, so that we have no problems with the new API.
     push ds
     push di
@@ -64,7 +64,7 @@ UsePXEAPI:
  ; Initializes PXE (and checks whether the structures are correct or not).
  ;     ES:BX     -> points to the PXENV+ structure.
  ;     SS:SP + 4 -> points to the !PXE structure (if valid).
-InitPXE:
+PXEInit:
     pushad
    
     ; If the signature isn't equal, abort boot.

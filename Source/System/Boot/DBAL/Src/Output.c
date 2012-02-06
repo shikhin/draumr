@@ -545,7 +545,7 @@ static void InitVGA()
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Go to the 320*200*256 colors mode.
-    SwitchToMode(320_200_256, (VBEModeInfo_t*)NULL);    
+    SwitchToMode(MODE_320_200_256, (VBEModeInfo_t*)NULL);    
 }
       
 /*  

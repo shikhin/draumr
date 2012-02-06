@@ -3,9 +3,9 @@
  # Copyright (c) 2012, Shikhin Sethi
  # All rights reserved.
  #
- # Redistribution and use in Source and binary forms, with or without
+ # Redistribution and use in source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
- #     * Redistributions of Source code must retain the above copyright
+ #     * Redistributions of source code must retain the above copyright
  #       notice, this list of conditions and the following disclaimer.
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
@@ -36,7 +36,7 @@ from SCons.Action import Action
 def Path(p) :
     return os.path.sep.join(p)
 
-def _iso_builder(Target, Source, Env) :
+def _iso_builder(target, source, env) :
     # Create a temporary directory to build the ISO image structure.
     Dir = tempfile.mkdtemp()
 
@@ -45,22 +45,22 @@ def _iso_builder(Target, Source, Env) :
 
     os.makedirs(Boot)
 
-    Stage1 = str(Env["CD_STAGE1"][0])
-    BIOS = str(Env["BIOS"][0])
-    DBAL = str(Env["DBAL"][0])
-    Background = str(Env["BACK"])
+    Stage1 = str(env["CD_STAGE1"][0])
+    BIOS = str(env["BIOS"][0])
+    DBAL = str(env["DBAL"][0])
+    Background = str(env["BACK"])
 
     shutil.copy(Stage1, Boot)
     shutil.copy(BIOS, Boot)
     shutil.copy(DBAL, Boot)
-    if Env["BACK"] != 0:
+    if env["BACK"] != 0:
         shutil.copy(Background, Boot)
 
-    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", Target[0], d))
+    os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], Dir))
     
-    print("  [ISO]   %s" % (Target[0]))
+    print("  [ISO]   %s" % (target[0]))
     # Clean up our mess. :)
-    shutil.rmtree(d)
+    shutil.rmtree(Dir)
 
     return 0
 

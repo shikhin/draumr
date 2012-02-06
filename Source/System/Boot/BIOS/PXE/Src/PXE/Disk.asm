@@ -78,7 +78,7 @@ SECTION .text
  ; Returns: 
  ;      Carry -> set if ANY error occured (technically, no error should be happening, but still).
  ;      ECX   -> the size of the file you want to open.
-OpenFile:
+FileOpen:
     pushad
 
     cmp byte [FILE.Code], -1               ; Check whether any file has already been opened or not.
@@ -119,7 +119,7 @@ OpenFile:
     ; Store the address of the input buffer, and the opcode at BX.
     mov di, PXENV_TFTP_OPEN
     mov bx, TFTP_OPEN
-    call UsePXEAPI
+    call PXEAPICall
 
     or ax, [PXENV_TFTP_OPEN]
     jnz .Error                        ; Test if any error occured. If it did, return with error.
@@ -134,14 +134,14 @@ OpenFile:
 
     mov di, PXENV_TFTP_READ
     mov bx, TFTP_READ
-    call UsePXEAPI                    ; Use the API to read.
+    call PXEAPICall                    ; Use the API to read.
 
     ; If the call failed, then simply close the file and return.
     or ax, [PXENV_TFTP_READ]
     jz .Cont
     
     ; Close the file, and then, return with carry set.
-    call CloseFile
+    call FileClose
     jmp .Error
     
 .Cont:    
@@ -176,9 +176,13 @@ GetFileSize:
     cmp dword [FirstPacket], "DBAL"
     je .BootFiles
 
-    cmp word [FirstPacket], "BM"
+    cmp word [FirstPacket], "SI"
+    jne .Return
+
+    cmp byte [FirstPacket + 2], "F"
     je .BackgroundImg
-    
+
+.Return:
     ; Return if not matched with anything.
     ret
 
@@ -193,7 +197,7 @@ GetFileSize:
 ; If matched with background image.
 .BackgroundImg:
     ; Put the length into ecx.
-    mov ecx, [FirstPacket + 2]
+    mov ecx, [FirstPacket + 3]
     ret
 
  ; Reads the required bytes of the file currently opened.
@@ -202,12 +206,12 @@ GetFileSize:
  ;
  ; Returns:
  ;     Abort -> boot is aborted if any error occured (during read, that is).
-ReadFile:
+FileRead:
     pushad
 
     ; If it isn't the first packet we are trying to read - just read the rest.
     cmp byte [FirstPacketFlag], 0
-    je .ReadFile
+    je .FileRead
     
 .FirstPacket:
     mov byte [FirstPacketFlag], 0
@@ -253,7 +257,7 @@ ReadFile:
 
     sub ecx, edx
     
-.ReadFile: 
+.FileRead: 
     mov edx, edi
     mov ebx, edi
     and ebx, 0x000F
@@ -271,7 +275,7 @@ ReadFile:
         
     mov di, PXENV_TFTP_READ
     mov bx, TFTP_READ
-    call UsePXEAPI                    ; Use the API to read.
+    call PXEAPICall                    ; Use the API to read.
 
     pop ecx
     pop edi                           ; And restore DI back again.
@@ -294,7 +298,7 @@ ReadFile:
     jmp AbortBoot
 
  ; Closes the previously opened file.
-CloseFile:
+FileClose:
     pushad
 
     cmp byte [FILE.Code], -1
@@ -304,7 +308,7 @@ CloseFile:
 
     mov di, PXENV_TFTP_OPEN
     mov bx, TFTP_CLOSE
-    call UsePXEAPI
+    call PXEAPICall
 
 .Return:
     popad

@@ -46,9 +46,7 @@ CRC32_DEFINE
 SECTION .data
 
 BIT:
-    .FileOpen     dd FileOpenWrapper
-    .FileRead     dd FileReadWrapper
-    .FileClose    dd FileCloseWrapper
+    .FileAPI      dd FileAPI
     
     .IPS          dq 0                ; The intstructions executed per second.
     .HrdwreFlags  db 0                ; The "hardware" flags.
@@ -104,6 +102,9 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/IPS.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
+%include "Source/System/Lib/CRC32/CRC32.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
@@ -122,10 +123,10 @@ Startup:
     mov [BIT.BDFlags], edx
 
     ; Enable A20, then try to generate memory map.
-    call EnableA20
+    call A20Enable
     call MMapBuild
     call VideoInit
-    call FindIPS
+    call IPSCalculate
 
 .LoadDBAL:    
     xor ax, ax                        ; Open File 1, or DBAL file.
@@ -177,7 +178,7 @@ Startup:
 
     ; Switch to protected mode - since we might be crossing our boundary here.
     mov ebx, .CheckDBAL2
-    call SwitchToPM
+    call PMSwitch
 
 BITS 32
 .CheckDBAL2:   
@@ -188,17 +189,17 @@ BITS 32
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
     
     call CRC32
-    
+
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
             
-    je .ZeroBSS
+    je .BSSZero
     
     ; If error occured, switch to Real Modee
     mov ebx, .ErrorParse
-    call SwitchToRM
+    call RMSwitch
 
-.ZeroBSS:
+.BSSZero:
     mov esi, 0xE000 
     mov edi, [esi + 16]               ; Move the start of BSS section into EDI.
    
@@ -222,7 +223,7 @@ BITS 16
 
 BITS 32
 .Cont:
-    call FindTables
+    call TablesFind
 
 ; Jump to the DBAL file here.
 .JmpToDBAL:
@@ -233,15 +234,13 @@ BITS 32
 
     call [0xE004]
 
-%include "Source/System/Lib/CRC32/CRC32.asm"
-
  ; A wrapper to the VGASwitchMode function - to be done from 32-bit code.
  ;     uint16_t -> the mode to switch to.
 VGASwitchModeWrapper:
     push ebx
    
     mov ebx, .GetInfo
-    jmp SwitchToRM                    ; Switch to Real mode, and return to GetInfo.
+    jmp RMSwitch                    ; Switch to Real mode, and return to GetInfo.
 
 BITS 16
 .GetInfo:
@@ -249,7 +248,7 @@ BITS 16
     call VGASwitchMode                    ; Switch to the VGA mode defined.
 
     mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+    jmp PMSwitch                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
@@ -261,14 +260,14 @@ VGASetupPaletteWrapper:
     push ebx
    
     mov ebx, .SetupPalette
-    jmp SwitchToRM                    ; Switch to Real mode, and return to SetupPalette.
+    jmp RMSwitch                    ; Switch to Real mode, and return to SetupPalette.
 
 BITS 16
 .SetupPalette:
     call VGASetupPalette              ; Set up the palette.
 
     mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+    jmp PMSwitch                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
@@ -284,7 +283,7 @@ VBEGetModeInfoWrapper:
     push ebx
    
     mov ebx, .VBEGetModeInfo
-    jmp SwitchToRM                    ; Switch to Real mode, and return to VBEGetModeInfo.
+    jmp RMSwitch                    ; Switch to Real mode, and return to VBEGetModeInfo.
 
 BITS 16
 .VBEGetModeInfo:
@@ -295,7 +294,7 @@ BITS 16
     push eax
 
     mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+    jmp PMSwitch                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
@@ -312,7 +311,7 @@ VBESwitchModeWrapper:
     push ebx
    
     mov ebx, .GetInfo
-    jmp SwitchToRM                    ; Switch to Real mode, and return to GetInfo.
+    jmp RMSwitch                    ; Switch to Real mode, and return to GetInfo.
 
 BITS 16
 .GetInfo:
@@ -321,7 +320,7 @@ BITS 16
     push eax
     
     mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+    jmp PMSwitch                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
@@ -334,202 +333,19 @@ VBESetupPaletteWrapper:
     push ebx
    
     mov ebx, .SetupPalette
-    jmp SwitchToRM                    ; Switch to Real mode, and return to SetupPalette.
+    jmp RMSwitch                    ; Switch to Real mode, and return to SetupPalette.
 
 BITS 16
 .SetupPalette:
     call VBESetupPalette              ; Set up the palette.
     
     mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
+    jmp PMSwitch                    ; And switch back to protected mode for the return.
 
 BITS 32
 .Return:
     pop ebx
     ret
-
- ; A wrapper to the FileOpen function - to be done from 32-bit code.
- ;     uint32_t -> the "code" of the file to open.
- ;
- ; Returns:
- ;     EAX      -> the size of the file opened.
-FileOpenWrapper:
-    push ebx
-   
-    mov ebx, .FileOpen
-    jmp SwitchToRM                    ; Switch to Real mode, and return to FileOpen.
-
-BITS 16
-.FileOpen:
-    mov eax, [esp + 8]                ; Get the "file code" into EAX.
-    
-    call word [FileOpen]              ; Open the file.   
-   
-    mov eax, ecx                      ; Get the size into @eax.
-    jnc .BackToPM
-
-    ; And if we failed for some reason, the size is 0.
-    xor eax, eax
-    clc
-    
-.BackToPM:
-    push eax
-    mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop eax  
-    pop ebx
-    ret
-
- ; A wrapper to the FileRead function - to be done from 32-bit code.
- ;     uint32_t -> the length to read.
- ;     uint32_t -> the address to read to.
- ;
- ; Returns:
- ;     EAX      -> the size of the file opened.
-FileReadWrapper:
-    push ebx
-    push edi
-   
-    mov ebx, .FileRead
-    jmp SwitchToRM                    ; Switch to Real mode, and return to FileRead.
-
-BITS 16
-.FileRead:
-    mov ecx, [esp + 16]                ; Get the length into EAX.
-    mov edi, [esp + 12]                ; And the address into EDI.
-    
-    call word [FileRead]              ; Read the file.
-    
-    mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop edi
-    pop ebx
-    
-    ret
-
- ; A wrapper to the FileClose function - to be done from 32-bit code.
-FileCloseWrapper:
-    push ebx
-   
-    mov ebx, .FileClose
-    jmp SwitchToRM                    ; Switch to Real mode, and return to FileClose.
-
-BITS 16
-.FileClose:
-    call word [FileClose]            ; Close the file.
-    jc ErrorIO
-    
-.BackToPM:
-    mov ebx, .Return
-    jmp SwitchToPM                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop ebx
-    ret
-
-BITS 16
- ; Performs a switch to protected mode - making sure to save all registers (except segment one - of course).
- ;     EBX -> the return address here.
-SwitchToPM:
-    cli
-
-    lgdt [GDTR32]                     ; Load the GDT.
-    
-    mov eax, cr0                      ; Or 1 with CR0, to enable the PM bit.
-    or al, 1
-    mov cr0, eax
-
-    jmp 0x08:.Switched                ; Reload the code segment register.
-
-; 32-bit mode here.
-BITS 32
-.Switched:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax 
-    mov ss, ax                        ; Reload all the other segment registers too.
-
-.Return:
-    jmp ebx
-
- ; Switch to Real mode back for future generations.
-SwitchToRM:
-    lgdt [GDTR16]                     ; Load the 16-bit GDT.
-    
-    jmp 0x08:.Protected16             ; And jump into 16-bit protected mode!
-
-; Now, back to 16-bits.
-BITS 16
-.Protected16:
-    mov ax, 0x10
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-
-    mov eax, cr0                      ; Switch off protected mode.
-    and eax, ~1
-    mov cr0, eax 
-
-    jmp 0x00:.RealMode
-
-.RealMode:
-    mov ax, 00
-    mov ds, ax
-    mov es, ax
-    mov gs, ax
-    mov fs, ax
-    mov ss, ax
-
-    sti
-    
-.Return:
-    jmp ebx
-
-SECTION .data
-; The GDTR, which is loaded in the GDTR register.
-GDTR32:
-    dw (0x08 * 3) - 1                 ; It's the size of all entries, minus 1.
-    dd GDT32
-
-; And the actual GDT here.
-GDT32:
-    dd 0x00000000, 0x00000000         ; The null entry.
-
-    ; The code entry - limit is 0xFFFF, base is 0x0000.
-    dw 0xFFFF, 0x0000                 
-    db 0x00, 0x9A, 0xCF, 0x00         ; The base, access, flags and limit byte.
-
-    ; The data entry.
-    dw 0xFFFF, 0x0000                 
-    db 0x00, 0x92, 0xCF, 0x00         ; The base, access, flags and limit byte.
-
-; The GDTR, which is loaded in the GDTR register.
-GDTR16:
-    dw (0x08 * 3) - 1                 ; It's the size of all entries, minus 1.
-    dd GDT16
-
-; And the actual GDT here.
-GDT16:
-    dd 0x00000000, 0x00000000         ; The null entry.
-
-    ; The code entry - limit is 0xFFFF, base is 0x0000.
-    dw 0xFFFF, 0x0000                 
-    db 0x00, 0x9A, 0x0F, 0x00         ; The base, access, flags and limit byte.
-
-    ; The data entry.
-    dw 0xFFFF, 0x0000                 
-    db 0x00, 0x92, 0x0F, 0x00         ; The base, access, flags and limit byte.
 
 SECTION .pad
     db "BIOS"

@@ -78,8 +78,8 @@ Main:
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
     
-    call InitDisk
-    call CheckBootFile                ; Check whether the boot file (us) is intact or not.
+    call DiskInit
+    call BootFileCheck                ; Check whether the boot file (us) is intact or not.
     
     ; Now, once we have checked whether we are intact or not, and done stuff -
     ; jump to extended main.
@@ -101,13 +101,13 @@ SECTION .text
 %include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
 
 ExtMain:
-    call InitScreen                   ; Initialize the entire screen to blue, and disable the hardware cursor.					   
-    call FindBootFiles                ; Find the boot files.
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					   
+    call BootFilesFind                ; Find the boot files.
     
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     
-    call OpenFile                     ; Open the File.
+    call FileOpen                     ; Open the File.
     jc .ErrorIO
     
     ; ECX contains size of file we are opening.
@@ -115,7 +115,7 @@ ExtMain:
     
     mov ecx, 0x800                    ; Read only 0x800 bytes.
     mov edi, 0x9000                   ; At 0x9000.
-    call ReadFile                     ; Read the first sector.
+    call FileRead                     ; Read the first sector.
     
 ; Check common BIOS file - basic first sector testing.
 .CheckCBIOSFirstSector:
@@ -151,10 +151,10 @@ ExtMain:
     jbe .Finish
 
     sub ecx, 0x800                    ; Read the rest 0x800 bytes.
-    call ReadFile                     ; Read the rest of the file.
+    call FileRead                     ; Read the rest of the file.
     
 .Finish:
-    call CloseFile                    ; And then close the file.
+    call FileClose                    ; And then close the file.
    
 ; Check rest of the common BIOS file.
 .CheckCBIOSRest:
@@ -183,9 +183,9 @@ ExtMain:
     rep stosd                         ; Clear out the BSS section.
 
 .JmpToBIOS:
-    mov eax, OpenFile
-    mov ebx, ReadFile
-    mov ecx, CloseFile
+    mov eax, FileOpen
+    mov ebx, FileRead
+    mov ecx, FileClose
     mov edx, BD_CD
        
     ; Reset esp and ebp.
