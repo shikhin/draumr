@@ -83,13 +83,8 @@ struct BIT
         uint32_t        VBEModeInfoN;                    // The number of entries.
         
         EDIDInfo_t EDIDInfo;                             // The EDID information.
-
-        void     (*SwitchVGA)(uint16_t Mode);        // The function which performs the switch to a vga mode.
-	    void     (*SetupPaletteVGA)();                   // The function which sets up a palette for a 8bpp mode.
-	    uint32_t (*VBEGetModeInfo)(VBEModeInfo_t *);     // The function which gets Video mode information from VBE.
-
-	    uint16_t (*SwitchVBE)(uint16_t Mode);        // The function which performs the switch to a vbe mode.
-        void     (*SetupPaletteVBE)();                   // The function which sets up a palette for a 8bpp mode.	    
+ 
+        uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
 	    
 	    uint32_t *Address;                       // The address of the video display. 
    	    uint32_t XRes;                           // X resolution.

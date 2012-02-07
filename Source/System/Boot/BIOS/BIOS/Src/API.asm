@@ -45,6 +45,9 @@ FileAPI:
     ; Compare the API code, and take appropriate steps.
     mov eax, [esp + 12]
 
+    cmp eax, FILE_CLOSE
+    ja .Return
+
 .TryOpen:
     cmp eax, FILE_OPEN
     jne .TryRead
@@ -60,9 +63,6 @@ FileAPI:
     jmp RMSwitch
 
 .TryClose:
-    cmp eax, FILE_CLOSE
-    jne .Return
-
     mov ebx, .FileClose
     jmp RMSwitch
 
@@ -115,6 +115,123 @@ BITS 32
     ; Pop 'edi' - which we push for the 'FileRead' case to make the code uniform.
     pop edi
 
+    ; And 'ebx', which we use for the continuing address by *Switch functions.
+    pop ebx
+    ret
+
+
+; The API codes for the video handling API.
+%define VIDEO_VGA_SWITCH_MODE   0
+%define VIDEO_VGA_PALETTE       1
+
+%define VIDEO_VBE_SWITCH_MODE   10
+%define VIDEO_VBE_PALETTE       11
+%define VIDEO_VBE_GET_MODES     12
+
+ ; The video API, to access VGA/VBE* functions.
+ ;     uint32_t -> the API code of the function.
+ ;     ...      -> rest of the arguments.
+ ;
+ ; Returns:
+ ;     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
+VideoAPI:
+    push ebx
+
+    ; Compare the API code, and take appropriate steps.
+    mov eax, [esp + 8]
+
+.TryVGA:
+    cmp eax, VIDEO_VBE_SWITCH_MODE
+    jae .TryVBE
+
+    cmp eax, VIDEO_VGA_PALETTE
+    ja .Return
+
+.TryVGASwitchMode:
+    cmp eax, VIDEO_VGA_SWITCH_MODE
+    jne .TryVGAPalette
+
+    mov ebx, .VGASwitchMode
+    jmp RMSwitch
+
+.TryVGAPalette:
+    mov ebx, .VGAPalette
+    jmp RMSwitch
+
+.TryVBE:
+    cmp eax, VIDEO_VBE_GET_MODES
+    ja .Return
+
+.TryVBESwitchMode:
+    cmp eax, VIDEO_VBE_SWITCH_MODE
+    jne .TryVBEPalette
+
+    mov ebx, .VBESwitchMode
+    jmp RMSwitch
+
+.TryVBEPalette:
+    cmp eax, VIDEO_VBE_PALETTE
+    jne .TryVBEGetModes
+
+    mov ebx, .VBEPalette
+    jmp RMSwitch
+
+.TryVBEGetModes:
+    mov ebx, .VBEGetModes
+    jmp RMSwitch
+
+BITS 16
+; VGASwitchMode:
+.VGASwitchMode:
+    mov eax, [esp + 12]               ; Since we pushed EBX earlier, add 12 instead of 8 to get the argument.
+    
+    call VGASwitchMode                ; Switch to the VGA mode defined.
+
+    xor eax, eax                      ; Clear the return value.
+    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+
+; VGAPalette:
+.VGAPalette:
+    call VGASetupPalette              ; Set up the palette.
+
+    xor eax, eax                      ; Clear the return value.
+    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+
+; VBEGetModes:
+.VBEGetModes:
+    mov eax, [esp + 12]               ; Get the address into EAX.
+    mov [BIT.VBEModeInfo], eax
+
+    call VBEGetModeInfo               ; Get mode information from VBE.
+    
+    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+
+; VBESwitchMode:
+.VBESwitchMode:
+    mov eax, [esp + 12]               ; Since we pushed EBX earlier, add 12 instead of 8 to get the argument.
+    
+    call VBESwitchMode                ; Switch to the VBE mode defined.
+    
+    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+
+; VBEPalette:
+.VBEPalette:
+    call VBESetupPalette              ; Set up the palette.
+    
+    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+
+.ReturnToPM:
+    push eax
+
+    mov ebx, .PopEax
+    jmp PMSwitch                     ; And switch back to protected mode for the return.
+
+BITS 32
+.PopEax:
+    ; Pop 'eax' containing the return value.
+    pop eax
+
+.Return:
     ; And 'ebx', which we use for the continuing address by *Switch functions.
     pop ebx
     ret

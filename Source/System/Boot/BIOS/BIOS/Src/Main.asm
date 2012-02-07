@@ -68,13 +68,8 @@ BIT:
 
     .EDIDInfo        times 128 db 0   ; The EDID information block.
 
-    .VGASwitchMode   dd VGASwitchModeWrapper    ; The 32-bit address of the function to switch to a VGA mode.
-    .VGASetupPalette dd VGASetupPaletteWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
-    .VBEGetModeInfo  dd VBEGetModeInfoWrapper	; The 32-bit address of the function to get mode information from VBE.
+    .VideoAPI        dd VideoAPI      ; The video API entrance point.
     
-    .VBESwitchMode   dd VBESwitchModeWrapper    ; The 32-bit address of the function to switch to a VBE mode.
-    .VBESetupPalette dd VBESetupPaletteWrapper  ; The 32-bit address of the function to set up the palette in 8bpp modes.
-
 ; Put all the real-mode functions to handle files here.
 FileOpen:          dd 0
 FileRead:          dd 0
@@ -241,119 +236,6 @@ BITS 32
     mov eax, BIT
 
     call [0xE004]
-
- ; A wrapper to the VGASwitchMode function - to be done from 32-bit code.
- ;     uint16_t -> the mode to switch to.
-VGASwitchModeWrapper:
-    push ebx
-   
-    mov ebx, .GetInfo
-    jmp RMSwitch                    ; Switch to Real mode, and return to GetInfo.
-
-BITS 16
-.GetInfo:
-    mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
-    call VGASwitchMode                    ; Switch to the VGA mode defined.
-
-    mov ebx, .Return
-    jmp PMSwitch                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop ebx
-    ret
-
- ; A wrapper to the VGASetupPalette function - to be done from 32-bit code.
-VGASetupPaletteWrapper:
-    push ebx
-   
-    mov ebx, .SetupPalette
-    jmp RMSwitch                    ; Switch to Real mode, and return to SetupPalette.
-
-BITS 16
-.SetupPalette:
-    call VGASetupPalette              ; Set up the palette.
-
-    mov ebx, .Return
-    jmp PMSwitch                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop ebx
-    ret
-
- ; A wrapper to the VBEGetModeInfo function - to be done from 32-bit code.
- ;     uint32_t -> the address where to write.
- ;
- ; Returns:
- ;     EAX      -> the number of entries.
-VBEGetModeInfoWrapper:
-    push ebx
-   
-    mov ebx, .VBEGetModeInfo
-    jmp RMSwitch                    ; Switch to Real mode, and return to VBEGetModeInfo.
-
-BITS 16
-.VBEGetModeInfo:
-    mov eax, [esp + 8]                ; Get the address into EAX.
-    mov [BIT.VBEModeInfo], eax
-
-    call VBEGetModeInfo               ; Get mode information from VBE.
-    push eax
-
-    mov ebx, .Return
-    jmp PMSwitch                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop eax
-    pop ebx
-    ret
-
- ; A wrapper to the VBESwitchMode function - to be done from 32-bit code.
- ;     uint16_t -> the mode to switch to.
- ;
- ; Returns:
- ;     AX       -> the status of the call to VBE.
-VBESwitchModeWrapper:
-    push ebx
-   
-    mov ebx, .GetInfo
-    jmp RMSwitch                    ; Switch to Real mode, and return to GetInfo.
-
-BITS 16
-.GetInfo:
-    mov ax, [esp + 8]                 ; Since we pushed EBX earlier, add 8 instead of 4 to get the argument.
-    call VBESwitchMode                ; Switch to the VBE mode defined.
-    push eax
-    
-    mov ebx, .Return
-    jmp PMSwitch                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop eax
-    pop ebx
-    ret
-
- ; A wrapper to the VBESetupPalette function - to be done from 32-bit code.
-VBESetupPaletteWrapper:
-    push ebx
-   
-    mov ebx, .SetupPalette
-    jmp RMSwitch                    ; Switch to Real mode, and return to SetupPalette.
-
-BITS 16
-.SetupPalette:
-    call VBESetupPalette              ; Set up the palette.
-    
-    mov ebx, .Return
-    jmp PMSwitch                    ; And switch back to protected mode for the return.
-
-BITS 32
-.Return:
-    pop ebx
-    ret
 
 SECTION .pad
     db "BIOS"

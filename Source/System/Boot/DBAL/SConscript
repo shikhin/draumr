@@ -39,7 +39,7 @@ Src = ["Src/Header.asm",
        "Src/Log/Debug.c",
        "Src/Abort.c",
        "Src/BootFiles.c",
-       "Src/Output.c",
+       #"Src/Output.c",
        "Src/FPU.asm",
        "Src/Math.c"]
 
