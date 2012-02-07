@@ -170,12 +170,12 @@ FILE_t BootFilesBGImg()
 {
     // The file structure in which we'd store data about the Background image file.
     FILE_t File;
-
+    
     // The SIFFile header.
     SIFHeader_t *SIFHeader;
 
     // Open the file, with code, BACKGROUND_SIF.
-    File.Size = BIT.FileAPI(FILE_OPEN, BACKGROUND_SIF);
+    File.Size = BIT.FileAPI(FILE_OPEN, (uint32_t)BACKGROUND_SIF);
 
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
@@ -185,9 +185,8 @@ FILE_t BootFilesBGImg()
 
     // Read 2048 bytes at the bouncer.
     BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
-    
-    SIFHeader = (SIFHeader_t*)Bouncer;
 
+    SIFHeader = (SIFHeader_t*)Bouncer;
     // Check the file signature.
     if((SIFHeader->Type[0] != 'S') ||
        (SIFHeader->Type[1] != 'I') ||
@@ -198,7 +197,7 @@ FILE_t BootFilesBGImg()
 
         return File;
     }
-    
+
     if(((File.Size + 0xFFF) / 0x1000) != ((SIFHeader->FileSize + 0xFFF) / 0x1000))
     {
         // File size returned by FS, and in the image, didn't match.
@@ -227,6 +226,10 @@ FILE_t BootFilesBGImg()
   
     // Copy the 2048 bytes we read.
     memcpy(OutputBuffer, Bouncer, 2048);
+    
+    // Update the address of the SIF Header.
+    SIFHeader = (SIFHeader_t*)OutputBuffer;
+    
     OutputBuffer += 2048;
   
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
@@ -246,7 +249,7 @@ FILE_t BootFilesBGImg()
         memcpy(OutputBuffer, Bouncer, Size);
     }
 
-    // If CRC values are not equal.    
+    // If CRC values are not equal. 
     if(SIFHeader->CRC32 != ~CRC(0xFFFFFFFF, SIFHeader->ImageSize, (uint8_t*)File.Location + SIFHeader->Offset))
     {
         // Free the space we allocated for the Image.

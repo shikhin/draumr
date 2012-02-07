@@ -163,7 +163,7 @@ ExtMain:
     
     sub ecx, esi                      ; Subtract 0x9000 (address of start) + 28 (size of header) from it, to get the size.
     mov eax, 0xFFFFFFFF               ; Put the seed in EAX.
-    
+
     call CRC32
 
     not eax                           ; Inverse the bits to get the CRC value.
@@ -191,7 +191,7 @@ ExtMain:
     ; Reset esp and ebp.
     mov esp, 0x7C00
     xor ebp, ebp
-    
+
     jmp [0x9004]
     
 .ErrorIO:

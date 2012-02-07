@@ -45,8 +45,10 @@ CRC32_DEFINE
 
 SECTION .data
 
+ALIGN 4
+
 BIT:
-    .FileAPI      dd FileAPI
+    .FileAPI      dd FileAPI          ; The file API entrance point.
     
     .IPS          dq 0                ; The intstructions executed per second.
     .HrdwreFlags  db 0                ; The "hardware" flags.
@@ -104,7 +106,13 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/IPS.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
+
+BITS 32
+
 %include "Source/System/Lib/CRC32/CRC32.asm"
+
+BITS 16
+
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 

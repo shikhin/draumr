@@ -43,7 +43,7 @@ FileAPI:
     push edi
 
     ; Compare the API code, and take appropriate steps.
-    mov eax, [esp + 8]
+    mov eax, [esp + 12]
 
 .TryOpen:
     cmp eax, FILE_OPEN
@@ -103,14 +103,15 @@ BITS 16
 .ReturnToPM:
     push eax
 
-    mov ebx, .Return
+    mov ebx, .PopEax
     jmp PMSwitch                     ; And switch back to protected mode for the return.
 
 BITS 32
-.Return:
+.PopEax:
     ; Pop 'eax' containing the return value.
     pop eax
 
+.Return:
     ; Pop 'edi' - which we push for the 'FileRead' case to make the code uniform.
     pop edi
 

@@ -34,6 +34,7 @@ Import("Env", "SysEnv")
 Src = ["Link.ld",
        "Format/Format.inc",
        "Src/Main.asm",
+       "Src/API.asm",
        "Src/A20.asm",
        "Src/Memory.asm",
        "Src/IPS.asm",

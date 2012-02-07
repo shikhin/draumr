@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE); 
         }
 
-        fwrite(&Seed, 1, sizeof(uint32_t), InFile);
+        fwrite(&Seed, sizeof(uint32_t), 1, InFile);
         if(ferror(InFile))
         {
             // Close files and free allocations.
