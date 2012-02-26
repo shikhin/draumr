@@ -170,7 +170,7 @@ struct VBEModeInfo
     uint8_t  MemoryModel;       // Memory model type
     uint8_t  BankSize;               // Bank size in KB
     uint8_t  NumberOfImagePages;     // Number of images
-    uint8_t  Reserved;               // Reserved for future function 
+    uint8_t  Reserved0;              // Reserved for future function 
     
     // Direct Color fields (required for direct/6 and YUV/7 memory models)
     uint8_t  RedMaskSize;       // Size of direct color red mask in bits
@@ -201,7 +201,11 @@ struct VBEModeInfo
     uint8_t  LinRsvdMaskSize;        // Size of direct color reserved mask (linear modes)
     uint8_t  LinRsvdFieldPosition;   // Bit position of lsb of reserved mask (linear modes)
     uint32_t MaxPixelClock;          // Maximum pixel clock (in Hz) for graphics mode
-    uint8_t  Reserved2[190];         // Remainder of ModeInfoBlock.
+    
+    // While the reserved block is actually 190 bytes long, we use some of it for storing data.
+    uint8_t  Reserved1[186];         // Remainder of ModeInfoBlock.
+
+    uint32_t BytesBetweenLines;      // Bytes between lines.
 } __attribute__((packed));
 
 // The "video mode numbers" for the video modes we support in VGA.

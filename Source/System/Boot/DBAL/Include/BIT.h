@@ -58,6 +58,14 @@
 #define FILE_READ   1
 #define FILE_CLOSE  2
 
+// The API codes for the video handling API.
+#define VIDEO_VGA_SWITCH_MODE   0
+#define VIDEO_VGA_PALETTE       1
+
+#define VIDEO_VBE_SWITCH_MODE   10
+#define VIDEO_VBE_PALETTE       11
+#define VIDEO_VBE_GET_MODES     12
+
 // The BIT structure.
 struct BIT
 {
@@ -86,20 +94,16 @@ struct BIT
  
         uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
 	    
-	    uint32_t *Address;                       // The address of the video display. 
-   	    uint32_t XRes;                           // X resolution.
-	    uint32_t YRes;                           // Y resolution.
-	    uint32_t BPP;                            // Bytes per pixel.
-	    uint32_t BytesBetweenLines;              // Bytes between lines.
+        VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
 	
-	    FILE_t   BackgroundImg;                  // Pointer to the boot image.
+	    FILE_t   BackgroundImg;                          // Pointer to the boot image.
     } __attribute__((packed)) Video;
     
     // And the serial port related things here.
     struct
     {
-        uint8_t  SerialFlags;                    // The serial port flags.
-        uint32_t Port;                           // The port which we are going to use.
+        uint8_t  SerialFlags;                           // The serial port flags.
+        uint32_t Port;                                  // The port which we are going to use.
     } __attribute__((packed)) Serial;
     
 } __attribute__((packed));

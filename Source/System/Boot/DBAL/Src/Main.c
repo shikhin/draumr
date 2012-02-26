@@ -35,7 +35,6 @@
 #include <FPU.h>
 #include <BootFiles.h>
 #include <Output.h>
-#include <OutputMod/OutputMod.h>
 
 /* 
  * The Main function for the DBAL sub-module.
@@ -56,7 +55,7 @@ void Main(uint32_t *BITPointer)
     BootFilesInit();
 
     // Initialize support for 'output'.
-    //OutputInit(); 
+    OutputInit(); 
         
     for(;;)
         __asm__ __volatile__("hlt");

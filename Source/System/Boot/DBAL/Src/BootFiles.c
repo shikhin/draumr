@@ -180,6 +180,10 @@ FILE_t BootFilesBGImg()
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
     {
+        // Close the file, anyway.
+        BIT.FileAPI(FILE_CLOSE);
+
+        // And return with the File structure.
         return File;
     }
 
@@ -195,6 +199,10 @@ FILE_t BootFilesBGImg()
         // If it didn't match, make size 0.
 		File.Size = 0;
 
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
+        // And return the file structure.
         return File;
     }
 
@@ -202,6 +210,9 @@ FILE_t BootFilesBGImg()
     {
         // File size returned by FS, and in the image, didn't match.
         File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
 
         return File;
     }
@@ -214,6 +225,9 @@ FILE_t BootFilesBGImg()
     {
         // Make size 0.
         File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
 
         // Return with the file structure.
         return File;
@@ -258,10 +272,11 @@ FILE_t BootFilesBGImg()
         // Make file size 0.
         File.Size = 0;
 
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
         return File;
     }
 
-    // TODO: Close files in the required places in here.
-    DebugPrintText("Reached\n");
     return File;
 }

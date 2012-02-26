@@ -39,29 +39,29 @@
   
 // Switches to a video mode.
 // uint32_t Mode                      The identifier for the mode we are about to switch to.
-// VBEModeInfo_t *VBEMode             If a VBE mode, uses this to find out if VGA compatible mode or not. Can be zero if using a VGA mode.
+// VBEModeInfo_t *VBEMode             A pointer to the Mode Info structure.
 //     rc
 //                                    uint16_t - the status of the switch.
 //                                             - non zero values indicate errors.
-static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *VBEMode)
+static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
 {
-	// The 8th bit specifies whether it's a VBE mode or not.
+  	// The 8th bit specifies whether it's a VBE mode or not.
     if(Mode & (1 << 8))
     {
         // Switch to the mode, and save the status value.
-        uint16_t Return = BIT.Video.SwitchVBE((uint16_t)Mode);
+        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE, (uint16_t)Mode);
         
         // If the mode is 256 colors, then set up the palette.
-        if((BIT.Video.BPP == 8) && (Return == 0x4F))
+        if((ModeInfo->BitsPerPixel == 8) && (Return == 0x4F))
         { 
             // If the flag is zero, then it is VGA compatible.
-            // Use the VGA function ti setup the palette then.
+            // Use the VGA function to setup the palette then.
             // Else the VBE one.
-            if(!(VBEMode->ModeAttributes & VGA_COMPATIBLE))
-                BIT.Video.SetupPaletteVGA();
+            if(!(ModeInfo->ModeAttributes & VGA_COMPATIBLE))
+                BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
 
             else 
-                BIT.Video.SetupPaletteVBE();
+                BIT.Video.VideoAPI(VIDEO_VBE_PALETTE);
         }
            
         // Get rid of 0x4F - signifying function exists.
@@ -72,184 +72,133 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *VBEMode)
     else 
     {
         // Switch to the mode.
-        BIT.Video.SwitchVGA((uint16_t)Mode);
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, (uint16_t)Mode);
    
         // If the mode is 256 colors, then set up the palette.
-        if(BIT.Video.BPP == 8)
+        if(ModeInfo->BitsPerPixel == 8)
             // Setup the palette to a RGB thingy.
-	        BIT.Video.SetupPaletteVGA();
+	          BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
 	        
-	    return 0x0000;
+	      return 0x0000;
     }
 }
 
 // Detects the "first" working serial port.
 //     rc
 //                                    uint32_t - the I/O address of the serial port.
-static uint32_t DetectSerialPort()
+static uint32_t SerialPortDetect()
 {
     // Define the IO port for each of the COM port.
     static uint16_t Ports[4] = { 0x3F8,
                                  0x2F8,
-                				 0x3E8,
-				                 0x2E8 };
-				 
+                			        	 0x3E8,
+				                         0x2E8 };
     
     // Loop through the each of the port.
     for(uint32_t i = 0; i < 4; i++)
     {
-      	// Offset 7 is the scratch register.
-	    // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
-	    outb(Ports[i] + 7, 0xA5);
+        // Offset 7 is the scratch register.
+	      // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
+	      outb(Ports[i] + 7, 0xA5);
 	
-	    // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
-	    if(inb(Ports[i] + 7) != 0xA5)
-	         continue;
+	      // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
+	      if(inb(Ports[i] + 7) != 0xA5)
+	          continue;
       
         // At offset 1 is the Interrupt Enable register.
         // Disable all interrupts for this one.
         outb(Ports[i] + 1, 0x00);
 	 
         // At offset 3 is the Line Control register.
- 	    // Set the Divisor Latch Access Bit - so we set the Divisor next time.
+ 	      // Set the Divisor Latch Access Bit - so we set the Divisor next time.
         outb(Ports[i] + 3, 0x80);
 	
-	    // Offset 0 and 1 is the divisor register too.
-	    // Set the divisor to 3, which comes out to a frequency of 38400 baud.
-	    outb(Ports[i] + 0, 0x03);
-	    outb(Ports[i] + 1, 0x00);
+	      // Offset 0 and 1 is the divisor register too.
+	      // Set the divisor to 3, which comes out to a frequency of 38400 baud.
+	      outb(Ports[i] + 0, 0x03);
+	      outb(Ports[i] + 1, 0x00);
 	
    	    // Offset 3 is the Line Control register.
-	    // Set it to 8 bits, 1 stop, no parity.
-	    outb(Ports[i] + 3, 0x03);
+	      // Set it to 8 bits, 1 stop, no parity.
+	      outb(Ports[i] + 3, 0x03);
 	
-	    // Offset 4 is the Modem Control Register.
-	    // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
-	    outb(Ports[i] + 4, 0x13);	
+	      // Offset 4 is the Modem Control Register.
+	      // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
+	      outb(Ports[i] + 4, 0x13);	
 
-	    uint32_t Timeout = 0;
+	      uint32_t Timeout = 0;
 	
-	    // Read from the Line status register.
-	    // And keep looping till the transmit register isn't empty.
-	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	    while((!(inb(Ports[i] + 5) & 0x20))
-	          && (Timeout < MIN_TIMEOUT))
-	    {
-	        __asm__ __volatile__("pause");
-	        Timeout++;
-	    }
+	      // Read from the Line status register.
+	      // And keep looping till the transmit register isn't empty.
+	      // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	      while((!(inb(Ports[i] + 5) & 0x20))
+	            && (Timeout < MIN_TIMEOUT))
+	      {
+	          __asm__ __volatile__("pause");
+	          Timeout++;
+	      }
 	
-	    // If we reached timeout, the continue and assume faulty.
-	    if(Timeout == MIN_TIMEOUT)
-	        continue;
-	
+	      // If we reached timeout, the continue and assume faulty.
+	      if(Timeout == MIN_TIMEOUT)
+	          continue;
+	 
    	    // Output 0xA5 - now, since we are in loopback mode, the input register would also have 0xA5.
-	    outb(Ports[i], 0xA5);
+	      outb(Ports[i], 0xA5);
 	
-	    Timeout = 0;
-	    // And keep looping till we didn't recieve something.
-	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	    while((!(inb(Ports[i] + 5) & 0x01))
-	           && (Timeout < MIN_TIMEOUT))
-	    {  
-	        __asm__ __volatile__("pause");
-	        Timeout++;
+	      Timeout = 0;
+	      // And keep looping till we didn't recieve something.
+	      // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	      while((!(inb(Ports[i] + 5) & 0x01))
+	             && (Timeout < MIN_TIMEOUT))
+	      {  
+	          __asm__ __volatile__("pause");
+	          Timeout++;
    	    }
 	
-	    // If we reached timeout, the continue and assume faulty.
-	    if(Timeout == MIN_TIMEOUT)
-	        continue;
+	      // If we reached timeout, the continue and assume faulty.
+	      if(Timeout == MIN_TIMEOUT)
+	          continue;
 	
   	    // If not, assume faulty or something.
-	    if(inb(Ports[i]) != 0xA5)
-	        continue;
+	      if(inb(Ports[i]) != 0xA5)
+	          continue;
 	
-	    // Offset 4 is the Modem Control Register.
-	    // 0x3 sets the Request to Send and the Data Terminal Ready bits.
-	    outb(Ports[i] + 4, 0x3);
-	    return Ports[i];
+	      // Offset 4 is the Modem Control Register.
+	      // 0x3 sets the Request to Send and the Data Terminal Ready bits.
+	      outb(Ports[i] + 4, 0x3);
+	      return Ports[i];
     }
     
     return 0x0000;
 }
 
 // Get the best mode from VBEModeInfo[] array using all factors neccessary.
-static VBEModeInfo_t *FindBestVBEMode()
+static VBEModeInfo_t FindBestVBEMode()
 { 
     // No comments now - this is going under a major refactor.
-    VBEModeInfo_t *Best = &BIT.Video.VBEModeInfo[0];
-	Best->Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
-	Best->Score = sqrt((Best->Score * Best->Score) + 
-	                   (Best->XResolution * Best->XResolution) +
-	                   (Best->YResolution * Best->YResolution));
+    VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
+	  Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
+	  Best.Score = sqrt((Best.Score * Best.Score) + 
+	                    (Best.XResolution * Best.XResolution) +
+	                    (Best.YResolution * Best.YResolution));
     
     // Calculate the score for each mode - while side by side, finding the best mode.
-	for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
-	{
-        BIT.Video.VBEModeInfo[i].Score = fyl2x(Best->BitsPerPixel, BPP_SCALING_FACTOR);
-	    BIT.Video.VBEModeInfo[i].Score = sqrt((Best->Score * Best->Score) + 
-	                                     (Best->XResolution * Best->XResolution) +
-	                                     (Best->YResolution * Best->YResolution));
+	  for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
+	  {
+        BIT.Video.VBEModeInfo[i].Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
+	      BIT.Video.VBEModeInfo[i].Score = sqrt((Best.Score * Best.Score) + 
+	                                            (Best.XResolution * Best.XResolution) +
+	                                            (Best.YResolution * Best.YResolution));
 	 
-	    // If the score of this is greater than the best till now,
-	    // make it the best.                                     
-	    if(BIT.Video.VBEModeInfo[i].Score >
-	       Best->Score)
-	        Best = &BIT.Video.VBEModeInfo[i];
-    }
-    
-	return Best;
-}
-
-// A lookup table for text modes, for VBE < 1.2
-static uint16_t TextModeLookupTable[5][2] = 
-{
-    { 80 , 60 },
-    { 132, 25 },
-    { 132, 43 },
-    { 132, 50 },
-    { 132, 60 }
-};
-
-// Fill information about available text modes - only to be used if VBE Version < 1.2
-static void FillTextInfoVBE()
-{
-    for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
-    {
-        // If:
-        //      The mode cannot be initialized in the present hardware configuration.
-        //      It isn't a text mode.
-        //      It doesn't lie in the "standard VESA defined" text mode range (0x108 - 0x10C).
-        // Then, remove the entry.
-        if(!(BIT.Video.VBEModeInfo[i].ModeAttributes & HARDWARE_INIT) ||    // Can/cannot be initialized. 
-           (BIT.Video.VBEModeInfo[i].ModeAttributes & GRAPHICAL_MODE) ||     // Text mode/graphics mode.
-           (BIT.Video.VBEModeInfo[i].Mode < 0x108) ||                  // In the text mode range.
-           (BIT.Video.VBEModeInfo[i].Mode > 0x10C))
+	      // If the score of this is greater than the best till now,
+	      // make it the best.                                     
+	      if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
         {
-            // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
-            memmove(&BIT.Video.VBEModeInfo[i], &BIT.Video.VBEModeInfo[i + 1], 
-                    sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
-            BIT.Video.VBEModeInfoN--;
-            
-            // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
-            i--;
-            continue;
+	          Best = BIT.Video.VBEModeInfo[i];
         }
-        
-        BIT.Video.VBEModeInfo[i].ModeAttributes = HARDWARE_INIT;
-        BIT.Video.VBEModeInfo[i].PhysBasePtr = 0xB8000;         // Keep the base pointer as 0xB8000.
-        BIT.Video.VBEModeInfo[i].NumberOfPlanes = 1;            // The number of planes as 1.
-        BIT.Video.VBEModeInfo[i].BitsPerPixel = 16;             // And bits per pixel as 16.
-        BIT.Video.VBEModeInfo[i].NumberOfBanks = 1;             // Don't know - as the VBE 3.0 core specification said.
-        BIT.Video.VBEModeInfo[i].Reserved = 1;                  // This should be 1 - for a future feature.    
-        
-        // Put the appropriate resolution for the appropriate mode.
-        // The lookup table starts at 0 - 4, for 0x108 - 0x10C - just minus 0x108 from the mode.
-        BIT.Video.VBEModeInfo[i].XResolution = TextModeLookupTable[BIT.Video.VBEModeInfo[i].Mode - 0x108][0];
-        BIT.Video.VBEModeInfo[i].YResolution = TextModeLookupTable[BIT.Video.VBEModeInfo[i].Mode - 0x108][1];
     }
     
-    return;
+	  return Best;
 }
 
 static EDIDModeInfo_t EDIDModeInfo[29];
@@ -435,26 +384,20 @@ static void ParseEDIDInfo()
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.
 static void ParseVBEInfo()
 {
-	// For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
+	  // For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
     VBEModeInfo_t *VBEModeInfo;
+    
     // Check through each entry, removing unneccessary ones.
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
         VBEModeInfo = &BIT.Video.VBEModeInfo[i];
-        // If we haven't defined the PhysBasePtr - fill it.
+        
+        // Default fill the PhysBasePtr entry, in case it's not filled.
         if(!VBEModeInfo->PhysBasePtr)
         {
-		    if(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)
-		        VBEModeInfo->PhysBasePtr = 0xA0000;
-		        
-		    else
-		        VBEModeInfo->PhysBasePtr = 0xB8000;	
-		}
+    		    VBEModeInfo->PhysBasePtr = 0xA0000;
+		    }
 		
-        // If this is a text mode, continue with it, "as it is".
-        if(!(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE))
-            continue;
-        
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
         if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
         {
@@ -463,31 +406,52 @@ static void ParseVBEInfo()
             memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize, sizeof(uint8_t) * 8);
         }
         
-        // Remove the entry if doesn't suit us..
-        if(!(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
+        // Remove the entry if:
+        if(
+           // The current hardware configuration doesn't support the mode.
+           !(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
         
+           // The mode is a text mode.
+           !(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)                   ||
+
+           // If it takes more than a bank, and LFB isn't available.
            ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
                VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
            
-           ((VBEModeInfo->BitsPerPixel != 8)   &&
-            (VBEModeInfo->BitsPerPixel != 15)  &&
-            (VBEModeInfo->BitsPerPixel != 16)  &&
-            (VBEModeInfo->BitsPerPixel != 24)  &&
-            (VBEModeInfo->BitsPerPixel != 32)) ||
+           // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp and 32-bpp.
+           ((VBEModeInfo->BitsPerPixel != 4)       &&
+            (VBEModeInfo->BitsPerPixel != 8)       &&
+            (VBEModeInfo->BitsPerPixel != 15)      &&
+            (VBEModeInfo->BitsPerPixel != 16)      &&
+            (VBEModeInfo->BitsPerPixel != 24)      &&
+            (VBEModeInfo->BitsPerPixel != 32))                               ||
             
-           ((VBEModeInfo->BytesPerScanLine * (
-             VBEModeInfo->RsvdFieldPosition + 
-             VBEModeInfo->RedFieldPosition	+
-             VBEModeInfo->GreenFieldPosition +
-             VBEModeInfo->BlueFieldPosition)) % 32) ||
-           (VBEModeInfo->XResolution % 4)           ||
+           // The mode if 4-bpp, and isn't VGA compatible.
+           ((VBEModeInfo->BitsPerPixel == 4)       &&
+            !(VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))                 ||
 
-           ((VBEModeInfo->MemoryModel != 0)    &&
-            (VBEModeInfo->MemoryModel != 4)    && 
-            (VBEModeInfo->MemoryModel != 6))   ||
+           // The mode is smaller than equal to 320*200 and VGA exists.
+           (((VBEModeInfo->XResolution <= 320)     &&
+             (VBEModeInfo->YResolution <= 200))    &&
+             (BIT.Video.VideoFlags & VGA_PRESENT))                           ||
+
+           // The size of each scan line isn't dword divisible.
+           (VBEModeInfo->BytesPerScanLine % 4)                               ||
+
+           // The X resolution isn't divisible by 4.
+           (VBEModeInfo->XResolution % 4)                                    ||
+
+           // The memory model isn't:
+           //     Packed Pixel.
+           //     Direct Color.
+           ((VBEModeInfo->MemoryModel != 4)        && 
+            (VBEModeInfo->MemoryModel != 6))                                 ||
                   
-           (VBEModeInfo->NumberOfPlanes != 1)  ||
+           // Number of planes isn't 1 or 4 (for 4-bpp)
+           ((VBEModeInfo->NumberOfPlanes  != 1)    ||
+            ((VBEModeInfo->BitsPerPixel   == 4)    &&
+             (VBEModeInfo->NumberOfPlanes != 4)))                            || 
                   
            ((VBEModeInfo->BitsPerPixel == 15) &&
             VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
@@ -499,10 +463,10 @@ static void ParseVBEInfo()
             VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
          
            ((VBEModeInfo->BitsPerPixel == 32) && 
-            (VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                       ||
-            (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0)))))
+            ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      ||
+            (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0))))))
         {
-		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+		        // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
             memmove(VBEModeInfo, &VBEModeInfo[1], 
                     sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
             BIT.Video.VBEModeInfoN--;
@@ -522,8 +486,18 @@ static void ParseVBEInfo()
         }
 
         if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
+        {
             // Set the use LFB bit.
             VBEModeInfo->Mode |= (1 << 14);
+        }
+
+        VBEModeInfo->BytesBetweenLines = (VBEModeInfo->BytesPerScanLine) - 
+                                          ((VBEModeInfo->XResolution * VBEModeInfo->BitsPerPixel) / 8);
+    
+        if(VBEModeInfo->BitsPerPixel == 15)
+        {
+            VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
+        }
     }
 
     return;
@@ -532,20 +506,29 @@ static void ParseVBEInfo()
 /*
  * Initializes VGA for a graphical color mode.
  */
-static void InitVGA()
+static void VGAInit()
 { 
-    // NOTE: Support 640x480x16 colors mode - since that offers higher resolution.
-
     // Fill in some general details of the video mode.
-    BIT.Video.Address = (uint32_t*)0xA0000;
-    BIT.Video.XRes = 320;
-    BIT.Video.YRes = 200;
-    BIT.Video.BPP = 8;
-    BIT.Video.BytesBetweenLines = 0;
+    BIT.Video.ModeInfo.Mode = MODE_640_480_16;
+    BIT.Video.ModeInfo.PhysBasePtr = 0xA0000;
+    BIT.Video.ModeInfo.XResolution = 640;
+    BIT.Video.ModeInfo.YResolution = 480;
+
+    // Set the bits per pixel and the number of planes for the mode.
+    BIT.Video.ModeInfo.BitsPerPixel = 4;
+    BIT.Video.ModeInfo.NumberOfPlanes = 4;
+    
+    // The bytes between lines and the bytes per scan line.
+    BIT.Video.ModeInfo.BytesBetweenLines = 0;
+    BIT.Video.ModeInfo.BytesPerScanLine = (640 * 4) / 8;
+    
+    // And the mode is supported by hardware, is a graphical mode and is VGA compatible.
+    BIT.Video.ModeInfo.ModeAttributes = HARDWARE_INIT | GRAPHICAL_MODE | VGA_COMPATIBLE;  
+
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Go to the 320*200*256 colors mode.
-    SwitchToMode(MODE_320_200_256, (VBEModeInfo_t*)NULL);    
+    SwitchToMode(MODE_640_480_16, &BIT.Video.ModeInfo);    
 }
       
 /*  
@@ -564,7 +547,7 @@ static void VBEInit()
 
     // Get the segment and the offset of the list of the modes.
     uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
-    uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
+    uint16_t Offset  = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
         
     // Make flat pointer, from segment and offset = (segment * 0x10) + offset;
     uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
@@ -583,7 +566,7 @@ static void VBEInit()
     // Allocate some memory from the Base Bitmap to hold all the mode information.
     BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_BITMAP, 
                             ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
-        
+
     // If we failed to allocate enough space, simply revert back.
     if(!BIT.Video.VBEModeInfo)
     {
@@ -592,21 +575,8 @@ static void VBEInit()
         return;
     }
     
-    // If version number is 1.0, zero out the array. 
-
-    
     // Get mode information from VBE, and the number of entries in VBEModeInfoN.
-    BIT.Video.VBEModeInfoN = BIT.Video.VBEGetModeInfo(BIT.Video.VBEModeInfo);
-
-    // If version number is below 1.2, then, certainly, only text modes would be available.
-    // Thus, fill all the text mode information in VBEModeInfo[], and revert to VGA.
-    if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
-    {
-        // Fill information about available text modes.
-        FillTextInfoVBE();    
-        //Revert();
-        return;
-    }
+    BIT.Video.VBEModeInfoN = BIT.Video.VideoAPI(VIDEO_VBE_GET_MODES, BIT.Video.VBEModeInfo);
     
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
@@ -614,7 +584,8 @@ static void VBEInit()
     // If no mode was defined "usable", then revert.
     if(!BIT.Video.VBEModeInfoN)
     {
-        //Revert();
+        // TODO: Implement this.
+        //OutputRevert();
         return;
     }
 
@@ -622,29 +593,26 @@ static void VBEInit()
     ParseEDIDInfo();
 
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
-    VBEModeInfo_t *Best = FindBestVBEMode();
-    
-    // Fill in the required info in BIT.Video.
-    BIT.Video.XRes = Best->XResolution;
-    BIT.Video.YRes = Best->YResolution;
-    BIT.Video.BPP  = Best->BitsPerPixel;
-    BIT.Video.Address = (uint32_t*)Best->PhysBasePtr;
-    BIT.Video.BytesBetweenLines = (Best->BytesPerScanLine) - 
-                                 ((Best->XResolution * Best->BitsPerPixel) / 8);
-    if(Best->BitsPerPixel == 15)
-        BIT.Video.BytesBetweenLines -= Best->XResolution/8;
+    BIT.Video.ModeInfo = FindBestVBEMode();
         
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
 
-    // Switch to the best mode - woohoo!
-    SwitchToMode(Best->Mode, Best);
+    // Switch to the mode.
+    if(SwitchToMode(BIT.Video.ModeInfo.Mode, &BIT.Video.ModeInfo))
+    {
+        // If the mode switch was unsuccessful.
+        // TODO: Implement this.
+        //OutputRevert();
+
+        return;
+    }
 }
 
 // Initializes the first available serial port.
-static void InitSerial()
+static void SerialInit()
 {
     // Find the "first" working serial port, and get it's address.
-    BIT.Serial.Port = DetectSerialPort();  
+    BIT.Serial.Port = SerialPortDetect();  
         
     if(BIT.Serial.Port)
         BIT.Serial.SerialFlags = SERIAL_USED;    
@@ -662,11 +630,11 @@ void OutputInit()
         
     // Else, if VGA is present, initialize VGA for a graphical mode.
     else if(BIT.Video.VideoFlags & VGA_PRESENT)
-        InitVGA();
+        VGAInit();
 
     // Else, initialize the serial port (if found).
     else
-        InitSerial();
+        SerialInit();
     
     // If we are using a graphical mode, then load the background image.
     if(BIT.Video.VideoFlags & GRAPHICAL_USED)
