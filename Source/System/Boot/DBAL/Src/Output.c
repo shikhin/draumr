@@ -37,12 +37,14 @@
 #include <Math.h>
 #include <Macros.h>
   
-// Switches to a video mode.
-// uint32_t Mode                      The identifier for the mode we are about to switch to.
-// VBEModeInfo_t *VBEMode             A pointer to the Mode Info structure.
-//     rc
-//                                    uint16_t - the status of the switch.
-//                                             - non zero values indicate errors.
+/*
+ * Switches to a video mode.
+ *     uint32_t Mode          -> the identifier for the mode we are about to switch to.
+ *     VBEModeInfo_t *VBEMode -> a pointer to the Mode Info structure.
+ *     
+ * Returns:
+ *     uint16_t               -> the status of the switch, where non-zero indicates errors.
+ */
 static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
 {
   	// The 8th bit specifies whether it's a VBE mode or not.
@@ -83,9 +85,12 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
     }
 }
 
-// Detects the "first" working serial port.
-//     rc
-//                                    uint32_t - the I/O address of the serial port.
+/*
+ * Detects the "first" working serial port.
+ *
+ * Returns:
+ *     uint32_t -> the I/O address of the serial port.
+ */
 static uint32_t SerialPortDetect()
 {
     // Define the IO port for each of the COM port.
@@ -172,10 +177,14 @@ static uint32_t SerialPortDetect()
     return 0x0000;
 }
 
-// Get the best mode from VBEModeInfo[] array using all factors neccessary.
+/*
+ * Get the best mode from VBEModeInfo[] array using all factors neccessary.
+ */
 static VBEModeInfo_t FindBestVBEMode()
 { 
-    // No comments now - this is going under a major refactor.
+    // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
+    // This is a big TODO!
+
     VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
 	  Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
 	  Best.Score = sqrt((Best.Score * Best.Score) + 
@@ -204,8 +213,10 @@ static VBEModeInfo_t FindBestVBEMode()
 static EDIDModeInfo_t EDIDModeInfo[29];
 static uint32_t EDIDModeInfoN;
 
-// Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
-// array out of it.
+/*
+ * Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
+ * array out of it.
+ */
 static void ParseEDIDInfo()
 {
     // Ok - so the most sensible thing to do would be to parse all the timings
@@ -318,49 +329,73 @@ static void ParseEDIDInfo()
                     {
                       // Bit 1.
                       case 0:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 1280;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 1024;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
 
                         EDIDModeInfoN++;
                         break;
 
                       // Bit 2.
                       case 1:
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
 
                         EDIDModeInfoN++;
                         break;
                     
                       // Bit 3.
                       case 2:
-
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
+                        
                         EDIDModeInfoN++;
                         break;
 
                       // Bit 4.
                       case 3:
-
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
+                        
                         EDIDModeInfoN++;
                         break;
 
                       // Bit 5.
                       case 4:
-
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 87;
+                        
                         EDIDModeInfoN++;
                         break;
                         
                       // Bit 6.
                       case 5:
-
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 832;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 624;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+                        
                         EDIDModeInfoN++;
                         break;
 
                       // Bit 7.
                       case 6:
-
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+                        
                         EDIDModeInfoN++;
                         break;
 
                       // Bit 8.
                       case 7:
-                       
+                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
+                                               
                         EDIDModeInfoN++;
                         break;
                     }
@@ -375,10 +410,69 @@ static void ParseEDIDInfo()
     // Handle established timings in byte 2 in EDIDInfo.EstablishedTimings.
     if(BIT.Video.EDIDInfo.EstablishedTimings[2] & (1 << 7))
     {
-      
+        EDIDModeInfo[EDIDModeInfoN].XRes = 1152;
+        EDIDModeInfo[EDIDModeInfoN].YRes = 870;
+        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+
+        EDIDModeInfoN++;
     }
 
-    // NOTE: The rest bits in byte 2 are reserved (for OEM use and other such stuff) - so..
+    // NOTE: The rest bits in byte 2 are reserved (for OEM use and other such stuff).
+
+    // Take care of the standard timings.
+    for(uint32_t i = 0; i < 8; i++, EDIDModeInfoN++)
+    {
+        // Calculate the horizontal active pixels.
+        // The first byte is defined as the "(horizontal active pixels / 8) - 31".
+        EDIDModeInfo[EDIDModeInfoN].XRes = (BIT.Video.EDIDInfo.StandardTimings[i][0] + 31) * 8;
+
+        // Now, using the aspect ratio, calculate the vertical active pixels.
+        uint32_t AspectRatio = BIT.Video.EDIDInfo.StandardTimings[i][1] >> 6, VerticalRatio, HorizontalRatio;
+        switch(AspectRatio)
+        {
+          // Case 0.
+          case 0:
+            // If the version is 1.3 or above, then the aspect ratio is 16:10.
+            if((BIT.Video.EDIDInfo.Version >= 1) &&
+               (BIT.Video.EDIDInfo.Revision >= 3))
+            {
+                HorizontalRatio = 16;
+                VerticalRatio = 10;
+            }
+
+            // Else, it is 1:1.
+            else
+            {
+                 HorizontalRatio = 1;
+                 VerticalRatio = 1;
+            }
+
+            break;
+
+          // Case 1.
+          case 1:
+            HorizontalRatio = 4;
+            VerticalRatio = 3;
+
+            break;
+
+          // Case 2.
+          case 2:
+            HorizontalRatio = 5;
+            VerticalRatio = 4;
+
+            break;
+
+          // Case 3.
+          case 3:
+            HortizontalRatio = 16;
+            VerticalRatio = 9;
+
+            break;
+        }
+
+        EDIDModeInfo[EDIDModeInfo].YRes = (EDIDModeInfo[EDIDModeInfoN] * VerticalRatio) / HorizontalRatio;
+    }
 }
 
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.

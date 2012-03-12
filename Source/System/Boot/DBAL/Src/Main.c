@@ -56,7 +56,7 @@ void Main(uint32_t *BITPointer)
 
     // Initialize support for 'output'.
     OutputInit(); 
-        
+
     for(;;)
         __asm__ __volatile__("hlt");
 }
