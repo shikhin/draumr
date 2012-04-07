@@ -12,14 +12,14 @@
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
  #       documentation and/or other materials provided with the distribution.
- #     * Neither the name of the <organization> nor the
+ #     * Neither the name of Draumr nor the
  #       names of its contributors may be used to endorse or promote products
  #       derived from this software without specific prior written permission.
  #
  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- # DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ # DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -31,9 +31,9 @@ Import("Env")
 
 # Setup system specific environment
 SysEnv = Env.Clone()
-SysEnv["CPPPATH"] = ["#Source/System/Include", "Include"]
-SysEnv["LIBPATH"] = ["#Source/System/Lib"]
+SysEnv["CPPPATH"] = ["#Source/Include", "#Source/System/Include", "Include"]
+SysEnv["LIBPATH"] = ["#Source/Lib", "#Source/System/Lib"]
 SysEnv["ASFLAGS"] += ["-felf"]
 
 Export("SysEnv")
-SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Lib"], exports=["Env", "SysEnv"])
+SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "#Source/Lib"], exports=["Env", "SysEnv"])

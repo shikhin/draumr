@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,10 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef BIT_H     /* BIT.h */
-#define BIT_H
+#ifndef _BIT_H
+#define _BIT_H
 
-#include <stdint.h>
+#include <Standard.h>
 #include <Output.h>
 #include <BootFiles.h>
 
@@ -106,7 +106,7 @@ struct BIT
         uint32_t Port;                                  // The port which we are going to use.
     } __attribute__((packed)) Serial;
     
-} __attribute__((packed));
+} _PACKED;
 
 typedef struct BIT BIT_t;
 
@@ -117,6 +117,6 @@ extern BIT_t BIT;
  * Initializes the BIT structure, copying it to somewhere appropriate.
  *     uint32_t *BITPointer -> the pointer to the BIT structure, as passed to us.
  */
-void BITInit(uint32_t *BITPointer);
+_PROTOTYPE(void BITInit, (uint32_t *BITPointer)) _COLD;
 
-#endif            /* BIT.h */
+#endif /* _BIT_H */

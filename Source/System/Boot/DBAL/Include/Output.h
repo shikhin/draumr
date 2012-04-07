@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,10 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef VIDEO_H                       /* Video.h */
-#define VIDEO_H
+#ifndef _VIDEO_H
+#define _VIDEO_H
 
-#include <stdint.h>
+#include <Standard.h>
 
 // Define the timeout for now - and fix it later to use the PIT or something.
 #define MIN_TIMEOUT 100000
@@ -43,7 +43,7 @@ struct EDIDModeInfo
 
     // The refresh rates in Hz.
     uint16_t RefreshRate;
-} __attribute__((packed));
+};
 
 // EDID Info - taken from the BIOS again.
 struct EDIDInfo
@@ -105,7 +105,7 @@ struct EDIDInfo
     uint8_t  ExtensionFlag;
     // The checksum - makes the entire table 0.
     uint8_t  Checksum;
-} __attribute__((packed));
+} _PACKED;
 
 // VBE Controller Info - given by VBE.
 struct VBECntrlrInfo
@@ -129,7 +129,7 @@ struct VBECntrlrInfo
     // Some reserved area for VBE Implementation scratch, and some OEM area for the data stings.
     uint8_t  Reserved[222];
     uint8_t  OEMData[256];
-} __attribute__((packed));
+} _PACKED;
 
 // Flags for ModeAttributes in VBEModeInfo.
 #define HARDWARE_INIT    (1 << 0)  // If set, can be initialized. Else, can't.
@@ -206,7 +206,7 @@ struct VBEModeInfo
     uint8_t  Reserved1[186];         // Remainder of ModeInfoBlock.
 
     uint32_t BytesBetweenLines;      // Bytes between lines.
-} __attribute__((packed));
+} _PACKED;
 
 // The "video mode numbers" for the video modes we support in VGA.
 #define MODE_640_480_16     0x12
@@ -232,6 +232,6 @@ typedef struct EDIDModeInfo  EDIDModeInfo_t;
  * Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
  * If no video card, initializes the serial port.
  */
-void OutputInit();
+_PROTOTYPE(void OutputInit, (void)) _COLD;
 
-#endif                                /* Video.h */
+#endif /* _VIDEO_H */

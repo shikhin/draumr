@@ -1,5 +1,5 @@
-/*
- * Definitions of functions to detect and initialize the FPU.
+/* 
+ * Contains some commonly used macros.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,12 +27,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FPU_H   
-#define _FPU_H
+// The MAX macro - to find the maximum of two values.
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-/*
- * Initializes the FPU, and aborts if it fails to detect/init one.
- */
-_PROTOTYPE(extern void FPUInit, (void)) _COLD;
+// The MIN macro - to find the minimum of two values.
+#define MIN(a, b) (((a) > (b)) ? (a) : (b))
 
-#endif /* _FPU_h */
+// The NULL macro.
+#define NULL       (void*)0
+
+// To find a specific bit.
+#define BIT(x)     (1 << (x))

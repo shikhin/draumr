@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,15 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <String.h>
 #include <Output.h>
+#include <String.h>
 #include <BootFiles.h>
 #include <BIT.h>
 #include <PMM.h>
 #include <Log.h>
 #include <Math.h>
-#include <Macros.h>
   
 /*
  * Switches to a video mode.
@@ -184,7 +182,6 @@ static VBEModeInfo_t FindBestVBEMode()
 { 
     // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
     // This is a big TODO!
-
     VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
 	  Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
 	  Best.Score = sqrt((Best.Score * Best.Score) + 
@@ -465,13 +462,28 @@ static void ParseEDIDInfo()
 
           // Case 3.
           case 3:
-            HortizontalRatio = 16;
+            HorizontalRatio = 16;
             VerticalRatio = 9;
 
             break;
+
+          default:
+            HorizontalRatio = 4;
+            VerticalRatio = 3;
         }
 
-        EDIDModeInfo[EDIDModeInfo].YRes = (EDIDModeInfo[EDIDModeInfoN] * VerticalRatio) / HorizontalRatio;
+        // Calculate the Y resolution - using the ratio.
+        EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
+
+        // Calculate the Refresh Rate.
+        // It is stored in the first 6 bits, with it being 60 lower than it's original value.
+        EDIDModeInfo[EDIDModeInfoN].RefreshRate = (BIT.Video.EDIDInfo.StandardTimings[i][1] & 0x3F) + 60;
+    }
+
+    // Take care of the modes described in Detailed Timings.
+    for(uint32_t i = 0; i < 4; i++)
+    {
+      
     }
 }
 

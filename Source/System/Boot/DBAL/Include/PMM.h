@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,17 +27,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PMM_H                         /* PMM.h */
-#define PMM_H
+#ifndef _PMM_H
+#define _PMM_H
 
-#include <stdint.h>
+#include <Standard.h>
 
 // The Header structure for the MMap.
 struct MMapHeader
 {
     uint16_t Entries;                 // The number of entries in the memory map.
     uint32_t Address;                 // The starting address of the memory map.
-} __attribute__((packed));
+} _PACKED;
 
 // The Entry structure for the MMap.
 struct MMapEntry
@@ -49,7 +49,7 @@ struct MMapEntry
     // The Type of the entry, and it's Length.
     uint32_t Type;
     uint32_t Flags;
-} __attribute__((packed));
+} _PACKED;
 
 typedef struct MMapHeader MMapHeader_t;
 typedef struct MMapEntry MMapEntry_t;
@@ -78,7 +78,7 @@ extern MMapEntry_t  *MMapEntries;
 /*
  * Initializes the physical memory manager for ourselves.
  */
-void PMMInit();
+_PROTOTYPE(void PMMInit, (void)) _COLD;
 
 /*
  * Allocates a frame in the PMM, and returns it's address.
@@ -87,13 +87,13 @@ void PMMInit();
  * Returns:
  *     uint32_t      -> the address of the frame allocated. 0 indicates error.
  */
-uint32_t PMMAllocFrame(uint32_t Type);
+_PROTOTYPE(uint32_t PMMAllocFrame, (uint32_t Type));
 
 /*
  * Frees a frame in the PMM.
  *     uint32_t Addr -> the address of the frame to free.
  */
-void PMMFreeFrame(uint32_t Addr);            
+_PROTOTYPE(void PMMFreeFrame, (uint32_t Addr));            
 
 /*
  * Allocates contiguous number of 'Number' frames.
@@ -103,13 +103,13 @@ void PMMFreeFrame(uint32_t Addr);
  * Returns:
  *     uint32_t        -> the address of the contiguous frames allocated.
  */
-uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number);
+_PROTOTYPE(uint32_t PMMAllocContigFrames, (uint32_t Type, uint32_t Number));
 
 /*
  * Frees contiguous number of 'Number' frames.
  *     uint32_t Addr   -> the starting address from where to free.
  *     uint32_t Number -> the number of frames to free.
  */
-void PMMFreeContigFrames(uint32_t Addr, uint32_t Number);
+_PROTOTYPE(void PMMFreeContigFrames, (uint32_t Addr, uint32_t Number));
 
 #endif                                /* PMM.h */

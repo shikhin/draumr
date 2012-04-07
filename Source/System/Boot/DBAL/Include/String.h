@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,10 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef STRING_H                      /* String.h */
-#define STRING_H
+#ifndef _STRING_H
+#define _STRING_H
 
-#include <stdint.h>
+#include <Standard.h>
 
 /*
  * Memcpy - copy count bytes from source to destination.
@@ -41,10 +41,10 @@
  * Returns:
  *     void *       -> the destination.
  */
-void *memcpy(void *dest, void *src, uint32_t count);
+_PROTOTYPE(void *memcpy, (void *dest, _CONST void *src, uint32_t count)) _HOT;
 
 /*
- * Memmove - moves count bytes from source to destination - as if it is using a buffer to do so..
+ * Memmove - moves count bytes from source to destination - as if it is using a buffer to do so.
  *     void *dest   -> the destination to where to copy to.
  *     void *src    -> the source from where to copy to.
  *     size_t count -> the number of bytes to copy.
@@ -52,7 +52,7 @@ void *memcpy(void *dest, void *src, uint32_t count);
  * Returns:
  *     void *       -> the destination.
  */
-void *memmove(void *dest, void *src, uint32_t count);
+_PROTOTYPE(void *memmove, (void *dest, _CONST void *src, uint32_t count)) _HOT;
 
 /*
  * Memset - sets the destination to a specified value - count many times.
@@ -63,29 +63,29 @@ void *memmove(void *dest, void *src, uint32_t count);
  * Returns:
  *     void *         -> the destination.
  */
-void *memset(void *dest, uint8_t value, uint32_t count);
+_PROTOTYPE(void *memset, (void *dest, uint8_t value, uint32_t count)) _HOT;
 
 /*
  * Write a specified byte to the specified port.
  *     uint16_t Port  -> the port at which to write the value.
  *     uint8_t  Value -> the byte which is to be written at the port.
  */
-void outb(uint16_t Port, uint8_t Value);
+_PROTOTYPE(void outb, (uint16_t Port, uint8_t Value)) _HOT;
 
 /*
  * Write a specified wordto the specified port.
  *     uint16_t Port  -> the port at which to write the value.
  *     uint16_t Value -> the word which is to be written at the port.
  */
-void outw(uint16_t Port, uint16_t Value);
+_PROTOTYPE(void outw, (uint16_t Port, uint16_t Value)) _HOT;
 
 /*
  * Reads a byte from a specified port.
  *     uint16_t Port -> the port from where to read to.
  *
  * Returns:
- *     uint8_t       -> the byte read from the IO port..
+ *     uint8_t       -> the byte read from the IO port.
  */
-uint8_t inb(uint16_t Port);
+_PROTOTYPE(uint8_t inb, (uint16_t Port)) _HOT;
 
-#endif
+#endif /* _STRING_H */

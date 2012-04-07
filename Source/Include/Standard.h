@@ -1,5 +1,6 @@
-/*
- * Definitions of functions to detect and initialize the FPU.
+/* 
+ * The first header file to be included by any system file. Defines compiler-
+ * specific and system specific macros.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,12 +28,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FPU_H   
-#define _FPU_H
+#ifndef _STANDARD_H
+#define _STANDARD_H
 
-/*
- * Initializes the FPU, and aborts if it fails to detect/init one.
- */
-_PROTOTYPE(extern void FPUInit, (void)) _COLD;
+#include <Compiler.h>
+#include <stdint.h>
+#include <Macros.h>
+ 
+// Some macros to define function prototypes.
+#define _PROTOTYPE(Function, Args)        Function Args
 
-#endif /* _FPU_h */
+#define _CONST                            const
+#define _VOLATILE                         volatile 
+
+#endif /* _STANDARD_H */
+

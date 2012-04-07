@@ -11,14 +11,14 @@
  *     * Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
  *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the <organization> nor the
+ *     * Neither the name of Draumr nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -27,13 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdint.h>
-#include <String.h>
 #include <PMM.h>
+#include <String.h>
 #include <BIT.h>
 #include <Abort.h>
 #include <Bitmap.h>
-#include <Macros.h>
 
 // Define the pointers to the headers and entries.
 MMapHeader_t *MMapHeader;
@@ -459,13 +457,13 @@ uint32_t PMMAllocFrame(uint32_t Type)
     Bit = BitmapFindFirstZero(Bitmap);
     if(Bit == -1)
     {
-        return NULL;	
+        return (uint32_t)NULL;	
     }
     
     if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
     {
         BitmapClearBit(Bitmap, Bit);
-        return NULL;	
+        return (uint32_t)NULL;	
     }
 
     Frame = Bit * 0x1000;
@@ -536,14 +534,14 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
     // If was unable to allocate the bit, or it spans above 4GiB.
     if(Bit == -1)
     {
-        return NULL;	
+        return (uint32_t)NULL;	
     } 
 
     Bit += Number;
     if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
     {
     	BitmapClearContigZero(Bitmap, Bit - Number, Number);
-    	return NULL;
+    	return (uint32_t)NULL;
     }
 
     Bit -= Number;
