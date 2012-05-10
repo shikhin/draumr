@@ -483,7 +483,7 @@ static void ParseEDIDInfo()
     // Take care of the modes described in Detailed Timings.
     for(uint32_t i = 0; i < 4; i++)
     {
-      
+        
     }
 }
 
@@ -525,7 +525,7 @@ static void ParseVBEInfo()
                VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
            !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
            
-           // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp and 32-bpp.
+           // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp or 32-bpp.
            ((VBEModeInfo->BitsPerPixel != 4)       &&
             (VBEModeInfo->BitsPerPixel != 8)       &&
             (VBEModeInfo->BitsPerPixel != 15)      &&
@@ -537,9 +537,9 @@ static void ParseVBEInfo()
            ((VBEModeInfo->BitsPerPixel == 4)       &&
             !(VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))                 ||
 
-           // The mode is smaller than equal to 320*200 and VGA exists.
-           (((VBEModeInfo->XResolution <= 320)     &&
-             (VBEModeInfo->YResolution <= 200))    &&
+           // The mode is smaller than 320*200.
+           (((VBEModeInfo->XResolution < 320)     &&
+             (VBEModeInfo->YResolution < 200))    &&
              (BIT.Video.VideoFlags & VGA_PRESENT))                           ||
 
            // The size of each scan line isn't dword divisible.
@@ -709,8 +709,6 @@ static void VBEInit()
         // If the mode switch was unsuccessful.
         // TODO: Implement this.
         //OutputRevert();
-
-        return;
     }
 }
 

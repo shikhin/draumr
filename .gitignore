@@ -19,6 +19,5 @@ Source/System/Boot/DBAL/DBAL
 
 Utilities/*.util
 *.util
-LOC.sh
 
 *.sublime*

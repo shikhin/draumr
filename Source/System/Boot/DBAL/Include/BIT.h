@@ -20,8 +20,8 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
@@ -93,18 +93,18 @@ struct BIT
         EDIDInfo_t EDIDInfo;                             // The EDID information.
  
         uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
-	    
+        
         VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
-	
-	    FILE_t   BackgroundImg;                          // Pointer to the boot image.
-    } __attribute__((packed)) Video;
+    
+        FILE_t   BackgroundImg;                          // Pointer to the boot image.
+    } _PACKED Video;
     
     // And the serial port related things here.
     struct
     {
         uint8_t  SerialFlags;                           // The serial port flags.
         uint32_t Port;                                  // The port which we are going to use.
-    } __attribute__((packed)) Serial;
+    } _PACKED Serial;
     
 } _PACKED;
 
