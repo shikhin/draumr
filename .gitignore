@@ -19,5 +19,5 @@ Source/System/Boot/DBAL/DBAL
 
 Utilities/*.util
 *.util
-
+Logs
 *.sublime*

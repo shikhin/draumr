@@ -43,7 +43,12 @@ struct EDIDModeInfo
 
     // The refresh rates in Hz.
     uint16_t RefreshRate;
+
+    // Some flags.
+    uint8_t Flags;
 };
+
+#define EDID_MONITOR_NATIVE (1 << 0)
 
 // EDID Info - taken from the BIOS again.
 struct EDIDInfo
@@ -71,7 +76,7 @@ struct EDIDInfo
     // Various flags which I won't be covering here.
     uint8_t  InputDefinition;
     // Defined in cm.
-    uint8_t  HorizontalSize;
+    uint8_t  HorizontalHSize;
     uint8_t  VerticalSize;
     // Gamma.
     // Present as "(Gamma * 100) - 100"

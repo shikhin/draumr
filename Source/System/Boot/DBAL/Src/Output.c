@@ -480,11 +480,48 @@ static void ParseEDIDInfo()
         EDIDModeInfo[EDIDModeInfoN].RefreshRate = (BIT.Video.EDIDInfo.StandardTimings[i][1] & 0x3F) + 60;
     }
 
+    // Set the flag indicating it's the monitor's native mode.
+    EDIDModeInfo[EDIDModeInfoN].Flags |= EDID_MONITOR_NATIVE;
+
     // Take care of the modes described in Detailed Timings.
     for(uint32_t i = 0; i < 4; i++)
     {
-        
+        if((BIT.Video.EDIDInfo.DetailedTimings[i][0] == 0x00) &&
+           (BIT.Video.EDIDInfo.DetailedTimings[i][1] == 0x00))
+        {
+            // It's a monitor descriptor.
+            // TODO.
+
+            continue;
+        }
+
+        // Get horizontal and vertical active pixels.
+        uint16_t HorizontalActive = BIT.Video.EDIDInfo.DetailedTimings[i][2];
+        HorizontalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0xF0) << 4;
+
+        uint16_t VerticalActive = BIT.Video.EDIDInfo.DetailedTimings[i][5];
+        VerticalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][7] & 0xF0) << 4;
+
+        // Get the pixel clock & the horizontal blanking in pixels to calculate the refresh rate.
+        uint16_t HorizontalBlank = BIT.Video.EDIDInfo.DetailedTimings[i][3];
+        HorizontalBlank |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0x0F) << 8;
+
+        // Step 1. Get the pixel clock speed in hz.
+        double RefreshRate = ((BIT.Video.EDIDInfo.DetailedTimings[i][1] << 8) | (BIT.Video.EDIDInfo.DetailedTimings[i][0]))
+                            * 10000;
+
+        // Step 2. Divide it by the sum of (horizontal blanking in pixels and total horizontal active pixels) to get the horizontal frequency.
+        RefreshRate /= (double)(HorizontalActive + HorizontalBlank);
+
+        // Step 3. Divide it by total vertical pixels * 1.05 (to account for time spent moving the electron beam back to the top)
+        RefreshRate /= ((double)VerticalActive * 1.05f);
+
+        DebugPrintText("Refresh Rate: %d\n", (int)RefreshRate);
+
+        EDIDModeInfoN++;
     }
+
+    for(;;);
 }
 
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.
@@ -696,7 +733,8 @@ static void VBEInit()
     }
 
     // Parse EDID Information.
-    ParseEDIDInfo();
+    if(BIT.Video.VideoFlags & EDID_PRESENT)
+        ParseEDIDInfo();
 
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
     BIT.Video.ModeInfo = FindBestVBEMode();
