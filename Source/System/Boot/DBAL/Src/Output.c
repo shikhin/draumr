@@ -207,8 +207,127 @@ static VBEModeInfo_t FindBestVBEMode()
 	  return Best;
 }
 
-static EDIDModeInfo_t EDIDModeInfo[29];
+static EDIDModeInfo_t EDIDModeInfo[47];
 static uint32_t EDIDModeInfoN;
+
+/*
+ * Handles standard timings.
+ *     uint8_t Byte0 -> the first byte of the standard timing identifier.
+ *     uint8_t Byte1 -> the second byte of the standard timing identifier.
+ */
+static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
+{
+    // Calculate the horizontal active pixels.
+    // The first byte is defined as the "(horizontal active pixels / 8) - 31".
+    EDIDModeInfo[EDIDModeInfoN].XRes = (Byte0 + 31) * 8;
+
+    // Now, using the aspect ratio, calculate the vertical active pixels.
+    uint32_t AspectRatio = Byte1 >> 6, VerticalRatio, HorizontalRatio;
+    switch(AspectRatio)
+    {
+      // Case 0.
+      case 0:
+        // If the version is 1.3 or above, then the aspect ratio is 16:10.
+        if((BIT.Video.EDIDInfo.Version >= 1) &&
+           (BIT.Video.EDIDInfo.Revision >= 3))
+        {
+            HorizontalRatio = 16;
+            VerticalRatio = 10;
+        }
+
+        // Else, it is 1:1.
+        else
+        {
+            HorizontalRatio = 1;
+            VerticalRatio = 1;
+        }
+
+        break;
+
+      // Case 1.
+      case 1:
+        HorizontalRatio = 4;
+        VerticalRatio = 3;
+
+        break;
+
+      // Case 2.
+      case 2:
+        HorizontalRatio = 5;
+        VerticalRatio = 4;
+
+        break;
+
+      // Case 3.
+      case 3:
+        HorizontalRatio = 16;
+        VerticalRatio = 9;
+
+        break;
+
+      default:
+        HorizontalRatio = 4;
+        VerticalRatio = 3;
+    }
+
+    // Calculate the Y resolution - using the ratio.
+    EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
+
+    // Calculate the Refresh Rate.
+    // It is stored in the first 6 bits, with it being 60 lower than it's original value.
+    EDIDModeInfo[EDIDModeInfoN].RefreshRate = (Byte1 & 0x3F) + 60;
+
+    EDIDModeInfoN++;
+}
+
+/* 
+ * Rounds off a refresh rate so that it becomes easier to calculate what all modes are "preferable".
+ *     uint32_t RefreshRate -> the refresh rate which we would round off.
+ *
+ * Returns:
+ *     uint32_t             -> the rounded off refresh rate.
+ */
+static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
+{
+    // Since the refresh rate we calculate isn't exactly accurate (might be off by +/-1),
+    // and we want some round numbers so as to calculate what all modes are preferable,
+    // let's round off the refresh rate.
+
+    // The preferances are:
+    //     a) multiples of 5.
+    //     b) multiples of 2.
+
+    // If it's already a multiple of 5, return.
+    if(!(RefreshRate % 5))
+    {
+        return RefreshRate;
+    }
+
+    // If refresh rate + 1 is a multiple of 5, then return it + 1.
+    else if(!((RefreshRate + 1) % 5))
+    {
+        return RefreshRate + 1;
+    }
+
+    // If refres rate - 1 is a multiple of 5, then return it - 1.
+    else if(!((RefreshRate - 1) % 5))
+    {
+        return RefreshRate - 1;
+    }
+
+    // Else, look if it's a multiple of 2. If it is, return.
+    else if(!(RefreshRate % 2))
+    {
+        return RefreshRate;
+    }
+
+    else if(!((RefreshRate + 1) % 2))
+    {
+        return RefreshRate + 1;
+    }
+
+    return RefreshRate - 1;
+}
 
 /*
  * Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
@@ -217,7 +336,7 @@ static uint32_t EDIDModeInfoN;
 static void ParseEDIDInfo()
 {
     // Ok - so the most sensible thing to do would be to parse all the timings
-    // specified in Established timings, Standard timings and Detalied timings
+    // specified in Established timings, Standard timings and Detailed timings
     // and put all the usable modes in a array consisting of the Horizontal resolution,
     // Vertical resolution and Refresh rate.
     
@@ -417,67 +536,10 @@ static void ParseEDIDInfo()
     // NOTE: The rest bits in byte 2 are reserved (for OEM use and other such stuff).
 
     // Take care of the standard timings.
-    for(uint32_t i = 0; i < 8; i++, EDIDModeInfoN++)
+    for(uint32_t i = 0; i < 8; i++)
     {
-        // Calculate the horizontal active pixels.
-        // The first byte is defined as the "(horizontal active pixels / 8) - 31".
-        EDIDModeInfo[EDIDModeInfoN].XRes = (BIT.Video.EDIDInfo.StandardTimings[i][0] + 31) * 8;
-
-        // Now, using the aspect ratio, calculate the vertical active pixels.
-        uint32_t AspectRatio = BIT.Video.EDIDInfo.StandardTimings[i][1] >> 6, VerticalRatio, HorizontalRatio;
-        switch(AspectRatio)
-        {
-          // Case 0.
-          case 0:
-            // If the version is 1.3 or above, then the aspect ratio is 16:10.
-            if((BIT.Video.EDIDInfo.Version >= 1) &&
-               (BIT.Video.EDIDInfo.Revision >= 3))
-            {
-                HorizontalRatio = 16;
-                VerticalRatio = 10;
-            }
-
-            // Else, it is 1:1.
-            else
-            {
-                 HorizontalRatio = 1;
-                 VerticalRatio = 1;
-            }
-
-            break;
-
-          // Case 1.
-          case 1:
-            HorizontalRatio = 4;
-            VerticalRatio = 3;
-
-            break;
-
-          // Case 2.
-          case 2:
-            HorizontalRatio = 5;
-            VerticalRatio = 4;
-
-            break;
-
-          // Case 3.
-          case 3:
-            HorizontalRatio = 16;
-            VerticalRatio = 9;
-
-            break;
-
-          default:
-            HorizontalRatio = 4;
-            VerticalRatio = 3;
-        }
-
-        // Calculate the Y resolution - using the ratio.
-        EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
-
-        // Calculate the Refresh Rate.
-        // It is stored in the first 6 bits, with it being 60 lower than it's original value.
-        EDIDModeInfo[EDIDModeInfoN].RefreshRate = (BIT.Video.EDIDInfo.StandardTimings[i][1] & 0x3F) + 60;
+        HandleStandardTimings(BIT.Video.EDIDInfo.StandardTimings[i][0], 
+                              BIT.Video.EDIDInfo.StandardTimings[i][1]);
     }
 
     // Set the flag indicating it's the monitor's native mode.
@@ -486,11 +548,23 @@ static void ParseEDIDInfo()
     // Take care of the modes described in Detailed Timings.
     for(uint32_t i = 0; i < 4; i++)
     {
-        if((BIT.Video.EDIDInfo.DetailedTimings[i][0] == 0x00) &&
+        if((i > 0)                                            &&
+           (BIT.Video.EDIDInfo.DetailedTimings[i][0] == 0x00) &&
            (BIT.Video.EDIDInfo.DetailedTimings[i][1] == 0x00))
         {
             // It's a monitor descriptor.
-            // TODO.
+
+            // If it doesn't contain standard timings, then we don't have any use of it. Continue.
+            if(BIT.Video.EDIDInfo.DetailedTimings[i][3] != 0xFA)
+            {
+                continue;
+            }
+
+            for(uint32_t j = 4; j < 16; j += 2)
+            {
+                HandleStandardTimings(BIT.Video.EDIDInfo.DetailedTimings[i][j],
+                                      BIT.Video.EDIDInfo.DetailedTimings[i][j + 1]);
+            }
 
             continue;
         }
@@ -507,7 +581,7 @@ static void ParseEDIDInfo()
         HorizontalBlank |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0x0F) << 8;
 
         // Step 1. Get the pixel clock speed in hz.
-        double RefreshRate = ((BIT.Video.EDIDInfo.DetailedTimings[i][1] << 8) | (BIT.Video.EDIDInfo.DetailedTimings[i][0]))
+        float RefreshRate = ((BIT.Video.EDIDInfo.DetailedTimings[i][1] << 8) | (BIT.Video.EDIDInfo.DetailedTimings[i][0]))
                             * 10000;
 
         // Step 2. Divide it by the sum of (horizontal blanking in pixels and total horizontal active pixels) to get the horizontal frequency.
@@ -516,12 +590,12 @@ static void ParseEDIDInfo()
         // Step 3. Divide it by total vertical pixels * 1.05 (to account for time spent moving the electron beam back to the top)
         RefreshRate /= ((double)VerticalActive * 1.05f);
 
-        DebugPrintText("Refresh Rate: %d\n", (int)RefreshRate);
+        EDIDModeInfo[EDIDModeInfoN].XRes = HorizontalActive;
+        EDIDModeInfo[EDIDModeInfoN].YRes = VerticalActive;
+        EDIDModeInfo[EDIDModeInfoN].RefreshRate = RoundOffRefreshRate((uint32_t)RefreshRate);
 
         EDIDModeInfoN++;
     }
-
-    for(;;);
 }
 
 // Parse the VBEModeInfo[] array, and clean it out for usable modes.
