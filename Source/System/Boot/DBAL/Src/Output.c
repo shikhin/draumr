@@ -321,12 +321,8 @@ static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
         return RefreshRate;
     }
 
-    else if(!((RefreshRate + 1) % 2))
-    {
-        return RefreshRate + 1;
-    }
-
-    return RefreshRate - 1;
+    // Else, return + 1.
+    return RefreshRate + 1;
 }
 
 /*
