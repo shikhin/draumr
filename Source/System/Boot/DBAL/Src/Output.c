@@ -183,28 +183,28 @@ static VBEModeInfo_t FindBestVBEMode()
     // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
     // This is a big TODO!
     VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
-	  Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
-	  Best.Score = sqrt((Best.Score * Best.Score) + 
-	                    (Best.XResolution * Best.XResolution) +
-	                    (Best.YResolution * Best.YResolution));
+    Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
+	Best.Score = sqrt((Best.Score * Best.Score) + 
+	                  (Best.XResolution * Best.XResolution) +
+	                  (Best.YResolution * Best.YResolution));
     
     // Calculate the score for each mode - while side by side, finding the best mode.
-	  for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
-	  {
+	for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
+	{
         BIT.Video.VBEModeInfo[i].Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
-	      BIT.Video.VBEModeInfo[i].Score = sqrt((Best.Score * Best.Score) + 
-	                                            (Best.XResolution * Best.XResolution) +
-	                                            (Best.YResolution * Best.YResolution));
+	    BIT.Video.VBEModeInfo[i].Score = sqrt((Best.Score * Best.Score) + 
+	                                          (Best.XResolution * Best.XResolution) +
+	                                          (Best.YResolution * Best.YResolution));
 	 
-	      // If the score of this is greater than the best till now,
-	      // make it the best.                                     
-	      if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
+	    // If the score of this is greater than the best till now,
+	    // make it the best.                                     
+	    if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
         {
 	          Best = BIT.Video.VBEModeInfo[i];
         }
     }
     
-	  return Best;
+	return Best;
 }
 
 static EDIDModeInfo_t EDIDModeInfo[47];
@@ -217,6 +217,13 @@ static uint32_t EDIDModeInfoN;
  */
 static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
 {
+    // If both bytes are 0x01, then it is a unused standard timing descriptor.
+    if((Byte0 == 0x01) &&
+       (Byte1 == 0x01))
+    {
+        return;
+    }
+
     // Calculate the horizontal active pixels.
     // The first byte is defined as the "(horizontal active pixels / 8) - 31".
     EDIDModeInfo[EDIDModeInfoN].XRes = (Byte0 + 31) * 8;
@@ -644,12 +651,6 @@ static void CalculateMonitorPreference()
             // The final score is supported/total.
             BIT.Video.VBEModeInfo[i].MonitorPreference = SupportedModes/TotalModes;
         }
-
-        for(uint32_t i = 0; i < EDIDModeInfoN; i++)
-        {
-            DebugPrintText("%d: %d*%d, @%d\n", i, EDIDModeInfo[i].XRes, EDIDModeInfo[i].YRes, EDIDModeInfo[i].RefreshRate);
-        }
-        for(;;);
     }
 
     else
