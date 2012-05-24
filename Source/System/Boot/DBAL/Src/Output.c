@@ -302,7 +302,7 @@ static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
     {
         return RefreshRate;
     }
-
+    
     // If refresh rate + 1 is a multiple of 5, then return it + 1.
     else if(!((RefreshRate + 1) % 5))
     {
@@ -594,7 +594,73 @@ static void ParseEDIDInfo()
     }
 }
 
-// Parse the VBEModeInfo[] array, and clean it out for usable modes.
+/*
+ * Calculate the monitor preference for every mode based on the EDID Info.
+ */
+static void CalculateMonitorPreference()
+{
+    if(EDIDModeInfoN)
+    {
+        // Make a bitmap for all refresh rates from 0 - 256.
+        uint32_t RefreshRateBitmap[4] = {0, 0, 0, 0};
+        // Counter of total refresh rates encountered.
+        uint32_t TotalRefreshRates = 0;
+
+        // Find out total refresh rates.
+        for(uint32_t i = 0; i < EDIDModeInfoN; i++)
+        {
+            uint32_t RefreshRate = EDIDModeInfo[i].RefreshRate;
+
+            // If the bit in the bitmap isn't already set, set it & increase the count.
+            if(!(RefreshRateBitmap[RefreshRate / 32] &
+               (1 << (RefreshRate % 32))))
+            {
+                TotalRefreshRates++;
+                RefreshRateBitmap[RefreshRate / 32] |= (1 << (RefreshRate % 32));
+            }
+        }
+
+        // For every mode in VBEModeInfo[] array, calculate it's MonitorPreference.
+        for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
+        {
+            uint32_t SupportedModes = 0, TotalModes = TotalRefreshRates;
+            
+            for(uint32_t j = 0; j < EDIDModeInfoN; j++)
+            {
+                // If the horizontal & vertical resolution are same, then increase SupportedModes.
+                if((BIT.Video.VBEModeInfo[i].XResolution == EDIDModeInfo[j].XRes) &&
+                   (BIT.Video.VBEModeInfo[i].YResolution == EDIDModeInfo[j].YRes))
+                {
+                    SupportedModes++;
+
+                    // If this is the native mode, then +1.
+                    if(EDIDModeInfo[j].Flags & EDID_MONITOR_NATIVE)
+                    {
+                        SupportedModes++; TotalModes++;
+                    }
+                }
+            }
+
+            // The final score is supported/total.
+            BIT.Video.VBEModeInfo[i].MonitorPreference = SupportedModes/TotalModes;
+        }
+
+        for(uint32_t i = 0; i < EDIDModeInfoN; i++)
+        {
+            DebugPrintText("%d: %d*%d, @%d\n", i, EDIDModeInfo[i].XRes, EDIDModeInfo[i].YRes, EDIDModeInfo[i].RefreshRate);
+        }
+        for(;;);
+    }
+
+    else
+    {
+
+    }
+}
+
+/*
+ * Parse the VBEModeInfo[] array, and clean it out for usable modes.
+ */
 static void ParseVBEInfo()
 {
 	  // For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
@@ -806,6 +872,9 @@ static void VBEInit()
     if(BIT.Video.VideoFlags & EDID_PRESENT)
         ParseEDIDInfo();
 
+    // Calculate the montior's preference for every mode.
+    CalculateMonitorPreference();
+
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
     BIT.Video.ModeInfo = FindBestVBEMode();
         
@@ -820,7 +889,9 @@ static void VBEInit()
     }
 }
 
-// Initializes the first available serial port.
+/* 
+ *Initializes the first available serial port.
+ */
 static void SerialInit()
 {
     // Find the "first" working serial port, and get it's address.

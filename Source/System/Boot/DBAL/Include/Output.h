@@ -208,8 +208,9 @@ struct VBEModeInfo
     uint32_t MaxPixelClock;          // Maximum pixel clock (in Hz) for graphics mode
     
     // While the reserved block is actually 190 bytes long, we use some of it for storing data.
-    uint8_t  Reserved1[186];         // Remainder of ModeInfoBlock.
+    uint8_t  Reserved1[182];         // Remainder of ModeInfoBlock.
 
+    float    MonitorPreference;
     uint32_t BytesBetweenLines;      // Bytes between lines.
 } _PACKED;
 
