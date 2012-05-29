@@ -181,30 +181,53 @@ static uint32_t SerialPortDetect()
 static VBEModeInfo_t FindBestVBEMode()
 { 
     // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
-    // This is a big TODO!
+    // Also, keep in mind the Monitor Preference.
     VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
+
+    // Find log 2 of Bits Per Pixel, and multiply it with the scaling factor.
     Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
-	Best.Score = sqrt((Best.Score * Best.Score) + 
-	                  (Best.XResolution * Best.XResolution) +
-	                  (Best.YResolution * Best.YResolution));
+
+    // Find the "shortest distance" between the three scores.
+    // NOTE: This is better than taking an average. For example, considering 400*600 as the resolution for one mode
+    // and 500*500 for the other mode. For average, both are given same score. For "distance" the former is
+    // preffered.
+    Best.Score = sqrt((Best.Score * Best.Score) + 
+                      (Best.XResolution * Best.XResolution) +
+                      (Best.YResolution * Best.YResolution));
+
+    // Multiply the score by the MonitorPreference.
+    Best.Score = (int)((float)Best.Score * Best.MonitorPreference);
     
     // Calculate the score for each mode - while side by side, finding the best mode.
-	for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
-	{
-        BIT.Video.VBEModeInfo[i].Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
-	    BIT.Video.VBEModeInfo[i].Score = sqrt((Best.Score * Best.Score) + 
-	                                          (Best.XResolution * Best.XResolution) +
-	                                          (Best.YResolution * Best.YResolution));
-	 
-	    // If the score of this is greater than the best till now,
-	    // make it the best.                                     
-	    if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
+    for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
+    {
+        // If the monitor preference is 0, then continue.
+        if((int)BIT.Video.VBEModeInfo[i].MonitorPreference == 0)
         {
-	          Best = BIT.Video.VBEModeInfo[i];
+            continue;
+        }
+
+        // Find log 2 of Bits Per Pixel and multiply it with the scaling factor.
+        BIT.Video.VBEModeInfo[i].Score = fyl2x(BIT.Video.VBEModeInfo[i].BitsPerPixel, BPP_SCALING_FACTOR);
+
+        // Find the "shortest distance" (read note above) between the three scores.
+        BIT.Video.VBEModeInfo[i].Score = sqrt((BIT.Video.VBEModeInfo[i].Score * BIT.Video.VBEModeInfo[i].Score) + 
+                                              (BIT.Video.VBEModeInfo[i].XResolution * BIT.Video.VBEModeInfo[i].XResolution) +
+                                              (BIT.Video.VBEModeInfo[i].YResolution * BIT.Video.VBEModeInfo[i].YResolution));
+
+        BIT.Video.VBEModeInfo[i].Score = (int)((float)BIT.Video.VBEModeInfo[i].Score * BIT.Video.VBEModeInfo[i].MonitorPreference);
+        
+        // If the score of this is greater than the best till now,
+        // make it the best.                                     
+        if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
+        {
+              Best = BIT.Video.VBEModeInfo[i];
         }
     }
-    
-	return Best;
+
+    DebugPrintText("%d*%d*%d\n", Best.XResolution, Best.YResolution, Best.BitsPerPixel);
+    for(;;);
+    return Best;
 }
 
 static EDIDModeInfo_t EDIDModeInfo[47];
@@ -649,13 +672,39 @@ static void CalculateMonitorPreference()
             }
 
             // The final score is supported/total.
-            BIT.Video.VBEModeInfo[i].MonitorPreference = SupportedModes/TotalModes;
+            BIT.Video.VBEModeInfo[i].MonitorPreference = (float)SupportedModes/(float)TotalModes;
         }
     }
 
     else
     {
+        // Safe resolutions which are supported on all modes.
+        uint32_t SafeResolutions[8][2] = {{720, 480},
+                                          {640, 480},
+                                          {360, 480},
+                                          {320, 480},
+                                          {720, 240},
+                                          {640, 240},
+                                          {360, 240},
+                                          {320, 240}};
 
+        for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
+        {
+            BIT.Video.VBEModeInfo[i].MonitorPreference = 0;
+
+            for(uint32_t j = 0; j < 8; j++)
+            {
+                // If the horizontal & vertical resolutions match to something in SafeResolution, then MonitorPreference = 1.
+                if((BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0]) &&
+                   (BIT.Video.VBEModeInfo[i].YResolution == SafeResolutions[j][1]))
+                {
+                    BIT.Video.VBEModeInfo[i].MonitorPreference = 1;
+
+                    // No need to continue in the loop.
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -743,10 +792,10 @@ static void ParseVBEInfo()
             VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
          
            ((VBEModeInfo->BitsPerPixel == 32) && 
-            ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      ||
+            ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      &&
             (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0))))))
         {
-		        // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
             memmove(VBEModeInfo, &VBEModeInfo[1], 
                     sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
             BIT.Video.VBEModeInfoN--;
@@ -871,14 +920,24 @@ static void VBEInit()
 
     // Parse EDID Information.
     if(BIT.Video.VideoFlags & EDID_PRESENT)
+    {
         ParseEDIDInfo();
-
+    }
+    
     // Calculate the montior's preference for every mode.
     CalculateMonitorPreference();
 
     // Get the best mode from VBEModeInfo[] array - and then switch to it.
     BIT.Video.ModeInfo = FindBestVBEMode();
-        
+
+    // If the best mode also has score 0, then revert.
+    if(BIT.Video.ModeInfo.Score == 0)
+    {
+        // TODO: Implement this.
+        //OutputRevert();
+        return;
+    }
+
     BIT.Video.VideoFlags |= GRAPHICAL_USED;
 
     // Switch to the mode.
