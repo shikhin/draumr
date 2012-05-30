@@ -62,15 +62,11 @@ static void PMMFixMMap()
 	    if((MMapEntries[i].Start == MMapEntries[i + 1].Start) &&
 	       (MMapEntries[i].Length == MMapEntries[i + 1].Length))
 	    {
-	        // Move the required number of entries from i + 2 to i + 1.
-	        memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-		            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
 	        MMapEntries[i].Type = Type;
-	        MMapHeader->Entries--;
+	    	REMOVE_ENTRY((i + 1))
 	    
 	        // Here, we don't know whether we overlap with the next entry or not. So, move to previous, and continue.
-	        i--;
-	        continue;
+	        i--; continue;
 	    }
 	
 	    // If the entries overlap in the standard way:
@@ -88,13 +84,10 @@ static void PMMFixMMap()
 		                                - MMapEntries[i].Start;
 		
 		        // Move the entries up a bit.
-		        memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	            MMapHeader->Entries--;
+		        REMOVE_ENTRY((i + 1))
 		
     		    // We don't know anything about the next entry - so move a entry up, and continue (at same).
-	        	i--;
-		        continue;
+	        	i--; continue;
 	        }
 	    
 	        // Else, make space for another entry for the overlapping region.
@@ -102,13 +95,12 @@ static void PMMFixMMap()
 	        {
 	            // Make space for another entry.
 	            memmove(&MMapEntries[i + 2], &MMapEntries[i + 1], 
-			    sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
+			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
 
 			    // Increase the number of entries. 
 	            MMapHeader->Entries++;
 	    
 	            // Take care of the second entry.
-
 	            // The second entry starts where the earlier second entry started.
 	            MMapEntries[i + 1].Start = MMapEntries[i + 2].Start;
     	        MMapEntries[i + 1].Length = (MMapEntries[i].Start + MMapEntries[i].Length) 
@@ -119,12 +111,10 @@ static void PMMFixMMap()
                 MMapEntries[i + 1].Flags = MMapEntries[i].Flags;   
 
                 // The first entry.
-
 	            // The length of the first entry should be equal till where it doesn't overlap.
 	            MMapEntries[i].Length = MMapEntries[i + 2].Start - MMapEntries[i].Start;                          
 	    
 	            // And the third entry.
-
 	            // It starts at where the second entry ends, and reduce it's length by length of second entry.
 	            MMapEntries[i + 2].Start = MMapEntries[i + 1].Start + MMapEntries[i + 1].Length;   
 	            MMapEntries[i + 2].Length -= MMapEntries[i + 1].Length;                            
@@ -141,13 +131,10 @@ static void PMMFixMMap()
 	        if(MMapEntries[i].Type == MMapEntries[i + 1].Type)
 	        {
 	            // Move the entries up a bit.
-		        memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	            MMapHeader->Entries--;
+		        REMOVE_ENTRY((i + 1))
 		
     		    // Again, we don't know anything about the next entry. So move up a bit, and continue.
-		        i--;
-		        continue;
+		        i--; continue;
 	        }
 	    
 	        // Else, make the second entry the entry for the "non-overlapping" region.
@@ -185,13 +172,10 @@ static void PMMFixMMap()
 	            MMapEntries[i].Length = MMapEntries[i + 1].Length;
 
 	            // And delete the second one.
-	            memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	            MMapHeader->Entries--;
+	            REMOVE_ENTRY((i + 1))
 		
 		        // Repeat the same entry to test again.
-		        i--;
-	        	continue;
+		        i--; continue;
 	        }
 	    
 	        // Else, edit the second entry to cover the non-overlapping region.
@@ -216,13 +200,10 @@ static void PMMFixMMap()
 	        if(MMapEntries[i].Type == MMapEntries[i + 1].Type)
     	    {
 	            // Move the entries up a bit.
-	        	memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	            MMapHeader->Entries--;
+	        	REMOVE_ENTRY((i + 1))
 		
 		        // Here, we deleted the next entry. So, we need to check with it's next entry again. Move back a bit, and continue.
-		        i--;
-		        continue;
+		        i--; continue;
 	        }
 	    
 	        // Else, reduce the length of the first entry, and change the type of the second entry.
@@ -246,13 +227,10 @@ static void PMMFixMMap()
 	        if(MMapEntries[i].Type == MMapEntries[i + 1].Type)
 	        {
 	            // Move the entries up a bit.
-		        memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-			            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	            MMapHeader->Entries--;
+		        REMOVE_ENTRY((i + 1))
 		
 		        // Check with the next' next entry.
-		        i--;
-		        continue;
+		        i--; continue;
 	        }
 	  
 	        // Else, divide it into three: 'starting', 'middle (overlapping)' and 'ending'.
@@ -288,13 +266,10 @@ static void PMMFixMMap()
 	        MMapEntries[i].Length += MMapEntries[i + 1].Length;
 	
 	        // Move the required number of entries from i + 2 to i + 1.
-	        memmove(&MMapEntries[i + 1], &MMapEntries[i + 2], 
-		            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 2)));
-	        MMapHeader->Entries--; 
+	        REMOVE_ENTRY((i + 1))
 	    
 	        // Now, we don't know what the next entry is about. So move up a bit.
-	        i--;
-	        continue;
+	        i--; continue;
 	    }
     }
     
@@ -309,13 +284,44 @@ static void PMMFixMMap()
         if(!MMapEntries[i].Length)
         {
             // Move the required number of entries from i + 1 to i.
-	        memmove(&MMapEntries[i], &MMapEntries[i + 1], 
-		            sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
-	        MMapHeader->Entries--;
+	        REMOVE_ENTRY((i))
 	    
 	        // Here, we don't know about the current entry, so, move to previous, and continue.
-	        i--;
+	        i--; continue;
         }
+    }
+}
+
+/*
+ * Initialize the bitmaps.
+ */
+static void InitializeBitmap()
+{
+    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
+    {
+    	// If it isn't free RAM, loop.
+    	if(MMapEntries[i].Type != FREE_RAM)
+    	{
+    		continue;
+    	}
+        
+        // Loop over each entry.
+    	for(uint64_t Addr = MMapEntries[i].Start;
+    	    Addr < (MMapEntries[i].Start + MMapEntries[i].Length);
+    	    Addr += 0x1000)
+    	{
+    		// If address is smaller than 1MiB, initialize it in the base bitmap.
+    		if(Addr < 0x100000)
+    		{
+    		    BaseBitmap.Data[INDEX_BIT(Addr / 0x1000)] &= ~(1 << OFFSET_BIT(Addr / 0x1000));
+    		}
+
+            // Else, in the pool bitmap.
+    		else
+    		{
+    			PoolBitmap.Data[INDEX_BIT((Addr - 0x100000) / 0x1000)] &= ~(1 << OFFSET_BIT((Addr - 0x100000) / 0x1000));
+    		}
+    	}
     }
 }
 
@@ -348,10 +354,10 @@ void PMMInit()
     		continue;
     	}
 
-    	// If the starting address is over 0xFFFF0000, then simply continue.
-    	else if(MMapEntries[i].Length > 0xFFFF0000)
+    	// If the starting address is over 0xFFFF0000, then simply break..
+    	else if((MMapEntries[i].Start + MMapEntries[i].Length) > 0xFFFF0000)
     	{
-    		continue;
+    		break;
     	}
         
         // If, the entry can accomodate the bitmap, and, the address doesn't go over the 4GiB boundary, then use that area.
@@ -359,23 +365,20 @@ void PMMInit()
     	        ((MMapEntries[i].Start + BitmapSize) <= 0xFFFF0000))
     	{
     		// Asign the 'data' and 'size' of the pool and base bitmap.
-    		BaseBitmap.Data = (uint32_t*)((uint32_t)MMapEntries[i].Start);
+    		BaseBitmap.Data = (uint32_t*)((uint32_t)MMapEntries[i].Start + (uint32_t)MMapEntries[i].Length - (uint32_t)BitmapSize);
     		BaseBitmap.Size = (0x100000 / 0x1000);
 
     		PoolBitmap.Data = BaseBitmap.Data + (BaseBitmap.Size / 32);
     		PoolBitmap.Size = (HighestAddress - 0x100000) / 0x1000;
     		
-    		// Increase the start, and decrease the length, accordingly.
+    		// Decrease the length, accordingly.
             MMapEntries[i].Length -= BitmapSize;
-            MMapEntries[i].Start += BitmapSize;
 
     	   	// If length is zero, remove the entry.
             if(!MMapEntries[i].Length)
             {
                 // Move the required number of entries from i + 1 to i.
-	            memmove(&MMapEntries[i], &MMapEntries[i + 1], 
-		                sizeof(MMapEntry_t) * (MMapHeader->Entries - (i + 1)));
-	            MMapHeader->Entries--;
+	            REMOVE_ENTRY((i))
 	    
 	            // Here, we don't know about the current entry, so, move to previous, and continue.
 	            i--; 	
@@ -396,32 +399,7 @@ void PMMInit()
     PoolBitmap = BitmapInit(PoolBitmap.Data, PoolBitmap.Size, 0xFFFFFFFF);
     
     // Initialize the bitmaps, now.
-    for(uint16_t i = 0; i < MMapHeader->Entries; i++)
-    {
-    	// If it isn't free RAM, loop.
-    	if(MMapEntries[i].Type != FREE_RAM)
-    	{
-    		continue;
-    	}
-        
-        // Loop over each entry.
-    	for(uint64_t Addr = MMapEntries[i].Start;
-    	    Addr < (MMapEntries[i].Start + MMapEntries[i].Length);
-    	    Addr += 0x1000)
-    	{
-    		// If address is smaller than 1MiB, initialize it in the base bitmap.
-    		if(Addr < 0x100000)
-    		{
-    		    BaseBitmap.Data[INDEX_BIT(Addr / 0x1000)] &= ~(1 << OFFSET_BIT(Addr / 0x1000));
-    		}
-
-            // Else, in the pool bitmap.
-    		else
-    		{
-    			PoolBitmap.Data[INDEX_BIT((Addr - 0x100000) / 0x1000)] &= ~(1 << OFFSET_BIT((Addr - 0x100000) / 0x1000));
-    		}
-    	}
-    }
+    InitializeBitmap();
 
     // Update the instance of the first zero bit in both the bitmaps.
     BaseBitmap.FirstZero = FindFirstZero(&BaseBitmap, BaseBitmap.FirstZero);

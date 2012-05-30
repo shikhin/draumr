@@ -92,7 +92,7 @@ struct BIT
         EDIDInfo_t EDIDInfo;                             // The EDID information.
  
         uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
-        void     (*OutputRevert)();                      // The function to revert back from the current level.
+        void     (*OutputRevert)(void);                  // The function to revert back from the current level.
         
         VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
     

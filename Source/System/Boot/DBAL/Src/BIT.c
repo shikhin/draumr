@@ -43,9 +43,9 @@ void BITInit(uint32_t *BITPointer)
     memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
 
     // Clear out the rest of the BIT.
-    memset((void*)&BIT.Video.ModeInfo, 0, ((uint8_t*)BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
+    memset((void*)&BIT.Video.ModeInfo, 0, ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
 
-    BIT.OutputRevert = &OutputRevert();
+    BIT.Video.OutputRevert = &OutputRevert;
     
     return; 
 }

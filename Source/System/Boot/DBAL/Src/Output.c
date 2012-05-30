@@ -34,6 +34,7 @@
 #include <PMM.h>
 #include <Log.h>
 #include <Math.h>
+#include <Abort.h>
   
 /*
  * Switches to a video mode.
@@ -94,82 +95,91 @@ static uint32_t SerialPortDetect()
     // Define the IO port for each of the COM port.
     static uint16_t Ports[4] = { 0x3F8,
                                  0x2F8,
-                			        	 0x3E8,
-				                         0x2E8 };
+           			        	 0x3E8,
+		                         0x2E8 };
     
     // Loop through the each of the port.
     for(uint32_t i = 0; i < 4; i++)
     {
         // Offset 7 is the scratch register.
-	      // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
-	      outb(Ports[i] + 7, 0xA5);
+	    // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
+	    outb(Ports[i] + 7, 0xA5);
 	
-	      // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
-	      if(inb(Ports[i] + 7) != 0xA5)
-	          continue;
-      
+	    // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
+	    if(inb(Ports[i] + 7) != 0xA5)
+	    {
+            continue;
+        }
+
         // At offset 1 is the Interrupt Enable register.
         // Disable all interrupts for this one.
         outb(Ports[i] + 1, 0x00);
 	 
         // At offset 3 is the Line Control register.
- 	      // Set the Divisor Latch Access Bit - so we set the Divisor next time.
+ 	    // Set the Divisor Latch Access Bit - so we set the Divisor next time.
         outb(Ports[i] + 3, 0x80);
 	
-	      // Offset 0 and 1 is the divisor register too.
-	      // Set the divisor to 3, which comes out to a frequency of 38400 baud.
-	      outb(Ports[i] + 0, 0x03);
-	      outb(Ports[i] + 1, 0x00);
+	    // Offset 0 and 1 is the divisor register too.
+	    // Set the divisor to 3, which comes out to a frequency of 38400 baud.
+	    outb(Ports[i] + 0, 0x03);
+	    outb(Ports[i] + 1, 0x00);
 	
    	    // Offset 3 is the Line Control register.
-	      // Set it to 8 bits, 1 stop, no parity.
-	      outb(Ports[i] + 3, 0x03);
+	    // Set it to 8 bits, 1 stop, no parity.
+	    outb(Ports[i] + 3, 0x03);
 	
-	      // Offset 4 is the Modem Control Register.
-	      // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
-	      outb(Ports[i] + 4, 0x13);	
+	    // Offset 4 is the Modem Control Register.
+	    // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
+	    outb(Ports[i] + 4, 0x13);	
 
-	      uint32_t Timeout = 0;
+	    uint32_t Timeout = 0;
 	
-	      // Read from the Line status register.
-	      // And keep looping till the transmit register isn't empty.
-	      // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	      while((!(inb(Ports[i] + 5) & 0x20))
-	            && (Timeout < MIN_TIMEOUT))
-	      {
-	          __asm__ __volatile__("pause");
-	          Timeout++;
-	      }
+	    // Read from the Line status register.
+	    // And keep looping till the transmit register isn't empty.
+	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	    while((!(inb(Ports[i] + 5) & 0x20))
+	          && (Timeout < MIN_TIMEOUT))
+	    {
+	        __asm__ __volatile__("pause");
+	        Timeout++;
+	    }
 	
-	      // If we reached timeout, the continue and assume faulty.
-	      if(Timeout == MIN_TIMEOUT)
-	          continue;
-	 
+	    // If we reached timeout, the continue and assume faulty.
+	    if(Timeout == MIN_TIMEOUT)
+	    {
+            continue;
+	    }
+
    	    // Output 0xA5 - now, since we are in loopback mode, the input register would also have 0xA5.
-	      outb(Ports[i], 0xA5);
+	    outb(Ports[i], 0xA5);
 	
-	      Timeout = 0;
-	      // And keep looping till we didn't recieve something.
-	      // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	      while((!(inb(Ports[i] + 5) & 0x01))
-	             && (Timeout < MIN_TIMEOUT))
-	      {  
-	          __asm__ __volatile__("pause");
-	          Timeout++;
+	    Timeout = 0;
+	    
+        // And keep looping till we didn't recieve something.
+	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
+	    while((!(inb(Ports[i] + 5) & 0x01))
+	          && (Timeout < MIN_TIMEOUT))
+	    {  
+	        __asm__ __volatile__("pause");
+	        Timeout++;
    	    }
 	
-	      // If we reached timeout, the continue and assume faulty.
-	      if(Timeout == MIN_TIMEOUT)
-	          continue;
-	
+	    // If we reached timeout, the continue and assume faulty.
+	    if(Timeout == MIN_TIMEOUT)
+	    {
+            continue;
+	    }
+
   	    // If not, assume faulty or something.
-	      if(inb(Ports[i]) != 0xA5)
-	          continue;
-	
-	      // Offset 4 is the Modem Control Register.
-	      // 0x3 sets the Request to Send and the Data Terminal Ready bits.
-	      outb(Ports[i] + 4, 0x3);
-	      return Ports[i];
+	    if(inb(Ports[i]) != 0xA5)
+	    {
+            continue;
+	    }
+	     
+        // Offset 4 is the Modem Control Register.
+	    // 0x3 sets the Request to Send and the Data Terminal Ready bits.
+	    outb(Ports[i] + 4, 0x3);
+	    return Ports[i];
     }
     
     return 0x0000;
@@ -231,148 +241,12 @@ static VBEModeInfo_t FindBestVBEMode()
 static EDIDModeInfo_t EDIDModeInfo[47];
 static uint32_t EDIDModeInfoN;
 
-/*
- * Handles standard timings.
- *     uint8_t Byte0 -> the first byte of the standard timing identifier.
- *     uint8_t Byte1 -> the second byte of the standard timing identifier.
- */
-static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
-{
-    // If both bytes are 0x01, then it is a unused standard timing descriptor.
-    if((Byte0 == 0x01) &&
-       (Byte1 == 0x01))
-    {
-        return;
-    }
-
-    // Calculate the horizontal active pixels.
-    // The first byte is defined as the "(horizontal active pixels / 8) - 31".
-    EDIDModeInfo[EDIDModeInfoN].XRes = (Byte0 + 31) * 8;
-
-    // Now, using the aspect ratio, calculate the vertical active pixels.
-    uint32_t AspectRatio = Byte1 >> 6, VerticalRatio, HorizontalRatio;
-    switch(AspectRatio)
-    {
-      // Case 0.
-      case 0:
-        // If the version is 1.3 or above, then the aspect ratio is 16:10.
-        if((BIT.Video.EDIDInfo.Version >= 1) &&
-           (BIT.Video.EDIDInfo.Revision >= 3))
-        {
-            HorizontalRatio = 16;
-            VerticalRatio = 10;
-        }
-
-        // Else, it is 1:1.
-        else
-        {
-            HorizontalRatio = 1;
-            VerticalRatio = 1;
-        }
-
-        break;
-
-      // Case 1.
-      case 1:
-        HorizontalRatio = 4;
-        VerticalRatio = 3;
-
-        break;
-
-      // Case 2.
-      case 2:
-        HorizontalRatio = 5;
-        VerticalRatio = 4;
-
-        break;
-
-      // Case 3.
-      case 3:
-        HorizontalRatio = 16;
-        VerticalRatio = 9;
-
-        break;
-
-      default:
-        HorizontalRatio = 4;
-        VerticalRatio = 3;
-    }
-
-    // Calculate the Y resolution - using the ratio.
-    EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
-
-    // Calculate the Refresh Rate.
-    // It is stored in the first 6 bits, with it being 60 lower than it's original value.
-    EDIDModeInfo[EDIDModeInfoN].RefreshRate = (Byte1 & 0x3F) + 60;
-
-    EDIDModeInfoN++;
-}
-
 /* 
- * Rounds off a refresh rate so that it becomes easier to calculate what all modes are "preferable".
- *     uint32_t RefreshRate -> the refresh rate which we would round off.
- *
- * Returns:
- *     uint32_t             -> the rounded off refresh rate.
+ * Handles established timings.
  */
-static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
+static void HandleEstablishedTimings()
 {
-    // Since the refresh rate we calculate isn't exactly accurate (might be off by +/-1),
-    // and we want some round numbers so as to calculate what all modes are preferable,
-    // let's round off the refresh rate.
-
-    // The preferances are:
-    //     a) multiples of 5.
-    //     b) multiples of 2.
-
-    // If it's already a multiple of 5, return.
-    if(!(RefreshRate % 5))
-    {
-        return RefreshRate;
-    }
-    
-    // If refresh rate + 1 is a multiple of 5, then return it + 1.
-    else if(!((RefreshRate + 1) % 5))
-    {
-        return RefreshRate + 1;
-    }
-
-    // If refres rate - 1 is a multiple of 5, then return it - 1.
-    else if(!((RefreshRate - 1) % 5))
-    {
-        return RefreshRate - 1;
-    }
-
-    // Else, look if it's a multiple of 2. If it is, return.
-    else if(!(RefreshRate % 2))
-    {
-        return RefreshRate;
-    }
-
-    // Else, return + 1.
-    return RefreshRate + 1;
-}
-
-/*
- * Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
- * array out of it.
- */
-static void ParseEDIDInfo()
-{
-    // Ok - so the most sensible thing to do would be to parse all the timings
-    // specified in Established timings, Standard timings and Detailed timings
-    // and put all the usable modes in a array consisting of the Horizontal resolution,
-    // Vertical resolution and Refresh rate.
-    
-    // Later, this could be used to find out how many timings are supported of the 
-    // "standard" (no - not the EDID standard, the standard standard) timings of 
-    // a mode, adding to the score.
-
-    // Currently, the number of EDIDModeInfo structures are 0.
-    EDIDModeInfoN = 0;
-
-    // Take care of the established modes.
-    for(uint32_t i = 0; i < 2; i++)
+for(uint32_t i = 0; i < 2; i++)
     {
         for(uint32_t j = 0; j < 8; j++)
         {
@@ -558,6 +432,150 @@ static void ParseEDIDInfo()
     }
 
     // NOTE: The rest bits in byte 2 are reserved (for OEM use and other such stuff).
+}
+
+/*
+ * Handles standard timings.
+ *     uint8_t Byte0 -> the first byte of the standard timing identifier.
+ *     uint8_t Byte1 -> the second byte of the standard timing identifier.
+ */
+static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
+{
+    // If both bytes are 0x01, then it is a unused standard timing descriptor.
+    if((Byte0 == 0x01) &&
+       (Byte1 == 0x01))
+    {
+        return;
+    }
+
+    // Calculate the horizontal active pixels.
+    // The first byte is defined as the "(horizontal active pixels / 8) - 31".
+    EDIDModeInfo[EDIDModeInfoN].XRes = (Byte0 + 31) * 8;
+
+    // Now, using the aspect ratio, calculate the vertical active pixels.
+    uint32_t AspectRatio = Byte1 >> 6, VerticalRatio, HorizontalRatio;
+    switch(AspectRatio)
+    {
+      // Case 0.
+      case 0:
+        // If the version is 1.3 or above, then the aspect ratio is 16:10.
+        if((BIT.Video.EDIDInfo.Version >= 1) &&
+           (BIT.Video.EDIDInfo.Revision >= 3))
+        {
+            HorizontalRatio = 16;
+            VerticalRatio = 10;
+        }
+
+        // Else, it is 1:1.
+        else
+        {
+            HorizontalRatio = 1;
+            VerticalRatio = 1;
+        }
+
+        break;
+
+      // Case 1.
+      case 1:
+        HorizontalRatio = 4;
+        VerticalRatio = 3;
+
+        break;
+
+      // Case 2.
+      case 2:
+        HorizontalRatio = 5;
+        VerticalRatio = 4;
+
+        break;
+
+      // Case 3.
+      case 3:
+        HorizontalRatio = 16;
+        VerticalRatio = 9;
+
+        break;
+
+      default:
+        HorizontalRatio = 4;
+        VerticalRatio = 3;
+    }
+
+    // Calculate the Y resolution - using the ratio.
+    EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
+
+    // Calculate the Refresh Rate.
+    // It is stored in the first 6 bits, with it being 60 lower than it's original value.
+    EDIDModeInfo[EDIDModeInfoN].RefreshRate = (Byte1 & 0x3F) + 60;
+
+    EDIDModeInfoN++;
+}
+
+/* 
+ * Rounds off a refresh rate so that it becomes easier to calculate what all modes are "preferable".
+ *     uint32_t RefreshRate -> the refresh rate which we would round off.
+ *
+ * Returns:
+ *     uint32_t             -> the rounded off refresh rate.
+ */
+static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
+{
+    // Since the refresh rate we calculate isn't exactly accurate (might be off by +/-1),
+    // and we want some round numbers so as to calculate what all modes are preferable,
+    // let's round off the refresh rate.
+
+    // The preferances are:
+    //     a) multiples of 5.
+    //     b) multiples of 2.
+
+    // If it's already a multiple of 5, return.
+    if(!(RefreshRate % 5))
+    {
+        return RefreshRate;
+    }
+    
+    // If refresh rate + 1 is a multiple of 5, then return it + 1.
+    else if(!((RefreshRate + 1) % 5))
+    {
+        return RefreshRate + 1;
+    }
+
+    // If refres rate - 1 is a multiple of 5, then return it - 1.
+    else if(!((RefreshRate - 1) % 5))
+    {
+        return RefreshRate - 1;
+    }
+
+    // Else, look if it's a multiple of 2. If it is, return.
+    else if(!(RefreshRate % 2))
+    {
+        return RefreshRate;
+    }
+
+    // Else, return + 1.
+    return RefreshRate + 1;
+}
+
+/*
+ * Parses the BIT.Video.EDIDInfo structure, cleaning it out, and making a usable
+ * array out of it.
+ */
+static void ParseEDIDInfo()
+{
+    // Ok - so the most sensible thing to do would be to parse all the timings
+    // specified in Established timings, Standard timings and Detailed timings
+    // and put all the usable modes in a array consisting of the Horizontal resolution,
+    // Vertical resolution and Refresh rate.
+    
+    // Later, this could be used to find out how many timings are supported of the 
+    // "standard" (no - not the EDID standard, the standard standard) timings of 
+    // a mode, adding to the score.
+
+    // Currently, the number of EDIDModeInfo structures are 0.
+    EDIDModeInfoN = 0;
+
+    // Take care of the established modes.
+    HandleEstablishedTimings();
 
     // Take care of the standard timings.
     for(uint32_t i = 0; i < 8; i++)
@@ -623,6 +641,40 @@ static void ParseEDIDInfo()
 }
 
 /*
+ * Calculate the monitor preference, if EDID Info isn't present.
+ */
+static void MonitorPreferenceNoEDID()
+{
+    // Safe resolutions which are supported on all modes.
+    uint32_t SafeResolutions[8][2] = {{720, 480},
+                                      {640, 480},
+                                      {360, 480},
+                                      {320, 480},
+                                      {720, 240},
+                                      {640, 240},
+                                      {360, 240},
+                                      {320, 240}};
+
+    for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
+    {
+        BIT.Video.VBEModeInfo[i].MonitorPreference = 0;
+
+        for(uint32_t j = 0; j < 8; j++)
+        {
+            // If the horizontal & vertical resolutions match to something in SafeResolution, then MonitorPreference = 1.
+            if((BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0]) &&
+               (BIT.Video.VBEModeInfo[i].YResolution == SafeResolutions[j][1]))
+            {
+                BIT.Video.VBEModeInfo[i].MonitorPreference = 1;
+ 
+                // No need to continue in the loop.
+                break;
+            }
+        }
+    }
+}
+
+/*
  * Calculate the monitor preference for every mode based on the EDID Info.
  */
 static void CalculateMonitorPreference()
@@ -676,34 +728,85 @@ static void CalculateMonitorPreference()
 
     else
     {
-        // Safe resolutions which are supported on all modes.
-        uint32_t SafeResolutions[8][2] = {{720, 480},
-                                          {640, 480},
-                                          {360, 480},
-                                          {320, 480},
-                                          {720, 240},
-                                          {640, 240},
-                                          {360, 240},
-                                          {320, 240}};
-
-        for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
-        {
-            BIT.Video.VBEModeInfo[i].MonitorPreference = 0;
-
-            for(uint32_t j = 0; j < 8; j++)
-            {
-                // If the horizontal & vertical resolutions match to something in SafeResolution, then MonitorPreference = 1.
-                if((BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0]) &&
-                   (BIT.Video.VBEModeInfo[i].YResolution == SafeResolutions[j][1]))
-                {
-                    BIT.Video.VBEModeInfo[i].MonitorPreference = 1;
-
-                    // No need to continue in the loop.
-                    break;
-                }
-            }
-        }
+        // Calculate the monitor preference for the "no EDID" case.
+        MonitorPreferenceNoEDID();
     }
+}
+
+/*
+ * Check the VBE entry for it's sanity.
+ *     VBEModeInfo_t *VBEModeInfo -> the pointer to the current vbe mode structure.
+ *
+ * Returns:
+ *     uint8_t                    -> 1 means that the VBE entry isn't sane enough.
+ */
+static uint8_t CheckVBESanity(VBEModeInfo_t *VBEModeInfo)
+{
+    // The VBE entry isn't sane if:
+    if(
+        // The current hardware configuration doesn't support the mode.
+        !(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
+        
+        // The mode is a text mode.
+        !(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)                   ||
+
+        // If it takes more than a bank, and LFB isn't available.
+        ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
+            VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
+        !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
+           
+        // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp or 32-bpp.
+        ((VBEModeInfo->BitsPerPixel != 4)       &&
+         (VBEModeInfo->BitsPerPixel != 8)       &&
+         (VBEModeInfo->BitsPerPixel != 15)      &&
+         (VBEModeInfo->BitsPerPixel != 16)      &&
+         (VBEModeInfo->BitsPerPixel != 24)      &&
+         (VBEModeInfo->BitsPerPixel != 32))                               ||
+            
+        // The mode if 4-bpp, and isn't VGA compatible.
+        ((VBEModeInfo->BitsPerPixel == 4)       &&
+         !(VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))                 ||
+
+        // The mode is smaller than 320*200.
+        (((VBEModeInfo->XResolution < 320)     &&
+          (VBEModeInfo->YResolution < 200))    &&
+          (BIT.Video.VideoFlags & VGA_PRESENT))                           ||
+
+        // The size of each scan line isn't dword divisible.
+        (VBEModeInfo->BytesPerScanLine % 4)                               ||
+
+        // The X resolution isn't divisible by 4.
+        (VBEModeInfo->XResolution % 4)                                    ||
+
+        // The memory model isn't:
+        //     Packed Pixel.
+        //     Direct Color.
+        ((VBEModeInfo->MemoryModel != 4)        && 
+         (VBEModeInfo->MemoryModel != 6))                                 ||
+                  
+        // Number of planes isn't 1 or 4 (for 4-bpp)
+        ((VBEModeInfo->NumberOfPlanes  != 1)    ||
+         ((VBEModeInfo->BitsPerPixel   == 4)    &&
+          (VBEModeInfo->NumberOfPlanes != 4)))                            || 
+                  
+        ((VBEModeInfo->BitsPerPixel == 15) &&
+         VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
+        
+        ((VBEModeInfo->BitsPerPixel == 16) &&
+         VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0))                        ||
+         
+        ((VBEModeInfo->BitsPerPixel == 24) &&                       
+         VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
+         
+        ((VBEModeInfo->BitsPerPixel == 32) && 
+         ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      &&
+          (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0))))))
+    {
+        return 1;
+    }
+
+    // Else, the entry is sane.
+    return 0;
 }
 
 /*
@@ -734,64 +837,7 @@ static void ParseVBEInfo()
         }
         
         // Remove the entry if:
-        if(
-           // The current hardware configuration doesn't support the mode.
-           !(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
-        
-           // The mode is a text mode.
-           !(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)                   ||
-
-           // If it takes more than a bank, and LFB isn't available.
-           ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
-               VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
-           !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
-           
-           // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp or 32-bpp.
-           ((VBEModeInfo->BitsPerPixel != 4)       &&
-            (VBEModeInfo->BitsPerPixel != 8)       &&
-            (VBEModeInfo->BitsPerPixel != 15)      &&
-            (VBEModeInfo->BitsPerPixel != 16)      &&
-            (VBEModeInfo->BitsPerPixel != 24)      &&
-            (VBEModeInfo->BitsPerPixel != 32))                               ||
-            
-           // The mode if 4-bpp, and isn't VGA compatible.
-           ((VBEModeInfo->BitsPerPixel == 4)       &&
-            !(VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))                 ||
-
-           // The mode is smaller than 320*200.
-           (((VBEModeInfo->XResolution < 320)     &&
-             (VBEModeInfo->YResolution < 200))    &&
-             (BIT.Video.VideoFlags & VGA_PRESENT))                           ||
-
-           // The size of each scan line isn't dword divisible.
-           (VBEModeInfo->BytesPerScanLine % 4)                               ||
-
-           // The X resolution isn't divisible by 4.
-           (VBEModeInfo->XResolution % 4)                                    ||
-
-           // The memory model isn't:
-           //     Packed Pixel.
-           //     Direct Color.
-           ((VBEModeInfo->MemoryModel != 4)        && 
-            (VBEModeInfo->MemoryModel != 6))                                 ||
-                  
-           // Number of planes isn't 1 or 4 (for 4-bpp)
-           ((VBEModeInfo->NumberOfPlanes  != 1)    ||
-            ((VBEModeInfo->BitsPerPixel   == 4)    &&
-             (VBEModeInfo->NumberOfPlanes != 4)))                            || 
-                  
-           ((VBEModeInfo->BitsPerPixel == 15) &&
-            VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
-         
-           ((VBEModeInfo->BitsPerPixel == 16) &&
-            VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0))                        ||
-         
-           ((VBEModeInfo->BitsPerPixel == 24) &&                       
-            VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
-         
-           ((VBEModeInfo->BitsPerPixel == 32) && 
-            ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      &&
-            (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0))))))
+        if(CheckVBESanity(VBEModeInfo))
         {
 		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
             memmove(VBEModeInfo, &VBEModeInfo[1], 
@@ -806,10 +852,16 @@ static void ParseVBEInfo()
         // I've found out that certain video cards for 32-bpp modes set the 
         // Rsvd* fields to 0. I'm not too sure why - but we'll just set them to
         // the default value we want them to be.
-        if(VBEModeInfo->BitsPerPixel == 32)
+        switch(VBEModeInfo->BitsPerPixel)
         {
+          case 15:
+            VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
+            break;
+
+          case 32:
             VBEModeInfo->RsvdFieldPosition = 24;
             VBEModeInfo->RsvdMaskSize = 8;
+            break;
         }
 
         if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
@@ -820,15 +872,22 @@ static void ParseVBEInfo()
 
         VBEModeInfo->BytesBetweenLines = (VBEModeInfo->BytesPerScanLine) - 
                                           ((VBEModeInfo->XResolution * VBEModeInfo->BitsPerPixel) / 8);
-    
-        if(VBEModeInfo->BitsPerPixel == 15)
-        {
-            VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
-        }
     }
 
     return;
 }
+
+// Some prototypes, for OutputRevert().
+
+/*
+ * Initializes VGA for a graphical color mode.
+ */
+static void VGAInit();
+
+/*
+ * Initializes VBE for a graphical color mode.
+ */
+static void VBEInit();
 
 // To know what we are using right now - VBE, VGA, Serial.
 #define LEVEL_VBE 0
@@ -955,7 +1014,7 @@ static void VBEInit()
     // If we failed to allocate enough space, simply revert back.
     if(!BIT.Video.VBEModeInfo)
     {
-        OutputReturn();      
+        OutputRevert();      
         return;
     }
     
