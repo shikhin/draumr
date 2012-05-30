@@ -225,8 +225,6 @@ static VBEModeInfo_t FindBestVBEMode()
         }
     }
 
-    DebugPrintText("%d*%d*%d\n", Best.XResolution, Best.YResolution, Best.BitsPerPixel);
-    for(;;);
     return Best;
 }
 
@@ -724,8 +722,8 @@ static void ParseVBEInfo()
         // Default fill the PhysBasePtr entry, in case it's not filled.
         if(!VBEModeInfo->PhysBasePtr)
         {
-    		    VBEModeInfo->PhysBasePtr = 0xA0000;
-		    }
+    	    VBEModeInfo->PhysBasePtr = 0xA0000;
+		}
 		
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
         if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
@@ -832,6 +830,65 @@ static void ParseVBEInfo()
     return;
 }
 
+// To know what we are using right now - VBE, VGA, Serial.
+#define LEVEL_VBE 0
+#define LEVEL_VGA 1
+#define LEVEL_SERIAL 2
+
+static int CurrentLevel;
+
+/*
+ * Reverts back from whatever we are currently using to the below level.
+ */
+void OutputRevert()
+{
+    // The original video flags.
+    uint8_t VideoFlags = BIT.Video.VideoFlags;
+
+    switch(CurrentLevel)
+    {
+      case LEVEL_VBE:
+        BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
+        // If we need to go down a level from VBE, and VGA is supported switch to it.
+        if(BIT.Video.VideoFlags & VGA_PRESENT)
+        {
+            CurrentLevel = LEVEL_VGA;
+            VGAInit();
+
+            // And return.
+            return;
+        }
+ 
+      case LEVEL_VGA:
+        BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
+        // If we need to go down a level from VGA, check for serial support.
+        if(((BIT.Serial.Port = SerialPortDetect()), BIT.Serial.Port))
+        {
+            CurrentLevel = LEVEL_SERIAL;
+            BIT.Serial.SerialFlags = SERIAL_USED;
+        }
+
+      case LEVEL_SERIAL:
+        // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        // If we need to go down a level from Serial, ABORT!
+        AbortBoot("ERROR: Could not find any suitable display system.");
+    }
+
+    // If the original video flags and the current video flags aren't the same.
+    // then we downgraded from VGA/VBE to serial. Free the background image resources.
+    if(VideoFlags != BIT.Video.VideoFlags)
+    {
+        if(BIT.Video.BackgroundImg.Size)
+        {
+            // Free the space allocated for the background image.
+            PMMFreeContigFrames((uint32_t)BIT.Video.BackgroundImg.Location, 
+                                (BIT.Video.BackgroundImg.Size + 0xFFF) / 0x1000);
+        }
+    }
+}
+
 /*
  * Initializes VGA for a graphical color mode.
  */
@@ -869,8 +926,7 @@ static void VBEInit()
     // If mode number is below 0x0102, then, revert. 
     if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
     {
-        // TODO: Implement this.
-        //OutputRevert();
+        OutputRevert();
         return;
     }
 
@@ -899,8 +955,7 @@ static void VBEInit()
     // If we failed to allocate enough space, simply revert back.
     if(!BIT.Video.VBEModeInfo)
     {
-        // TODO: Implement this.
-        //OutputReturn();      
+        OutputReturn();      
         return;
     }
     
@@ -913,8 +968,7 @@ static void VBEInit()
     // If no mode was defined "usable", then revert.
     if(!BIT.Video.VBEModeInfoN)
     {
-        // TODO: Implement this.
-        //OutputRevert();
+        OutputRevert();
         return;
     }
 
@@ -931,10 +985,9 @@ static void VBEInit()
     BIT.Video.ModeInfo = FindBestVBEMode();
 
     // If the best mode also has score 0, then revert.
-    if(BIT.Video.ModeInfo.Score == 0)
+    if(!BIT.Video.ModeInfo.Score)
     {
-        // TODO: Implement this.
-        //OutputRevert();
+        OutputRevert();
         return;
     }
 
@@ -943,22 +996,9 @@ static void VBEInit()
     // Switch to the mode.
     if(SwitchToMode(BIT.Video.ModeInfo.Mode, &BIT.Video.ModeInfo))
     {
-        // If the mode switch was unsuccessful.
-        // TODO: Implement this.
-        //OutputRevert();
+        OutputRevert();
+        return;
     }
-}
-
-/* 
- *Initializes the first available serial port.
- */
-static void SerialInit()
-{
-    // Find the "first" working serial port, and get it's address.
-    BIT.Serial.Port = SerialPortDetect();  
-        
-    if(BIT.Serial.Port)
-        BIT.Serial.SerialFlags = SERIAL_USED;    
 }
 
 /*
@@ -969,16 +1009,30 @@ void OutputInit()
 {
     // If VBE is present, initialize VBE for a graphical mode.
     if(BIT.Video.VideoFlags & VBE_PRESENT)
+    {
+        CurrentLevel = LEVEL_VBE;
         VBEInit();
+    }
         
     // Else, if VGA is present, initialize VGA for a graphical mode.
     else if(BIT.Video.VideoFlags & VGA_PRESENT)
+    {
+        CurrentLevel = LEVEL_VGA;
         VGAInit();
+    }
 
     // Else, initialize the serial port (if found).
+    else if(((BIT.Serial.Port = SerialPortDetect()), BIT.Serial.Port))
+    {
+        CurrentLevel = LEVEL_SERIAL;
+        BIT.Serial.SerialFlags = SERIAL_USED;
+    }
+
     else
-        SerialInit();
-    
+    {
+        AbortBoot("ERROR: Could not find any suitable display system.");
+    }
+
     // If we are using a graphical mode, then load the background image.
     if(BIT.Video.VideoFlags & GRAPHICAL_USED)
     {

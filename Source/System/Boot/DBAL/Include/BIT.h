@@ -41,9 +41,8 @@
 #define VGA_PRESENT     (1 << 0)
 #define VBE_PRESENT     (1 << 1)
 #define GRAPHICAL_USED  (1 << 2)
-#define TEXT_USED       (1 << 3)
-#define DITHER_DISABLE  (1 << 4)
-#define EDID_PRESENT    (1 << 5)
+#define DITHER_DISABLE  (1 << 3)
+#define EDID_PRESENT    (1 << 4)
 
 // Serial flags.
 #define SERIAL_USED     (1 << 0)
@@ -93,6 +92,7 @@ struct BIT
         EDIDInfo_t EDIDInfo;                             // The EDID information.
  
         uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
+        void     (*OutputRevert)();                      // The function to revert back from the current level.
         
         VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
     

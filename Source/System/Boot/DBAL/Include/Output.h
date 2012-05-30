@@ -215,6 +215,7 @@ struct VBEModeInfo
 } _PACKED;
 
 // The "video mode numbers" for the video modes we support in VGA.
+#define MODE_80_25_TEXT     0x03
 #define MODE_640_480_16     0x12
 #define MODE_320_200_256    0x13
 
@@ -239,5 +240,10 @@ typedef struct EDIDModeInfo  EDIDModeInfo_t;
  * If no video card, initializes the serial port.
  */
 _PROTOTYPE(void OutputInit, (void)) _COLD;
+
+/*
+ * Reverts back from whatever we are currently using to the below level.
+ */
+_PROTOTYPE(void OutputRevert, (void));
 
 #endif /* _VIDEO_H */

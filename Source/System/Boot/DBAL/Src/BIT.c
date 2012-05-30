@@ -29,6 +29,7 @@
  
 #include <BIT.h>
 #include <String.h>
+#include <Output.h>
 
 // The BIT structure here.
 BIT_t BIT;
@@ -40,6 +41,11 @@ BIT_t BIT;
 void BITInit(uint32_t *BITPointer)
 {
     memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
+
+    // Clear out the rest of the BIT.
+    memset((void*)&BIT.Video.ModeInfo, 0, ((uint8_t*)BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
+
+    BIT.OutputRevert = &OutputRevert();
     
     return; 
 }
