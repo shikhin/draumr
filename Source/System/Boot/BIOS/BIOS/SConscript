@@ -37,7 +37,6 @@ Src = ["Link.ld",
        "Src/API.asm",
        "Src/A20.asm",
        "Src/Memory.asm",
-       "Src/IPS.asm",
        "Src/Video/Video.asm",
        "Src/Tables/Tables.asm"]
 

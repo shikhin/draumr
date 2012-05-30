@@ -50,7 +50,6 @@ ALIGN 4
 BIT:
     .FileAPI      dd FileAPI          ; The file API entrance point.
     
-    .IPS          dq 0                ; The intstructions executed per second.
     .HrdwreFlags  db 0                ; The "hardware" flags.
     .BDFlags      db 0                ; The boot device flags.
     
@@ -98,7 +97,6 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/IPS.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
 
@@ -129,7 +127,6 @@ Startup:
     call A20Enable
     call MMapBuild
     call VideoInit
-    call IPSCalculate
 
 .LoadDBAL:    
     xor ax, ax                        ; Open File 1, or DBAL file.

@@ -71,7 +71,6 @@ struct BIT
     // The open, read and close file functions.
     uint32_t (*FileAPI)(uint32_t APICode, ...);
 
-    uint64_t IPS;                     // Number of instructions, executed per second.
     uint8_t  HrdwreFlags;             // The "hardware" flags.
     uint8_t  BDFlags;                 // The boot device flags.
     
