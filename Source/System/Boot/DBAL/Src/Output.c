@@ -85,107 +85,6 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
 }
 
 /*
- * Detects the "first" working serial port.
- *
- * Returns:
- *     uint32_t -> the I/O address of the serial port.
- */
-static uint32_t SerialPortDetect()
-{
-    // Define the IO port for each of the COM port.
-    static uint16_t Ports[4] = { 0x3F8,
-                                 0x2F8,
-           			        	 0x3E8,
-		                         0x2E8 };
-    
-    // Loop through the each of the port.
-    for(uint32_t i = 0; i < 4; i++)
-    {
-        // Offset 7 is the scratch register.
-	    // Write 0xA5 (arbitary) to it, and check if we can read 0xA5 back.
-	    outb(Ports[i] + 7, 0xA5);
-	
-	    // If we can't read 0xA5 back, then continue (assume this one's faulty or something).
-	    if(inb(Ports[i] + 7) != 0xA5)
-	    {
-            continue;
-        }
-
-        // At offset 1 is the Interrupt Enable register.
-        // Disable all interrupts for this one.
-        outb(Ports[i] + 1, 0x00);
-	 
-        // At offset 3 is the Line Control register.
- 	    // Set the Divisor Latch Access Bit - so we set the Divisor next time.
-        outb(Ports[i] + 3, 0x80);
-	
-	    // Offset 0 and 1 is the divisor register too.
-	    // Set the divisor to 3, which comes out to a frequency of 38400 baud.
-	    outb(Ports[i] + 0, 0x03);
-	    outb(Ports[i] + 1, 0x00);
-	
-   	    // Offset 3 is the Line Control register.
-	    // Set it to 8 bits, 1 stop, no parity.
-	    outb(Ports[i] + 3, 0x03);
-	
-	    // Offset 4 is the Modem Control Register.
-	    // 0x13 sets the Loobpack mode, the Request to Send and the Data Terminal Ready bits.
-	    outb(Ports[i] + 4, 0x13);	
-
-	    uint32_t Timeout = 0;
-	
-	    // Read from the Line status register.
-	    // And keep looping till the transmit register isn't empty.
-	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	    while((!(inb(Ports[i] + 5) & 0x20))
-	          && (Timeout < MIN_TIMEOUT))
-	    {
-	        __asm__ __volatile__("pause");
-	        Timeout++;
-	    }
-	
-	    // If we reached timeout, the continue and assume faulty.
-	    if(Timeout == MIN_TIMEOUT)
-	    {
-            continue;
-	    }
-
-   	    // Output 0xA5 - now, since we are in loopback mode, the input register would also have 0xA5.
-	    outb(Ports[i], 0xA5);
-	
-	    Timeout = 0;
-	    
-        // And keep looping till we didn't recieve something.
-	    // And, till Timeout < 1million. If we reach 1million first, then faulty port.
-	    while((!(inb(Ports[i] + 5) & 0x01))
-	          && (Timeout < MIN_TIMEOUT))
-	    {  
-	        __asm__ __volatile__("pause");
-	        Timeout++;
-   	    }
-	
-	    // If we reached timeout, the continue and assume faulty.
-	    if(Timeout == MIN_TIMEOUT)
-	    {
-            continue;
-	    }
-
-  	    // If not, assume faulty or something.
-	    if(inb(Ports[i]) != 0xA5)
-	    {
-            continue;
-	    }
-	     
-        // Offset 4 is the Modem Control Register.
-	    // 0x3 sets the Request to Send and the Data Terminal Ready bits.
-	    outb(Ports[i] + 4, 0x3);
-	    return Ports[i];
-    }
-    
-    return 0x0000;
-}
-
-/*
  * Get the best mode from VBEModeInfo[] array using all factors neccessary.
  */
 static VBEModeInfo_t FindBestVBEMode()
@@ -889,10 +788,9 @@ static void VGAInit();
  */
 static void VBEInit();
 
-// To know what we are using right now - VBE, VGA, Serial.
+// To know what we are using right now - VBE, VGA.
 #define LEVEL_VBE 0
 #define LEVEL_VGA 1
-#define LEVEL_SERIAL 2
 
 static int CurrentLevel;
 
@@ -901,13 +799,9 @@ static int CurrentLevel;
  */
 void OutputRevert()
 {
-    // The original video flags.
-    uint8_t VideoFlags = BIT.Video.VideoFlags;
-
     switch(CurrentLevel)
     {
       case LEVEL_VBE:
-        BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
         // If we need to go down a level from VBE, and VGA is supported switch to it.
         if(BIT.Video.VideoFlags & VGA_PRESENT)
         {
@@ -919,32 +813,11 @@ void OutputRevert()
         }
  
       case LEVEL_VGA:
-        BIT.Video.VideoFlags &= ~GRAPHICAL_USED;
-        // If we need to go down a level from VGA, check for serial support.
-        if(((BIT.Serial.Port = SerialPortDetect()), BIT.Serial.Port))
-        {
-            CurrentLevel = LEVEL_SERIAL;
-            BIT.Serial.SerialFlags = SERIAL_USED;
-        }
-
-      case LEVEL_SERIAL:
         // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
         BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         // If we need to go down a level from Serial, ABORT!
         AbortBoot("ERROR: Could not find any suitable display system.");
-    }
-
-    // If the original video flags and the current video flags aren't the same.
-    // then we downgraded from VGA/VBE to serial. Free the background image resources.
-    if(VideoFlags != BIT.Video.VideoFlags)
-    {
-        if(BIT.Video.BackgroundImg.Size)
-        {
-            // Free the space allocated for the background image.
-            PMMFreeContigFrames((uint32_t)BIT.Video.BackgroundImg.Location, 
-                                (BIT.Video.BackgroundImg.Size + 0xFFF) / 0x1000);
-        }
     }
 }
 
@@ -969,8 +842,6 @@ static void VGAInit()
     
     // And the mode is supported by hardware, is a graphical mode and is VGA compatible.
     BIT.Video.ModeInfo.ModeAttributes = HARDWARE_INIT | GRAPHICAL_MODE | VGA_COMPATIBLE;  
-
-    BIT.Video.VideoFlags |= GRAPHICAL_USED;
     
     // Go to the 320*200*256 colors mode.
     SwitchToMode(MODE_640_480_16, &BIT.Video.ModeInfo);    
@@ -1050,8 +921,6 @@ static void VBEInit()
         return;
     }
 
-    BIT.Video.VideoFlags |= GRAPHICAL_USED;
-
     // Switch to the mode.
     if(SwitchToMode(BIT.Video.ModeInfo.Mode, &BIT.Video.ModeInfo))
     {
@@ -1062,7 +931,6 @@ static void VBEInit()
 
 /*
  * Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
- * If no video card, initializes the serial port.
  */
 void OutputInit()
 {
@@ -1080,22 +948,11 @@ void OutputInit()
         VGAInit();
     }
 
-    // Else, initialize the serial port (if found).
-    else if(((BIT.Serial.Port = SerialPortDetect()), BIT.Serial.Port))
-    {
-        CurrentLevel = LEVEL_SERIAL;
-        BIT.Serial.SerialFlags = SERIAL_USED;
-    }
-
     else
     {
         AbortBoot("ERROR: Could not find any suitable display system.");
     }
 
-    // If we are using a graphical mode, then load the background image.
-    if(BIT.Video.VideoFlags & GRAPHICAL_USED)
-    {
-        // Open the file, and get it's information.
-        BIT.Video.BackgroundImg = BootFilesBGImg();
-    }
+    // Open the file, and get it's information.
+    BIT.Video.BackgroundImg = BootFilesBGImg();
 }

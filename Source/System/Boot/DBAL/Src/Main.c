@@ -34,6 +34,7 @@
 #include <BootFiles.h>
 #include <Output.h>
 #include <Log.h>
+
 /* 
  * The Main function for the DBAL sub-module.
  *     uint32_t *BITPointer -> the pointer to the BIT.

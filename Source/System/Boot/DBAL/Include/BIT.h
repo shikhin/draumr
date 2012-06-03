@@ -40,12 +40,7 @@
 // Video flags.
 #define VGA_PRESENT     (1 << 0)
 #define VBE_PRESENT     (1 << 1)
-#define GRAPHICAL_USED  (1 << 2)
-#define DITHER_DISABLE  (1 << 3)
-#define EDID_PRESENT    (1 << 4)
-
-// Serial flags.
-#define SERIAL_USED     (1 << 0)
+#define EDID_PRESENT    (1 << 2)
 
 // Boot device flags.
 #define BD_CD           0
@@ -96,15 +91,7 @@ struct BIT
         VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
     
         FILE_t   BackgroundImg;                          // Pointer to the boot image.
-    } _PACKED Video;
-    
-    // And the serial port related things here.
-    struct
-    {
-        uint8_t  SerialFlags;                           // The serial port flags.
-        uint32_t Port;                                  // The port which we are going to use.
-    } _PACKED Serial;
-    
+    } _PACKED Video;    
 } _PACKED;
 
 typedef struct BIT BIT_t;
