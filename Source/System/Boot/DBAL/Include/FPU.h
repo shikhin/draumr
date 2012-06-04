@@ -31,7 +31,7 @@
 #define _FPU_H
 
 /*
- * Initializes the FPU, and aborts if it fails to detect/init one.
+ * Initializes the FPU.
  */
 _PROTOTYPE(extern void FPUInit, (void)) _COLD;
 

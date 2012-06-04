@@ -34,7 +34,7 @@ class Config :
     }
 
     def __init__(self) :
-        self.Arch = "i486"
+        self.Arch = "i586"
         self.Build = "debug"
         self.Target = "all"
 	

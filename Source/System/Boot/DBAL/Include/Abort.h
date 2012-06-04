@@ -39,6 +39,6 @@
  * Returns:
  *     Boot                -> halts the processor.
  */
-_PROTOTYPE(void AbortBoot, (_CONST char *String));
+_PROTOTYPE(void AbortBoot, (_CONST char *String)) _TARGET("arch=i486");
 
 #endif                                /* Abort.h */

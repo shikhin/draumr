@@ -81,13 +81,7 @@ FileClose:         dd 0
 ; Video flags.
 %define VGA_PRESENT     (1 << 0)
 %define VBE_PRESENT     (1 << 1)
-%define GRAPHICAL_USED  (1 << 2)
-%define TEXT_USED       (1 << 3)
-%define DITHER_DISABLE  (1 << 4)
-%define EDID_PRESENT    (1 << 5)
-
-; Abort boot if the CPU isn't 486 or above.
-Error486 db "ERROR: Error occured since CPU isn't 486+.", 0
+%define EDID_PRESENT    (1 << 2)
 
 ; Abort boot if can't open file.
 ErrorIO db "ERROR: Error occured during file Input/Output.", 0
@@ -103,15 +97,14 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
 BITS 32
 
 %include "Source/Lib/CRC32/CRC32.asm"
 
 BITS 16
-
-%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
 GLOBAL Startup
 
@@ -126,24 +119,7 @@ Startup:
     mov [FileRead], ebx
     mov [FileClose], ecx
     mov [BIT.BDFlags], edx
-
-    ; Check if the CPU is 486 and/or above or not.
-    ; The "sort-of reliable" way to test this is to toggle the AC flag in the EFLAGS.
-    pushfd                            ; Get the EFLAGS.
-    pop eax                           ; Into the EAX register.
-    mov ebx, eax                      ; Backup EAX into EBX.
-
-    xor eax, (1 << 18)                ; Flip the AC flag.
-    push eax                          ; Push back the EAX register.
-    popfd                             ; And pop back the EFLAGS.
-
-    pushfd                            ; Push the EFLAGS back again, and save into EAX register.
-    pop eax
-
-    xor eax, ebx                      ; Set the 'changed bits' to 1.
-    test eax, (1 << 18)               ; The 18th bit should now be 1.
-    jz .Error486                      ; If 18th bit isn't 1, then it isn't a 486.
-
+    
     ; Enable A20, then try to generate memory map.
     call A20Enable
     call MMapBuild
@@ -234,10 +210,6 @@ BITS 32
     jmp .Cont
 
 BITS 16
-.Error486:
-    mov si, Error486
-    jmp AbortBoot
-
 .ErrorIO:
     mov si, ErrorIO
     jmp AbortBoot

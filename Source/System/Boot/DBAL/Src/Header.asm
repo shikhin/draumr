@@ -26,6 +26,7 @@
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 BITS 32
+CPU 586
 
 %include "Source/System/Boot/DBAL/Format/Format.inc"
 
@@ -35,6 +36,7 @@ EXTERN bss
 EXTERN end
 EXTERN file_end
 EXTERN Main
+EXTERN CPUCheck
 
 ; Define the DBAL Header
 DBAL
@@ -53,6 +55,9 @@ GLOBAL Start
  ;     EAX -> the 32-bit address of the BIT.
  ;     ESP -> this should be equal to 0x7C00 - for clearing.
 Start:
+    ; Check if CPU is supported or not.
+    call CPUCheck
+
     push eax
     call Main
 
