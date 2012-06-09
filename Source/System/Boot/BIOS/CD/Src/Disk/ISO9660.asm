@@ -305,10 +305,10 @@ FileOpen:
     jmp .Return
 
 .KL:
-    mov eax, [DBAL.LBA]
+    mov eax, [KL.LBA]
     mov [FILE.LBA], eax
 
-    mov eax, [DBAL.Size]
+    mov eax, [KL.Size]
     mov [FILE.Size], eax
 
     jmp .Return

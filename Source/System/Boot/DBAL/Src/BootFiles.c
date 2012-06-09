@@ -33,6 +33,7 @@
 #include <Abort.h>
 #include <BIT.h>
 #include <Macros.h>
+#include <Log.h>
 
 // The bouncer where we'd load files.
 static void *Bouncer = (void*)NULL;
@@ -265,6 +266,134 @@ FILE_t BootFilesBGImg()
 
     // If CRC values are not equal. 
     if(SIFHeader->CRC32 != ~CRC(0xFFFFFFFF, SIFHeader->ImageSize, (uint8_t*)File.Location + SIFHeader->Offset))
+    {
+        // Free the space we allocated for the Image.
+        PMMFreeContigFrames((uint32_t)File.Location, (File.Size + 0xFFF) / 0x1000);
+
+        // Make file size 0.
+        File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
+        return File;
+    }
+
+    return File;
+}
+
+/*
+ * Gets the Kernel Loader file, verifying what we are getting to.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ */
+FILE_t BootFilesKL()
+{
+    // The file structure in which we'd store data about the KL file.
+    FILE_t File;
+
+    // Open the file, with code, BACKGROUND_SIF.
+    File.Size = BIT.FileAPI(FILE_OPEN, (uint32_t)KL);
+
+    // If we were unable to open it, return blank file structure.
+    if(!File.Size)
+    {
+        // Close the file, anyway.
+        BIT.FileAPI(FILE_CLOSE);
+
+        // And return with the File structure.
+        return File;
+    }
+
+    // Read 2048 bytes at the bouncer.
+    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+
+    BootFileHeader_t *Header = (BootFileHeader_t*)Bouncer;
+    // Check the file signature.
+    if((Header->Signature[0] != ' ') ||
+       (Header->Signature[1] != ' ') ||
+       (Header->Signature[2] != 'K') ||
+       (Header->Signature[3] != 'L'))
+    {
+        // If it didn't match, make size 0.
+        File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
+        // And return the file structure.
+        return File;
+    }
+
+    if(((File.Size + 0xFFF) / 0x1000) != (((Header->FileEnd - Header->FileStart) + 0xFFF) / 0x1000))
+    {
+        // File size returned by FS, and in the image, didn't match.
+        File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
+        return File;
+    }
+
+    // Allocate enough space to hold the file.
+    File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP, (File.Size + 0xFFF)/0x1000);
+
+    // So we can't allocate space for the image.
+    if(!File.Location)
+    {
+        // Make size 0.
+        File.Size = 0;
+
+        // Close the file.
+        BIT.FileAPI(FILE_CLOSE);
+
+        // Return with the file structure.
+        return File;
+    }
+    
+    // Reduce the 2048 bytes we left and read the rest of the file.
+    uint32_t FileSize = File.Size;
+    if(FileSize < 2048)
+    {
+        FileSize = 0;
+    }
+
+    else 
+    {
+        FileSize -= 2048;
+    }
+
+    uint8_t *OutputBuffer = (uint8_t*)File.Location;
+  
+    // Copy the 2048 bytes we read.
+    memcpy(OutputBuffer, Bouncer, 2048);
+    
+    // Update the address of the Header.
+    Header = (BootFileHeader_t*)OutputBuffer;
+    
+    OutputBuffer += 2048;
+
+    // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
+    while(FileSize >= BouncerSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        memcpy(OutputBuffer, Bouncer, BouncerSize);
+        
+        FileSize -= BouncerSize;
+        OutputBuffer += BouncerSize;
+    }
+
+    // If they are any left over bytes, read them.
+    if(FileSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);   
+        memcpy(OutputBuffer, Bouncer, FileSize);
+    }
+
+    // If CRC values are not equal. 
+    if(Header->CRC32 != ~CRC(0xFFFFFFFF, File.Size - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
     {
         // Free the space we allocated for the Image.
         PMMFreeContigFrames((uint32_t)File.Location, (File.Size + 0xFFF) / 0x1000);

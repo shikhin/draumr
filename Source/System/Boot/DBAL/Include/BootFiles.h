@@ -57,6 +57,20 @@ struct SIFHeader
     uint32_t XRes, YRes;
 } _PACKED;
 
+// The Boot File generic header format.
+struct BootFileHeader
+{
+    uint8_t  Signature[4];
+    uint32_t EntryPoint;
+    uint32_t FileStart;
+    uint32_t FileEnd;
+
+    uint32_t BSSStart;
+    uint32_t BSSEnd;
+
+    uint32_t CRC32;
+} _PACKED;
+
 // The file structure, which is returned by opening files.
 typedef struct
 {
@@ -69,6 +83,7 @@ typedef struct
 
 // Some typedef's to make stuff easier.
 typedef struct SIFHeader SIFHeader_t;
+typedef struct BootFileHeader BootFileHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
@@ -87,5 +102,13 @@ _PROTOTYPE(void BootFilesClear, (void));
  *     FILE_t -> the file structure containing address and length of the file.
  */
 _PROTOTYPE(FILE_t BootFilesBGImg, (void));
+
+/*
+ * Gets the Kernel Loader file, verifying what we are getting to.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ */
+_PROTOTYPE(FILE_t BootFilesKL, (void));
 
 #endif /* _BOOT_FILES_H */
