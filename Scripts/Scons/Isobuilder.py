@@ -48,11 +48,13 @@ def _iso_builder(target, source, env) :
     Stage1 = str(env["CD_STAGE1"][0])
     BIOS = str(env["BIOS"][0])
     DBAL = str(env["DBAL"][0])
+    KL = str(env["KL"][0])
     Background = str(env["BACK"])
 
     shutil.copy(Stage1, Boot)
     shutil.copy(BIOS, Boot)
     shutil.copy(DBAL, Boot)
+    shutil.copy(KL, Boot)
     if env["BACK"] != 0:
         shutil.copy(Background, Boot)
 

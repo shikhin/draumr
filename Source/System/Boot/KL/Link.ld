@@ -1,5 +1,5 @@
-/*
- * Entry point for DBAL file.
+/* 
+ * Draumr build system.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,35 +27,37 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Standard.h>
-#include <FPU.h>
-#include <BIT.h>
-#include <PMM.h>
-#include <BootFiles.h>
-#include <Output.h>
-#include <Log.h>
+OUTPUT_FORMAT("binary")
+ENTRY(Start)
 
-/* 
- * The Main function for the DBAL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
-void Main(uint32_t *BITPointer)
+SECTIONS
 {
-    // Initialize the FPU, without which, we can't proceed.
-    FPUInit();
+    .header 0x14000 :
+    {
+        header = .;
+        *(.header)
+    }
 
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
+    .text :
+    {
+        code = .; _code = .; __code = .;
+        *(.text)
+        *(.rodata)
+    }
 
-    // Initialize the PMM.
-    PMMInit();
-    
-    // Initialize the bouncer for the boot files.
-    BootFilesInit();
+    .data :
+    {
+        data = .; _data = .; __data = .;
+        *(.data)                                                                                                                                                                                                            
+    }
 
-    // Initialize support for 'output'.
-    OutputInit();
-    
-    for(;;)
-        __asm__ __volatile__("hlt");
+    file_end = .; _file_end = .; __file_end = .;
+
+    .bss :
+    {
+        bss = .;
+        *(.bss)
+    }
+
+    end = .; _end = .; __end = .;
 }

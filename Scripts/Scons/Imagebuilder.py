@@ -37,6 +37,7 @@ from Config import Config
 def _image_builder(target, source, env) :   
     os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
     os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["KL"][0]))
     
     if os.path.isfile(env["BACK"]) :
         os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))

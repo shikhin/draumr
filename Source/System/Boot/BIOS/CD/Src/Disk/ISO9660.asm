@@ -47,6 +47,10 @@ DBAL:
     .LBA          dd 0                ; The LBA of the DBAL file.
     .Size         dd 0                ; The Size of the DBAL file in bytes.
 
+KL:
+    .LBA          dd 0                ; The LBA of the KL file.
+    .Size         dd 0                ; The Size of the KL file in bytes.
+
 Background:
     .LBA          dd 0                ; The LBA of the Background file.
     .Size         dd 0                ; The size of the Background file in bytes.
@@ -113,7 +117,7 @@ BootFilesFind:
     mov [Boot.LBA], ebx
     mov [Boot.Size], eax
     
-    mov ebp, 3                        ; Number of files to load.
+    mov ebp, 4                        ; Number of files to load.
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
@@ -123,8 +127,8 @@ BootFilesFind:
     cmp byte [di], 0                  ; If zero, we have finished this sector. Move on to next sector.
     je .NextSectorBD
 
-    cmp byte [di + 32], 7             ; If size of directory identifier isn't 4, then try for background image.
-    jne .CheckBGImage
+    cmp byte [di + 32], 7             ; If size of directory identifier isn't 4, then try for KL.
+    jne .CheckKL
 
     cmp dword [di + 33], "BIOS"       ; If directory identifier doesn't match, next record.
     je .FoundBIOS
@@ -134,6 +138,25 @@ BootFilesFind:
 
     ; If not matched with anything, go on to next record.
     jmp .NextRecordBD
+
+.CheckKL:
+    cmp byte [di + 32], 5             ; If size of directory isn't 2, then try for BG image.
+    jne .CheckBGImage
+
+    cmp word [di + 33], "KL"          ; If directory identifier doesn't match, next record.
+    jne .NextRecordBD
+
+    ; So we found the KL here.
+
+    ; We don't use edx and esi in the loop/anywhere, so use them to move around
+    ; and store the LBA and Size.
+    mov edx, [di + 10]
+    mov esi, [di + 2]
+
+    mov [KL.LBA], esi
+    mov [KL.Size], edx
+
+    jmp .CheckForAllDone
 
 .CheckBGImage:
     cmp byte [di + 32], 14            ; Check the size of the directory identifier.
@@ -220,6 +243,7 @@ BootFilesFind:
  ;      0   -> common BIOS File.
  ;      1   -> DBAL.
  ;      2   -> background image.
+ ;      3   -> KL.
  ;
  ; Returns: 
  ;    ECX   -> the size of the file you want to open.
@@ -243,6 +267,9 @@ FileOpen:
 
     cmp al, 2                         ; 2 indicates the Background image.
     je .Background
+
+    cmp al, 3                         ; 3 indicates the KL.
+    je .KL
 
     jmp .Error
    
@@ -277,6 +304,15 @@ FileOpen:
 
     jmp .Return
 
+.KL:
+    mov eax, [DBAL.LBA]
+    mov [FILE.LBA], eax
+
+    mov eax, [DBAL.Size]
+    mov [FILE.Size], eax
+
+    jmp .Return
+    
 .Error:
     mov byte [FILE.Code], 0
     mov dword [FILE.Extra], 0

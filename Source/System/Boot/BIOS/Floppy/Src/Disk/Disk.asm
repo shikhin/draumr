@@ -41,7 +41,11 @@ BIOS:
 
 DBAL:
     .LBA      dd 24                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
-    .Size     dd 0                    ; The size for the DBAL file is currently unknown - perhaps later it would be known.
+    .Size     dd 0                    ; The size for the DBAL file is unknown.
+
+KL:
+    .LBA      dd 0 
+    .Size     dd 0                    ; The size and the LBA of the KL is unknown.
 
 FILE:
     .Code   db -1                     ; Code of the file opened.
@@ -178,7 +182,7 @@ BootFilesInit:
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
     
-    call FloppyReadSectorM              ; Read from the floppy - multiple sectors, with advanced error checking.
+    call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
     sub ecx, 0xE000                   ; Subtract Start of File to get the size of the file.
@@ -186,6 +190,24 @@ BootFilesInit:
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF
     mov [DBAL.Size], ecx              ; And store it!
+
+    shl ecx, 9                        ; Shift left ECX (size of DBAL) by 9, dividing by 512.
+    add ecx, [DBAL.LBA]               ; Add it to the LBA to get the LBA of KL.
+
+    mov [KL.LBA], ecx
+
+    mov eax, [KL.LBA]                 ; Get the LBA into EAX.
+    mov ecx, 1                        ; Read one sectors.
+    mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
+    
+    call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
+    
+    mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
+    sub ecx, 0x14000                  ; Subtract Start of File to get the size of the file.
+
+    add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
+    and ecx, ~0x1FF
+    mov [KL.Size], ecx                ; And store it!
 
 .Return:
     popad
@@ -293,6 +315,7 @@ FloppyReadSectorM:
  ;       0   -> common BIOS File.
  ;       1   -> DBAL.
  ;       2   -> background image.
+ ;       3   -> KL.
  ;
  ; Returns: 
  ;     Carry -> set if any error occured.
@@ -309,6 +332,9 @@ FileOpen:
 
     cmp al, 1                         ; While 1 indicates the DBAL file.
     je .DBAL
+
+    cmp al, 3                         ; Code 3 indicates the KL.
+    je .KL
 
     ; Don't recognize Background image in floppies.
     jmp .Error
@@ -332,6 +358,17 @@ FileOpen:
 
     mov eax, [DBAL.Size]
     mov [FILE.Size], eax              ; And the size.
+
+    jmp .Return
+
+.KL:
+    mov [FILE.Code], al
+
+    mov eax, [KL.LBA]                 ; Get the LBA in EAX.
+    mov [FILE.LBA], eax
+
+    mov eax, [DBAL.Size]              ; And the size.
+    mov [FILE.Size], eax
 
 .Return:
     mov ecx, [FILE.Size] 

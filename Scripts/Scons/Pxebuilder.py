@@ -46,11 +46,12 @@ def _pxe_builder(target, source, env) :
     BIOS = str(env["BIOS"][0])
     DBAL = str(env["DBAL"][0])
     Background = str(env["BACK"])
+    KL = str(env["KL"][0])
     
     shutil.copy(Stage1, TftpBoot)
     shutil.copy(BIOS, TftpBoot)
     shutil.copy(DBAL, TftpBoot)
-
+    shutil.copy(KL, TftpBoot)
     if env["BACK"] != 0:
         shutil.copy(Background, TftpBoot)
     

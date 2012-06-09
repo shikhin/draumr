@@ -34,6 +34,7 @@
 
 // Define the "file code" of every file, for easy usage.
 #define BACKGROUND_SIF 0x02
+#define KL             0x03
 
 // Bouncer has size of 64KiB.
 #define BOUNCER_SIZE        (64 * 1024)

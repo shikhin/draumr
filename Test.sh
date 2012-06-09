@@ -43,7 +43,7 @@ do
         scons target=pxe build=release
 
         echo -e "\nOpening QEMU, using PXE."
-        qemu -s -monitor stdio -tftp /tftpboot/ -bootp /Stage1 -boot n -net user -net nic,model=rtl8139,macaddr=00:11:22:33:44:55
+        qemu-system-i386 -s -monitor stdio -tftp /tftpboot/ -bootp /Stage1 -boot n -net user -net nic,model=rtl8139,macaddr=00:11:22:33:44:55
 
     elif [ "$Var" == "$Floppy" ] 
     then
@@ -57,7 +57,7 @@ do
     	bochs -q
 
         echo -e "\nOpening QEMU, using floppy."
-	    qemu -s -monitor stdio -fda Draumr.flp
+	    qemu-system-i386 -s -monitor stdio -fda Draumr.flp
 
     elif [ "$Var" == "$CD" ] 
     then
@@ -69,7 +69,7 @@ do
         bochs -q
 
         echo -e "\nOpening QEMU, using CD."
-        qemu -s -monitor stdio -cdrom Draumr.iso
+        qemu-system-i386 -s -monitor stdio -cdrom Draumr.iso
 
     fi
 done

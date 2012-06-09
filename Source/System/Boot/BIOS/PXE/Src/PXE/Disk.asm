@@ -54,6 +54,7 @@ Files:
     .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
     .DBAL         dw DBALStr          ; And the DBAL string in the table.
     .Background   dw BackgroundStr    ; And the Background string in the table.
+    .KL           dw KLStr            ; And the KL string in the table.
 
 ALIGN 4
 ; Reserve some space to read *one* packet (512) to find out the size of the file.
@@ -66,6 +67,7 @@ FirstPacketFlag: db 0
 BIOSStr db "BIOS", 0
 DBALStr db "DBAL", 0
 BackgroundStr db "Background.sif", 0
+KLStr db "KL", 0
 
 SECTION .text
 
@@ -74,6 +76,7 @@ SECTION .text
  ;      0     -> Common BIOS File.
  ;      1     -> DBAL.
  ;      2     -> Background image.
+ ;      3     -> KL.
  ;
  ; Returns: 
  ;      Carry -> set if ANY error occured (technically, no error should be happening, but still).
@@ -174,6 +177,9 @@ GetFileSize:
     je .BootFiles
 
     cmp dword [FirstPacket], "DBAL"
+    je .BootFiles
+
+    cmp dword [FirstPacket], "  KL"
     je .BootFiles
 
     cmp word [FirstPacket], "SI"
