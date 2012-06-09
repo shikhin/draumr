@@ -33,7 +33,7 @@
 #include <PMM.h>
 #include <BootFiles.h>
 #include <Output.h>
-#include <Log.h>
+#include <Abort.h>
 
 /* 
  * The Main function for the DBAL sub-module.
@@ -53,9 +53,23 @@ void Main(uint32_t *BITPointer)
     // Initialize the bouncer for the boot files.
     BootFilesInit();
 
+    // Load the KL file.
+    FILE_t KLFile = BootFilesKL();
+
+    // If unable to do so, abort boot.
+    if(!KLFile.Size)
+    {
+        AbortBoot("ERROR: Unable to load Kernel Loader file.");
+    }
+
     // Initialize support for 'output'.
     OutputInit();
-    
+
+    // Go to the kernel loader.
+    BootFileHeader_t *Header = (BootFileHeader_t*)KLFile.Location;
+    Header->EntryPoint();
+
+    // We shouldn't reach here.
     for(;;)
         __asm__ __volatile__("hlt");
 }

@@ -36,6 +36,9 @@
 #define BACKGROUND_SIF 0x02
 #define KL             0x03
 
+// The "standard" location of some files.
+#define KL_LOCATION    0x14000
+
 // Bouncer has size of 64KiB.
 #define BOUNCER_SIZE        (64 * 1024)
 #define BOUNCER_SMALL_SIZE  (16 * 1024)
@@ -61,7 +64,7 @@ struct SIFHeader
 struct BootFileHeader
 {
     uint8_t  Signature[4];
-    uint32_t EntryPoint;
+    void (*EntryPoint)(void);
     uint32_t FileStart;
     uint32_t FileEnd;
 

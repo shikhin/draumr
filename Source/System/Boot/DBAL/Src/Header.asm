@@ -62,3 +62,4 @@ Start:
     call Main
 
     ; We wouldn't be returning here.
+

@@ -30,7 +30,6 @@
 #include <BIT.h>
 #include <String.h>
 #include <Output.h>
-#include <Log.h>
 
 // The BIT structure here.
 BIT_t BIT;

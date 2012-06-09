@@ -33,7 +33,6 @@
 #include <Abort.h>
 #include <BIT.h>
 #include <Macros.h>
-#include <Log.h>
 
 // The bouncer where we'd load files.
 static void *Bouncer = (void*)NULL;
@@ -306,10 +305,10 @@ FILE_t BootFilesKL()
         return File;
     }
 
-    // Read 2048 bytes at the bouncer.
-    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+    // Read 2048 bytes at KL_LOCATION.
+    BIT.FileAPI(FILE_READ, (uint32_t*)KL_LOCATION, 2048);
 
-    BootFileHeader_t *Header = (BootFileHeader_t*)Bouncer;
+    BootFileHeader_t *Header = (BootFileHeader_t*)KL_LOCATION;
     // Check the file signature.
     if((Header->Signature[0] != ' ') ||
        (Header->Signature[1] != ' ') ||
@@ -338,20 +337,7 @@ FILE_t BootFilesKL()
     }
 
     // Allocate enough space to hold the file.
-    File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP, (File.Size + 0xFFF)/0x1000);
-
-    // So we can't allocate space for the image.
-    if(!File.Location)
-    {
-        // Make size 0.
-        File.Size = 0;
-
-        // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
-
-        // Return with the file structure.
-        return File;
-    }
+    File.Location = (void*)KL_LOCATION;
     
     // Reduce the 2048 bytes we left and read the rest of the file.
     uint32_t FileSize = File.Size;
@@ -365,21 +351,13 @@ FILE_t BootFilesKL()
         FileSize -= 2048;
     }
 
-    uint8_t *OutputBuffer = (uint8_t*)File.Location;
-  
-    // Copy the 2048 bytes we read.
-    memcpy(OutputBuffer, Bouncer, 2048);
-    
-    // Update the address of the Header.
-    Header = (BootFileHeader_t*)OutputBuffer;
-    
+    uint8_t *OutputBuffer = (uint8_t*)File.Location;  
     OutputBuffer += 2048;
 
-    // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
+    // Keep reading "BouncerSize" bytes.
     while(FileSize >= BouncerSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
-        memcpy(OutputBuffer, Bouncer, BouncerSize);
+        BIT.FileAPI(FILE_READ, OutputBuffer, BouncerSize);
         
         FileSize -= BouncerSize;
         OutputBuffer += BouncerSize;
@@ -388,8 +366,7 @@ FILE_t BootFilesKL()
     // If they are any left over bytes, read them.
     if(FileSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);   
-        memcpy(OutputBuffer, Bouncer, FileSize);
+        BIT.FileAPI(FILE_READ, OutputBuffer, FileSize); 
     }
 
     // If CRC values are not equal. 
