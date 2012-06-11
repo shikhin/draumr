@@ -64,7 +64,7 @@ struct SIFHeader
 struct BootFileHeader
 {
     uint8_t  Signature[4];
-    void (*EntryPoint)(void);
+    void     (*EntryPoint)(void);
     uint32_t FileStart;
     uint32_t FileEnd;
 
@@ -81,11 +81,11 @@ typedef struct
 	uint32_t Size;
 
 	// The location of the file.
-    void *Location;
+    void     *Location;
 } FILE_t;
 
 // Some typedef's to make stuff easier.
-typedef struct SIFHeader SIFHeader_t;
+typedef struct SIFHeader      SIFHeader_t;
 typedef struct BootFileHeader BootFileHeader_t;
 
 /*

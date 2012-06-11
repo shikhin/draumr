@@ -35,6 +35,12 @@
 #include <Output.h>
 #include <Abort.h>
 
+/*
+ * Function to "jump" to the kernel loader.
+ *     void (*EntryPoint)(void) -> the function pointer of the entry point.
+ */
+_PROTOTYPE(void GotoKL, (void (*EntryPoint)(void)));
+
 /* 
  * The Main function for the DBAL sub-module.
  *     uint32_t *BITPointer -> the pointer to the BIT.
@@ -67,7 +73,7 @@ void Main(uint32_t *BITPointer)
 
     // Go to the kernel loader.
     BootFileHeader_t *Header = (BootFileHeader_t*)KLFile.Location;
-    Header->EntryPoint();
+    GotoKL(Header->EntryPoint);
 
     // We shouldn't reach here.
     for(;;)

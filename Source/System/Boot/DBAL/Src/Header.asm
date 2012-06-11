@@ -37,6 +37,7 @@ EXTERN end
 EXTERN file_end
 EXTERN Main
 EXTERN CPUCheck
+EXTERN BIT
 
 ; Define the DBAL Header
 DBAL
@@ -63,3 +64,17 @@ Start:
 
     ; We wouldn't be returning here.
 
+GLOBAL GotoKL
+
+ ; "Jump" to the kernel loader.
+ ;     ESP + 4 -> this should contain the address of the entry point.
+GotoKL:
+    ; Get the address of the entry point.
+    mov ebx, [esp + 4]
+
+    ; Preset EAX and ESP for the KL.
+    mov eax, BIT
+    mov esp, 0x7C00
+
+    ; Call the kernel loader.
+    call ebx
