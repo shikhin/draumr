@@ -33,6 +33,7 @@
 #include <Abort.h>
 #include <BIT.h>
 #include <Macros.h>
+#include <Log.h>
 
 // The bouncer where we'd load files.
 static void *Bouncer = (void*)NULL;
@@ -370,7 +371,7 @@ FILE_t BootFilesKL()
     }
 
     // If CRC values are not equal. 
-    if(Header->CRC32 != ~CRC(0xFFFFFFFF, File.Size - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
+    if(Header->CRC32 != ~CRC(0xFFFFFFFF, (Header->FileEnd - Header->FileStart) - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
     {
         // Free the space we allocated for the Image.
         PMMFreeContigFrames((uint32_t)File.Location, (File.Size + 0xFFF) / 0x1000);

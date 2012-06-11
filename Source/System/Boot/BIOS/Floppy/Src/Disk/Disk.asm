@@ -191,10 +191,10 @@ BootFilesInit:
     and ecx, ~0x1FF
     mov [DBAL.Size], ecx              ; And store it!
 
-    shl ecx, 9                        ; Shift left ECX (size of DBAL) by 9, dividing by 512.
+    shr ecx, 9                        ; Shift left ECX (size of DBAL) by 9, dividing by 512.
     add ecx, [DBAL.LBA]               ; Add it to the LBA to get the LBA of KL.
 
-    mov [KL.LBA], ecx
+    mov dword [KL.LBA], ecx
 
     mov eax, [KL.LBA]                 ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
@@ -367,7 +367,7 @@ FileOpen:
     mov eax, [KL.LBA]                 ; Get the LBA in EAX.
     mov [FILE.LBA], eax
 
-    mov eax, [DBAL.Size]              ; And the size.
+    mov eax, [KL.Size]                ; And the size.
     mov [FILE.Size], eax
 
 .Return:

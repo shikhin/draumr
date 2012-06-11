@@ -137,8 +137,8 @@ Startup:
     
     mov ecx, 512                      ; Read only 512 bytes.
     mov edi, 0xE000
-    call [FileRead]                   ; Read the entire file.
-
+    call [FileRead]         
+    
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
     jne .ErrorParse

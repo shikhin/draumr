@@ -43,11 +43,11 @@ def _floppy_builder(target, source, env) :
 
     DBAL = str(env["DBAL"][0])
     DBALAligned = Path([Dir, "DBALAligned"])    
-    os.system("dd if=%s bs=4096 of=%s conv=sync > /dev/null 2>&1" % (DBAL, DBALAligned))
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (DBAL, DBALAligned))
 
     KL = str(env["KL"][0])
     KLAligned = Path([Dir, "KLAligned"])
-    os.system("dd if=%s bs=4096 of=%s conv=sync > /dev/null 2>&1" % (KL, KLAligned))
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KL, KLAligned))
 
     Combined1 = Path([Dir, "Combined1"])
     Combined2 = Path([Dir, "Combined2"])

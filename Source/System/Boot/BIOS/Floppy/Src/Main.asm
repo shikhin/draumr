@@ -84,7 +84,7 @@ BIOSSignature:
     dw 0xAA55
 
 ExtMain:
-    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.		
     call BootFilesInit                ; Initialize boot file data - get the size currently.
 
 .LoadCommonBIOS:
