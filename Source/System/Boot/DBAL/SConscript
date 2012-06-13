@@ -48,7 +48,6 @@ Src = ["Src/Header.asm",
 DBAL = SysEnv.Program("DBAL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = ["-march=i586", "-m32"], LIBS=['Bitmap'])
 
 Depends(DBAL, Src)
-Depends(DBAL, Env["BIOS"])
 
 # Save the DBAL target in the Environment as we will need it later.
 Env["DBAL"] = DBAL

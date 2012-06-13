@@ -1,5 +1,5 @@
 /* 
- * This contains standard integer types (intx_t, uintx_t) definitions.
+ * Draumr build system.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,41 +27,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _STDINT_H
-#define _STDINT_H
+OUTPUT_FORMAT("binary")
+ENTRY(Start)
 
-#include <Compiler.h>
+SECTIONS
+{
+    .header 0xC0000000 :
+    {
+        header = .;
+        *(.header)
+    }
 
-/* intx_t */
-typedef signed char		        int8_t;
-typedef short int		        int16_t;
-typedef int			            int32_t;
+    .text :
+    {
+        code = .; _code = .; __code = .;
+        *(.text)
+        *(.rodata)
+    }
 
-#if _WORDSIZE == 64
-    typedef long int		    int64_t;
-#else
-    typedef long long int		int64_t;
-#endif
+    .data :
+    {
+        data = .; _data = .; __data = .;
+        *(.data)                                                                                                                                                                                                            
+    }
 
-/* uintx_t */
-typedef unsigned char		    uint8_t;
-typedef unsigned short int	    uint16_t;
-typedef unsigned int	    	uint32_t;
+    file_end = .; _file_end = .; __file_end = .;
 
-#if _WORDSIZE == 64
-    typedef unsigned long int  	    uint64_t;
-#else
-    typedef unsigned long long int	uint64_t;
-#endif
+    .bss :
+    {
+        bss = .;
+        *(.bss)
+    }
 
+    end = .; _end = .; __end = .;
+}
 
-/* xptr_t */
-#if _WORDSIZE == 64
-    typedef long int	      	intptr_t;
-    typedef unsigned long int   uintptr_t;
-#else
-    typedef int			        intptr_t;
-    typedef unsigned int		uintptr_t;
-#endif
-
-#endif /* _STDINT_H */

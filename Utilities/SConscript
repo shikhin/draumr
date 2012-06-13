@@ -47,8 +47,6 @@ SysEnv["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End
 CRC32 = SysEnv.Program("CRC32.util", "CRC32.c", CCFLAGS = "-std=c99")
 ToSIF = SysEnv.Program("ToSIF.util", "ToSIF.c", CCFLAGS = "-std=c99")
 
-Depends(CRC32, ToSIF)
-
 # Save the CRC32 target in the Environment as we will need it later.
 Env["CRC32"] = CRC32
 Env["ToSIF"] = ToSIF

@@ -1,11 +1,13 @@
+# -*- python -*-
+
  # Draumr build system.
  #
  # Copyright (c) 2012, Shikhin Sethi
  # All rights reserved.
  #
- # Redistribution and use in Source and binary forms, with or without
+ # Redistribution and use in source and binary forms, with or without
  # modification, are permitted provided that the following conditions are met:
- #     * Redistributions of Source code must retain the above copyright
+ #     * Redistributions of source code must retain the above copyright
  #       notice, this list of conditions and the following disclaimer.
  #     * Redistributions in binary form must reproduce the above copyright
  #       notice, this list of conditions and the following disclaimer in the
@@ -25,32 +27,4 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import shutil
-import tempfile
-import glob
-
-from SCons.Builder import Builder
-from SCons.Action import Action
-from Config import Config
-
-def _image_builder(target, source, env) :
-
-    os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["KL"][0]))
-    
-    if os.path.isfile(env["BACK"]) :
-
-        os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
-        env["BACK"] = "Background.sif"              
-        os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
-        
-    else :
-        
-        env["BACK"] = 0
-        
-    return 0
-
-ImageBuilder = Builder(action = Action(_image_builder, None))
-
+Import("Env", "SysEnv")

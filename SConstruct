@@ -51,6 +51,10 @@ Depends(Source, Utils)
 
 Image = Env.Image("BootImage.comp", None)
 Depends(Image, Utils)
+Depends(Image, Env["CRC32"])
+
+if os.path.isfile(Env["BACK"]) :
+    Depends(target, Env["ToSIF"])
 
 if Cfg.Target == "all":
     ISO = Env.ISO("Draumr.iso", None)

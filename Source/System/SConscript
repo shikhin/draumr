@@ -35,5 +35,4 @@ SysEnv["CPPPATH"] = ["#Source/Include", "#Source/System/Include", "Include"]
 SysEnv["LIBPATH"] = ["#Source/Lib", "#Source/System/Lib"]
 SysEnv["ASFLAGS"] += ["-felf"]
 
-Export("SysEnv")
-SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Boot/KL", "#Source/Lib"], exports=["Env", "SysEnv"])
+SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Boot/KL", "Kernel", "#Source/Lib"], exports=["Env", "SysEnv"])

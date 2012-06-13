@@ -38,10 +38,12 @@ Src = ["Src/Screen.asm",
        "Link.ld"]
 
 # A target for building the Stage 1 binary.
-Stage1 = SysEnv.Program("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/CD/Link.ld")
+Stage1Object = SysEnv.Object("Stage1.o", "Src/Main.asm")
 
-Depends(Stage1, Src)
+Stage1 = SysEnv.Program("Stage1", "Stage1.o", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/CD/Link.ld")
+
+Depends(Stage1Object, Src)
+Depends(Stage1, Stage1Object)
 
 # Save the stage 1 target in the Environment as we will need it later.
 Env["CD_STAGE1"] = Stage1
-
