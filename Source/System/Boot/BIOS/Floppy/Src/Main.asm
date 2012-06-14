@@ -36,11 +36,24 @@ SECTION .data
 %define BD_FLOPPY    1
 %define BD_PXE       2
 
-; Abort boot if can't open file.
-ErrorIO db "ERROR: Error occured during file Input/Output.", 0
+; End (of) line.
+%define EL           0x0A, 0x0D
+
+; The error slogan! (hehe)
+ErrorMsg:
+    db "ERROR! ERROR! ERROR!", EL, EL, 0
+
+; Abort boot if can't open CBIOS file.
+ErrorOpenCBIOSMsg:
+    db "Unable to open the common BIOS file.", EL, 0
 
 ; Or file is incorrect.
-ErrorParse db "ERROR: Error occured while trying to parse common BIOS file.", 0
+ErrorCBIOSHeaderMsg:
+    db "The common BIOS's header has been found to be corrupt.", EL, 0
+
+; Or the CRC value is incorrect.
+ErrorCBIOSCRCMsg:
+    db "Incorrect CRC32 value of the common BIOS file.", EL, 0
 
 SECTION .base
 
@@ -89,9 +102,9 @@ ExtMain:
 
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
-    call FileOpen                     ; Open the File.
 
-    jc .ErrorIO
+    call FileOpen                     ; Open the File.
+    jc .ErrorOpenCBIOS
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -104,10 +117,10 @@ ExtMain:
 ; Does all checks related to the first sector of the common BIOS file.
 .CheckCBIOS1:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
-    jne .ErrorParse
-    
+    jne .ErrorCBIOSHeader
+
     cmp dword [0x9008], 0x9000        ; If the starting of the file isn't 0x9000, abort.
-    jne .ErrorParse
+    jne .ErrorCBIOSHeader
 
     mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
@@ -120,7 +133,7 @@ ExtMain:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
 
     cmp ecx, edx
-    jne .ErrorParse                       ; If not equal, error.
+    jne .ErrorCBIOSHeader             ; If not equal, error.
 
 .LoadRestFile:
     add edi, 0x200
@@ -147,7 +160,7 @@ ExtMain:
     
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
-    jne .ErrorParse                   ; Not equal? ERROR: Abort boot.
+    jne .ErrorCBIOSCRC                ; Not equal? ERROR: Abort boot.
 
 .ZeroBSS:
     mov esi, 0x9000 
@@ -171,12 +184,25 @@ ExtMain:
 
     jmp [0x9004]
 
-.ErrorIO:
-    mov si, ErrorIO
+.ErrorOpenCBIOS:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorOpenCBIOSMsg
     jmp AbortBoot
 
-.ErrorParse:
-    mov si, ErrorParse
+.ErrorCBIOSHeader:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorCBIOSHeaderMsg
+    jmp AbortBoot
+
+.ErrorCBIOSCRC:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorCBIOSCRCMsg
     jmp AbortBoot
 
 SECTION .pad

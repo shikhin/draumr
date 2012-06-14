@@ -25,6 +25,8 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+SECTION .text
+
  ; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
 ScreenInit:
     pushad                            ; Push all general purpose registers to save them.
@@ -33,12 +35,6 @@ ScreenInit:
     ; Set es to 0xB800.
     mov ax, 0xB800
     mov es, ax
-    
-    ; Set to mode 0x03, or 80*25 text mode.
-    mov ax, 0x03
-   
-    ; SWITCH!
-    int 0x10
 
     xor ebx, ebx
     xor edx, edx
@@ -57,6 +53,8 @@ ScreenInit:
     pop es                            ; Restore es
     popad                             ; Pop all general registers back to save them.
     ret
+
+SECTION .base
 
  ; Prints a message on the screen using the BIOS.
  ;     SI -> the address of the null terminated string.

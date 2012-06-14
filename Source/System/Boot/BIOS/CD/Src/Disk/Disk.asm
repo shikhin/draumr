@@ -88,6 +88,16 @@ DiskErrCmdB6      db "Volume present but read protected.", EL, 0
 
 SECTION .base
 
+; Error if the boot file is found to be corrupt.
+ErrorBootFileMsg:
+    db "The boot file (Stage1) is corrupt.", EL, 0
+
+ErrorPVDMsg:
+    db "Unable to find the PVD - ISO corrupt.", EL, 0
+
+ErrorInt13ExtMsg:
+    db "Int 13 extensions not present.", EL, 0
+
 ; Save the boot drive number here.
 BootDrive         dd 0
 Retry             db 0                ; Number of times to retry a particular function - safety purposes.
@@ -113,7 +123,6 @@ DiskInit:
     push ecx
     push ebx
 
-    xor si, si                        ; If any error occurs in the future - abort using basic method.
     call Int13ExtCheck                ; Check whether Int 13 extensions are present or not.
 
     mov edi, 0x9000                   ; Read the following sector at 0x9000.
@@ -121,18 +130,25 @@ DiskInit:
     mov ebx, [BootInfo.PVD]           ; Read the sector containing the PVD.
     
     call DiskReadSector               ; Read the sector containing the Primary Volume Descriptor.
-    jc AbortBoot                      ; Abort boot if read failed.
+    jc .ErrorPVD                      ; Abort boot if read failed.
 
     cmp byte [0x9000], 1              ; Check whether we loaded a PVD or not.
-    jne AbortBoot                        
+    jne .ErrorPVD                        
 
     cmp dword [0x9001], 'CD00'        ; Check whether valid sector or not.
-    jne AbortBoot         
+    jne .ErrorPVD         
 
     cmp byte [0x9005], '1'            ; Check whether valid sector or not.
-    jne AbortBoot         
+    jne .ErrorPVD         
     
     jmp .Return
+
+.ErrorPVD:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorPVDMsg
+    jmp AbortBoot
 
 .Return:
     ; Restore the registers.
@@ -146,11 +162,10 @@ DiskInit:
  ; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
 BootFileCheck:
     pushad
-    xor si, si                        ; If any error occurs in the future - abort using basic method.
-
+    
     mov edi, 0x7C00
     cmp word [di + 510], 0xAA55
-    jne AbortBoot                     ; The boot signature at 510 byte offset was incorrect - can't assume anything. ABORT!
+    jne .ErrorBootFile                     ; The boot signature at 510 byte offset was incorrect - can't assume anything. ABORT!
 
     add edi, 0x800                    ; The file is four sectors long as of now.
     cmp dword [di + 2040 + 256], "DRAU"    ; Check our Draumr signature.
@@ -185,10 +200,17 @@ BootFileCheck:
 .CheckFileAgain:
     mov edi, 0x7C00 + 0x800
     cmp dword [di + 2040], "DRAU"     ; Check out the Draumr signature.
-    jne AbortBoot
+    jne .ErrorBootFile
 
     cmp dword [di + 2044], "MRSS"     ; Check out the Draumr signature.
-    jne AbortBoot
+    je .Return
+
+.ErrorBootFile:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorBootFileMsg
+    jmp AbortBoot
 
 .Return:    
     popad
@@ -206,10 +228,17 @@ Int13ExtCheck:
     mov edx, [BootDrive]
     int 0x13                          ; Check whether extended functions are supported or not.
 
-    jc AbortBoot                      ; If carry flag is set, go to return since carry flag is set anyway.
+    jc .ErrorInt13Ext                 ; If carry flag is set, go to abort since carry flag is set anyway.
     
     cmp bx, 0xAA55                    ; If BX=0xAA55, extended versions are installed. Return.
-    jne AbortBoot
+    je .Return
+
+.ErrorInt13Ext:
+    mov si, ErrorMsg
+    call Print
+
+    mov si, ErrorInt13ExtMsg
+    jmp AbortBoot
    
 .Return:
     popad
@@ -260,15 +289,15 @@ DiskReadSector:
     jmp .Retry
 
 .Abort:
-    xor si, si
+    mov si, ErrorMsg
+    call Print
+
+    mov si, DiskErr0
 
     test ebp, 0x80000000
     jz AbortBoot
     
 .AdvancedAbort:
-    mov si, ErrorMsg
-    call Print
-
     call DiskErrorMsg
     jmp AbortBoot
 

@@ -32,9 +32,6 @@ SECTION .base
 AbortBoot:
     cli
     
-    test si, si
-    jz .Beep
-
     ; Print error message on to screen.
     call Print
 

@@ -58,8 +58,13 @@ FILE:
 
 SECTION .base
 
-DiskError db "ERROR: Unable to access the boot floppy drive.", 0
-BootError db "ERROR: Boot file corrupt.", 0
+; Error if can't read disk.
+ErrorDiskMsg:
+    db "Unable to access the boot floppy. Please ensure it is properly inserted and not corrupt.", EL, 0
+
+; Error if the boot file is found to be corrupt.
+ErrorBootFileMsg:
+    db "The boot file (Stage1) is corrupt.", EL, 0
 
 ; Save the boot drive number here.
 BootDrive         dd 0

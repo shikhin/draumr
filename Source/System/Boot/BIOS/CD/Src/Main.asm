@@ -49,7 +49,7 @@ ErrorOpenCBIOSMsg:
 
 ; Or file is incorrect.
 ErrorCBIOSHeaderMsg:
-    db "The common BIOS's header has been found to be corrupt.", EL, 0
+    db "Corrupt common BIOS header.", EL, 0
 
 ; Or the CRC value is incorrect.
 ErrorCBIOSCRCMsg:
@@ -74,6 +74,8 @@ BootInfo:
     .Checksum     dd 0                ; 32 bit checksum
     times 40 db 0    
 
+%include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
+
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.
 
@@ -90,6 +92,12 @@ Main:
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
     
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ax, 0x03
+   
+    ; SWITCH!
+    int 0x10
+
     call DiskInit
     call BootFileCheck                ; Check whether the boot file (us) is intact or not.
     
@@ -108,12 +116,11 @@ SECTION .text
 ; Include some files.
 %include "Source/Lib/CRC32/CRC32.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Abort.asm"
-%include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Disk/Disk.asm"
 %include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
 
 ExtMain:
-    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					   
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.			
     call BootFilesFind                ; Find the boot files.
     
 .LoadCommonBIOS:
