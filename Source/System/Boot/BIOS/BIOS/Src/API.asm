@@ -96,15 +96,21 @@ BITS 16
 .FileClose:
     call word [FileClose]             ; Close the file.
 
-    ; TODO: Fix this - what happens if we have switched to a video mode?
-    jc Startup.ErrorIO                ; If any error occurs, print a error message and abort boot.
+    jc .ErrorIO                       ; If any error occurs, print a error message and abort boot.
     xor eax, eax                      ; Clear out EAX, since we don't want to return anything anyway.
 
 .ReturnToPM:
     push eax
 
     mov ebx, .PopEax
-    jmp PMSwitch                     ; And switch back to protected mode for the return.
+    jmp PMSwitch                      ; And switch back to protected mode for the return.
+
+.ErrorIO:
+    ; Switch to a text mode to ensure that we aren't in a video mode.
+    mov ax, 0x03
+    call VGASwitchMode
+
+    jmp Startup.ErrorIO
 
 BITS 32
 .PopEax:

@@ -28,7 +28,7 @@
 SECTION .data
 
 ; Some error strings.
-FilesNotFound     db "ERROR: Important boot files are not present.", 0
+FilesNotFoundMsg  db "Required files (DBAL, BIOS, KL, Kernel, Modules) not present on disk.", EL, 0
 
 ; Save all LBA/sizes here.
 Root:
@@ -231,7 +231,7 @@ BootFilesFind:
 
 .Abort:
     ; Else, abort.
-    mov si, FilesNotFound
+    mov si, FilesNotFoundMsg
     call AbortBoot
 
 .Return:

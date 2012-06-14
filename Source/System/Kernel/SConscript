@@ -40,8 +40,8 @@ AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Src
 AMD64SysEnv.VariantDir('Src/Arch/AMD64', 'Src/Arch/Generic', duplicate=0)
 KernelAMD64 = AMD64SysEnv.Program("KernelAMD64", ['Src/Arch/AMD64/' + File for File in GenSrc])
 
-Depends(Kernelx86, ['Src/' + File for File in GenSrc])
-Depends(KernelAMD64, ['Src/' + File for File in GenSrc])
+Depends(Kernelx86, ['Src/Arch/Generic/' + File for File in GenSrc])
+Depends(KernelAMD64, ['Src/Arch/Generic/' + File for File in GenSrc])
 
 Env["Kernelx86"] = Kernelx86
 Env["KernelAMD64"] = KernelAMD64

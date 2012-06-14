@@ -61,30 +61,30 @@ DiskErrTable2:
     dw DiskErrCmdB6
 
 ; This section contains all the Strings.
-DiskErr0          db "ERROR: Read from CD failed.", 0
-DiskErr1          db "ERROR: Not able to find the Primary Volume Descriptor.", 0
-DiskErr2          db "ERROR: Int 0x13 extension not supported.", 0
+DiskErr0          db "Read from CD failed.", EL, 0
+DiskErr1          db "Not able to find the Primary Volume Descriptor.", EL, 0
+DiskErr2          db "Int 0x13 extension not supported.", EL, 0
 
 ; Error messages returned by a BIOS in AH during disk operations.
-DiskErrCmd01      db "ERROR: Invalid function in AH or invalid parameter.", 0
-DiskErrCmd02      db "ERROR: Address mark not found.", 0
-DiskErrCmd03      db "ERROR: Disk write-protected.", 0
-DiskErrCmd04      db "ERROR: Sector not found/read error.", 0
-DiskErrCmd08      db "ERROR: DMA overrun.", 0
-DiskErrCmd09      db "ERROR: Data boundary error (attempted DMA across 64K boundary).", 0
-DiskErrCmd0C      db "ERROR: Unsupported track or invalid media.", 0
-DiskErrCmd10      db "ERROR: Uncorrectable CRC or ECC error on read.", 0
-DiskErrCmd20      db "ERROR: Controller failure.", 0
-DiskErrCmd31      db "ERROR: No media in drive.", 0
-DiskErrCmd40      db "ERROR: Seek failed.", 0
-DiskErrCmd80      db "ERROR: Timeout (not ready).", 0
-DiskErrCmdB0      db "ERROR: Volume not locked in drive.", 0
-DiskErrCmdB1      db "ERROR: Volume locked in drive.", 0
-DiskErrCmdB2      db "ERROR: Volume not removable.", 0
-DiskErrCmdB3      db "ERROR: Volume in use.", 0
-DiskErrCmdB4      db "ERROR: Lock count exceeded.", 0
-DiskErrCmdB5      db "ERROR: Valid eject request failed.", 0
-DiskErrCmdB6      db "ERROR: Volume present but read protected.", 0
+DiskErrCmd01      db "Invalid function in AH or invalid parameter.", EL, 0
+DiskErrCmd02      db "Address mark not found.", EL, 0
+DiskErrCmd03      db "Disk write-protected.", EL, 0
+DiskErrCmd04      db "Sector not found/read error.", EL, 0
+DiskErrCmd08      db "DMA overrun.", EL, 0
+DiskErrCmd09      db "Data boundary error (attempted DMA across 64K boundary).", EL, 0
+DiskErrCmd0C      db "Unsupported track or invalid media.", EL, 0
+DiskErrCmd10      db "Uncorrectable CRC or ECC error on read.", EL, 0
+DiskErrCmd20      db "Controller failure.", EL, 0
+DiskErrCmd31      db "No media in drive.", EL, 0
+DiskErrCmd40      db "Seek failed.", EL, 0
+DiskErrCmd80      db "Timeout (not ready).", EL, 0
+DiskErrCmdB0      db "Volume not locked in drive.", EL, 0
+DiskErrCmdB1      db "Volume locked in drive.", EL, 0
+DiskErrCmdB2      db "Volume not removable.", EL, 0
+DiskErrCmdB3      db "Volume in use.", EL, 0
+DiskErrCmdB4      db "Lock count exceeded.", EL, 0
+DiskErrCmdB5      db "Valid eject request failed.", EL, 0
+DiskErrCmdB6      db "Volume present but read protected.", EL, 0
 
 SECTION .base
 
@@ -120,7 +120,7 @@ DiskInit:
     mov ecx, 1                        ; Only read 1 sector (2KiB).
     mov ebx, [BootInfo.PVD]           ; Read the sector containing the PVD.
     
-    call DiskReadSector                 ; Read the sector containing the Primary Volume Descriptor.
+    call DiskReadSector               ; Read the sector containing the Primary Volume Descriptor.
     jc AbortBoot                      ; Abort boot if read failed.
 
     cmp byte [0x9000], 1              ; Check whether we loaded a PVD or not.
@@ -266,6 +266,9 @@ DiskReadSector:
     jz AbortBoot
     
 .AdvancedAbort:
+    mov si, ErrorMsg
+    call Print
+
     call DiskErrorMsg
     jmp AbortBoot
 
