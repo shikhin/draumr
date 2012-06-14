@@ -1,4 +1,4 @@
- ; Header definition for Kernel.
+ ; Contains macros defined to "define" the Kernel Header.
  ;
  ; Copyright (c) 2012, Shikhin Sethi
  ; All rights reserved.
@@ -19,46 +19,47 @@
  ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  ; DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
  ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%ifdef _x86
+; Offset 0        Kernel Identifier.
+; Offset 4        Address of entry point.
+; Offset 12       Start of file.
+; Offset 16       End of file.
+; Offset 20       Starting address of BSS section.
+; Offset 24       Ending address of BSS section.
+; Offset 28       CRC32 remainder.
 
-BITS 32
-CPU 586
-%include "Source/System/Kernel/Src/Arch/x86/Format.inc"
+; This should just be at offset 0 of the file - identifies the Kernel.
+%define KERN_DEF db "KE64"
 
-%elifdef _AMD64
+; Defines the entry point of the Kernel.
+%macro ENTRY_POINT 1
+    dq %1
+%endmacro 
 
-BITS 64
-%include "Source/System/Kernel/Src/Arch/AMD64/Format.inc"
+; Defines the starting address of BSS section.
+%macro BSS_START 1
+    dq %1
+%endmacro
 
-%endif
+; Defines the ending address of BSS section.
+%macro BSS_END 1
+    dq %1
+%endmacro
 
-SECTION .header
+; Defines the end of the file.
+%macro FILE_END 1
+    dq %1
+%endmacro
 
-EXTERN bss
-EXTERN end
-EXTERN file_end
+; Defines the start of the file.
+%macro FILE_START 0
+    dq 0xC0000000
+%endmacro
 
-; Define the DBAL Header
-KERN_DEF
-ENTRY_POINT       Start
-FILE_START
-FILE_END          file_end
-BSS_START         bss
-BSS_END           end
-CRC32_DEFINE
-
-SECTION .text
-
-GLOBAL Start
-
- ; The entry point for the KL sub-module.
- ;     R/EAX -> the 32-bit address of the BIT.
- ;     R/ESP -> the properly defined stack.
-Start:
-    jmp $
+; The CRC32 remainder.
+%define CRC32_DEFINE dd 0

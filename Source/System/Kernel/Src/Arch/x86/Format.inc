@@ -34,31 +34,36 @@
 ; Offset 28       CRC32 remainder.
 
 ; This should just be at offset 0 of the file - identifies the Kernel.
-%define KERN_DEF db "KERN"
+%define KERN_DEF db "KE32"
 
 ; Defines the entry point of the Kernel.
 %macro ENTRY_POINT 1
-    dq %1
+    dd 0
+    dd %1
 %endmacro 
 
 ; Defines the starting address of BSS section.
 %macro BSS_START 1
-    dq %1
+    dd 0
+    dd %1
 %endmacro
 
 ; Defines the ending address of BSS section.
 %macro BSS_END 1
-    dq %1
+    dd 0
+    dd %1
 %endmacro
 
 ; Defines the end of the file.
 %macro FILE_END 1
-    dq %1
+    dd 0
+    dd %1
 %endmacro
 
 ; Defines the start of the file.
-%macro FILE_START 1
-    dq %1
+%macro FILE_START 0
+    dd 0
+    dd 0xC0000000
 %endmacro
 
 ; The CRC32 remainder.
