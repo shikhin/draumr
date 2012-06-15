@@ -40,6 +40,7 @@
  */
 void AbortBoot(_CONST char *String)
 {
+	DebugPrintText("ERROR! ERROR! ERROR!\n\n");
     DebugPrintText(String);           // Print the message using the text version. 
 
     outb(0x42, 0xB6);

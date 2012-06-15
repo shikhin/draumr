@@ -111,6 +111,7 @@ _PROTOTYPE(FILE_t BootFilesBGImg, (void));
  *
  * Returns:
  *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if unable to load the KL.
  */
 _PROTOTYPE(FILE_t BootFilesKL, (void));
 

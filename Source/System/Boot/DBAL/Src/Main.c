@@ -62,12 +62,6 @@ void Main(uint32_t *BITPointer)
     // Load the KL file.
     FILE_t KLFile = BootFilesKL();
 
-    // If unable to do so, abort boot.
-    if(!KLFile.Size)
-    {
-        AbortBoot("ERROR: Unable to load Kernel Loader file.");
-    }
-
     // Initialize support for 'output'.
     OutputInit();
 

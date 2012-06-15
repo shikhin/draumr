@@ -144,9 +144,6 @@ DiskInit:
     jmp .Return
 
 .ErrorPVD:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorPVDMsg
     jmp AbortBoot
 
@@ -206,9 +203,6 @@ BootFileCheck:
     je .Return
 
 .ErrorBootFile:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorBootFileMsg
     jmp AbortBoot
 
@@ -234,9 +228,6 @@ Int13ExtCheck:
     je .Return
 
 .ErrorInt13Ext:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorInt13ExtMsg
     jmp AbortBoot
    
@@ -289,9 +280,6 @@ DiskReadSector:
     jmp .Retry
 
 .Abort:
-    mov si, ErrorMsg
-    call Print
-
     mov si, DiskErr0
 
     test ebp, 0x80000000

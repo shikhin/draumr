@@ -32,6 +32,16 @@ SECTION .base
 AbortBoot:
     cli
     
+    ; Save SI.
+    push si
+
+    ; Print the Error (slogan) Message.
+    mov si, ErrorMsg
+    call Print
+
+    ; Restore SI.
+    pop si
+
     ; Print error message on to screen.
     call Print
 

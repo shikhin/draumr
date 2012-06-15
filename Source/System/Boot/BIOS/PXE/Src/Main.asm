@@ -36,13 +36,24 @@ SECTION .data
 %define BD_FLOPPY    1
 %define BD_PXE       2
 
-; Error in IO.
-ErrorIO:
-    db "ERROR: Error occured during file Input/Output.", 0
+; End (of) line.
+%define EL           0x0A, 0x0D
 
-; Error while parsing file.
-ErrorParse:
-    db "ERROR: Error occured while trying to parse common BIOS File.", 0
+; The error slogan! (hehe)
+ErrorMsg:
+    db "ERROR! ERROR! ERROR!", EL, EL, 0
+
+; Abort boot if can't open CBIOS file.
+ErrorOpenCBIOSMsg:
+    db "Unable to open the common BIOS file.", EL, 0
+
+; Or file is incorrect.
+ErrorCBIOSHeaderMsg:
+    db "Corrupt common BIOS header.", EL, 0
+
+; Or the CRC value is incorrect.
+ErrorCBIOSCRCMsg:
+    db "Incorrect CRC32 value of the common BIOS file.", EL, 0
 
 ; Prepare the PXENV_GET_CACHED_INFO structure.
 PXENV_GET_CACHED_INFO:
@@ -89,7 +100,7 @@ Main:
     call PXEAPICall                   ; Ask for the cached info.
     
     or ax, [PXENV_GET_CACHED_INFO]    ; Get the status into BX.
-    jnz .Error
+    jnz .ErrorPXEAPI
 
     movzx esi, word [PXENV_GET_CACHED_INFO.BufferOff]
     add esi, 20                       ; Put the source offset into ESI.
@@ -108,7 +119,7 @@ Main:
     xor ax, ax                        ; Open File 0, or common BIOS file.
     
     call FileOpen                     ; Open the File.
-    jc .ErrorIO
+    jc .ErrorOpenCBIOS
 
     ; ECX contains size of file we are opening.
     push ecx
@@ -120,10 +131,10 @@ Main:
 ; Checks common BIOS file from first sector.
 .CheckCBIOSFirstSector:
     cmp dword [0x9000], "BIOS"        ; Check the signature.
-    jne .ErrorParse
+    jne .ErrorCBIOSHeader
 
     cmp dword [0x9008], 0x9000        ; Check whether starting address is 0x9000 or not.
-    jne .ErrorParse                   ; If no, abort boot.
+    jne .ErrorCBIOSHeader             ; If no, abort boot.
         
     mov ecx, [0x9000 + 12]            ; Get the end of file in ECX.
     sub ecx, 0x9000                   ; Subtract 0x9000 from it to get it's size.
@@ -136,7 +147,7 @@ Main:
     shr edx, 11                       ; Here we have the number of sectors of the file (according to the fs).
 
     cmp ecx, edx
-    jne .ErrorParse                   ; If they aren't equal, error.
+    jne .ErrorCBIOSHeader             ; If they aren't equal, error.
 
 .LoadRestFile:
     add edi, 512
@@ -165,7 +176,7 @@ Main:
     not eax                           ; Inverse the bits to get the CRC value.
     cmp eax, [esi - 4]                ; Compare the has with the hash stored in the file.
         
-    jne .ErrorParse                   ; Not equal? ERROR: Abort boot.
+    jne .ErrorCBIOSCRC                ; Not equal? ERROR: Abort boot.
 
 .ZeroBSS:
     mov esi, 0x9000 
@@ -192,18 +203,22 @@ Main:
     xor ebp, ebp
     jmp [0x9004]
 
-.Error:
+.ErrorPXEAPI:
     xor ax, ax
     mov es, ax
     mov ds, ax
 
-    mov si, PXEAPIError               ; Accessing the API error occured.
+    mov si, ErrorPXEAPIMsg            ; Accessing the API error occured.
     jmp AbortBoot                     ; Abort boot now!
 
-.ErrorIO:
-    mov si, ErrorIO
+.ErrorOpenCBIOS:
+    mov si, ErrorOpenCBIOSMsg
     jmp AbortBoot                     ; Abort boot now!
 
-.ErrorParse:
-    mov si, ErrorParse                ; Unable to parse the common BIOS file.
+.ErrorCBIOSHeader:
+    mov si, ErrorCBIOSHeaderMsg       ; Unable to parse the common BIOS file.
+    jmp AbortBoot
+
+.ErrorCBIOSCRC:
+    mov si, ErrorCBIOSCRCMsg          ; Incorrect CRC32 value. Oops.
     jmp AbortBoot

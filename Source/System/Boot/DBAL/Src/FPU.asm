@@ -28,14 +28,8 @@
 BITS 32
 CPU 586
 
-SECTION .data
-
-; The no fpu error message.
-ErrorFPU: db "ERROR: Unable to find a FPU in the system, required for boot.", 0
-
 SECTION .text
 
-EXTERN AbortBoot
 GLOBAL FPUInit
 
  ; Initializes the FPU.
@@ -55,4 +49,3 @@ FPUInit:
 
     popad
     ret
-

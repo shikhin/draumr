@@ -115,11 +115,11 @@ BootFileGet:
     ret
 
 .Fail1:
-    mov si, DiskError
+    mov si, ErrorDiskMsg
     jmp AbortBoot
  
 .Fail2:
-    mov si, BootError
+    mov si, ErrorBootFileMsg
     jmp AbortBoot
 
  ; Read a sector from the disk to a buffer.
@@ -312,7 +312,7 @@ FloppyReadSectorM:
     ret
 
 .Error:
-    mov si, DiskError
+    mov si, ErrorDiskMsg
     jmp AbortBoot
 
  ; Opens a file to be read from.

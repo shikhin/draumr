@@ -816,7 +816,7 @@ void OutputRevert()
         BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         // If we need to go down a level from Serial, ABORT!
-        AbortBoot("ERROR: Could not find any suitable display system.");
+        AbortBoot("Unable to find any suitable display system (VGA, VBE).\n");
     }
 }
 
@@ -949,7 +949,7 @@ void OutputInit()
 
     else
     {
-        AbortBoot("ERROR: Could not find any suitable display system.");
+        AbortBoot("Unable to find any suitable display system (VGA, VBE).\n");
     }
 
     // Open the file, and get it's information.

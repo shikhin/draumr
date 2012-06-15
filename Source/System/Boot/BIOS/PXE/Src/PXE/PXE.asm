@@ -27,8 +27,12 @@
 
 SECTION .data
 
-NoPXE       db    "ERROR: Not booted from PXE, or invalid PXE.", 0
-PXEAPIError db    "ERROR: Error occured while trying to access PXE API.", 0 
+ErrorPXENotPresentMsg:
+    db "The Preboot eXecution Environment is not present or invalid.", EL, 0
+
+ErrorPXEAPIMsg:
+    db "Unable to access the PXE API.", EL, 0
+
 SIP         dd 0
 GIP         dd 0
 
@@ -69,10 +73,10 @@ PXEInit:
    
     ; If the signature isn't equal, abort boot.
     cmp dword [es:bx], "PXEN" 
-    jne .NoPXE
+    jne .ErrorPXENotPresent
 
     cmp word [es:bx + 4], "V+"
-    jne .NoPXE
+    jne .ErrorPXENotPresent
 
     movzx ecx, byte [es:bx + 8]
     xor eax, eax
@@ -87,7 +91,7 @@ PXEInit:
     jnz .Checksum                     ; Done all bytes - return!
 
     test al, al
-    jnz .NoPXE                        ; If result was not zero - no PXE!
+    jnz .ErrorPXENotPresent           ; If result was not zero - no PXE!
 
     pop bx                            ; Get BX back - by poping it from the stack.
 
@@ -161,11 +165,11 @@ PXEInit:
     pop es
     jmp .PXENV
 
-.NoPXE:
+.ErrorPXENotPresent:
     ; Mov the address of the string into SI, and zero out DS and ES, before aborting boot.
     xor ax, ax
     mov ds, ax                        ; Clear out ES and DS.
     mov es, ax
  
-    mov si, NoPXE
+    mov si, ErrorPXENotPresentMsg
     jmp AbortBoot   

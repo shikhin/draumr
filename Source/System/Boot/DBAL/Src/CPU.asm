@@ -31,11 +31,16 @@ CPU 486
 EXTERN AbortBoot
 GLOBAL CPUCheck
 
-; Abort boot if the CPU isn't P5 or above.
-ErrorCPU db "ERROR: Error occured since CPU isn't supported.", 0
+; End (of) line.
+%define EL           '\n'
 
-; Abort boot if the FPU isn't there.
-ErrorFPU db "ERROR: Error occured since FPU isn't supported.", 0
+; Abort boot if the CPU isn't P5 or above.
+ErrorCPUUnsupportedMsg:
+    db "CPU doesn't fit in the requirements bracket - P5 or above.", EL, 0
+
+; The no fpu error message.
+ErrorFPUNotPresentMsg: 
+    db "FPU required for boot operations not present.", EL, 0
 
  ; Checks if the CPU is supported or not.
  ;
@@ -59,28 +64,28 @@ CPUCheck:
 
     xor eax, ebx                      ; Set the 'changed bits' to 1.
     test eax, (1 << 18)               ; The 18th bit should now be 1.
-    jz .ErrorCPU                      ; If 18th bit isn't 1, then it isn't a 486.
+    jz .ErrorCPUUnsupported           ; If 18th bit isn't 1, then it isn't a 486.
 
     ; CPUID should be supported, so check it.
-    pushfd                           ; Get the flags, and pop it into EAX.
+    pushfd                            ; Get the flags, and pop it into EAX.
    
     pop eax
-    mov ecx, eax                     ; Save the original flags. 
+    mov ecx, eax                      ; Save the original flags. 
 
-    xor eax, 0x200000                ; Flip the bit indicating presence of CPUID.
-    push eax                         ; Get the new flags by this. 
+    xor eax, 0x200000                 ; Flip the bit indicating presence of CPUID.
+    push eax                          ; Get the new flags by this. 
     popfd
 
-    pushfd                           ; Get the flags back again.
+    pushfd                            ; Get the flags back again.
     pop eax
-    xor eax, ecx                     ; And mask the changed bits.
+    xor eax, ecx                      ; And mask the changed bits.
 
-    push ecx                         ; Restore the original flags.
+    push ecx                          ; Restore the original flags.
     popfd 
   
-    test eax, (1 << 21)              ; Test for the 21st bit.
+    test eax, (1 << 21)               ; Test for the 21st bit.
     ; If it isn't set, then no CPUID.
-    jz .ErrorCPU
+    jz .ErrorCPUUnsupported
 
 CPU 586
 
@@ -93,16 +98,16 @@ CPU 586
     ; EDX has the feature flags.
     ; Bit 0 specifies the FPU presence.
     test edx, (1 << 0)
-    jz .ErrorFPU
+    jz .ErrorFPUNotPresent
 
 .Return:
     popad
     ret
     
-.ErrorCPU:
-    push ErrorCPU
+.ErrorCPUUnsupported:
+    push ErrorCPUUnsupportedMsg
     call AbortBoot
 
-.ErrorFPU:
-    push ErrorFPU
+.ErrorFPUNotPresent:
+    push ErrorFPUNotPresentMsg
     call AbortBoot

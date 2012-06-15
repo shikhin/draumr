@@ -27,6 +27,14 @@
 
 BITS 32
 
+SECTION .data
+
+; Unable to close the file.
+ErrorFileCloseMsg:
+    db "Unable to close a file. Please check that no stray calls to the File API are being made.", EL, 0
+
+SECTION .text
+
 ; The API codes for the file access API.
 %define FILE_OPEN   0
 %define FILE_READ   1
@@ -96,7 +104,7 @@ BITS 16
 .FileClose:
     call word [FileClose]             ; Close the file.
 
-    jc .ErrorIO                       ; If any error occurs, print a error message and abort boot.
+    jc .ErrorFileClose                ; If any error occurs, print a error message and abort boot.
     xor eax, eax                      ; Clear out EAX, since we don't want to return anything anyway.
 
 .ReturnToPM:
@@ -105,12 +113,13 @@ BITS 16
     mov ebx, .PopEax
     jmp PMSwitch                      ; And switch back to protected mode for the return.
 
-.ErrorIO:
+.ErrorFileClose:
     ; Switch to a text mode to ensure that we aren't in a video mode.
     mov ax, 0x03
     call VGASwitchMode
 
-    jmp Startup.ErrorIO
+    mov si, ErrorFileCloseMsg
+    jmp AbortBoot
 
 BITS 32
 .PopEax:

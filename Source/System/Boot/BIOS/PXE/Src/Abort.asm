@@ -25,16 +25,22 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-SECTION .base
-
  ; Function for aborting boot.
  ;     ES:SI -> should contain the error message to print. If zero, basic error checking.
 AbortBoot:
     cli
 
-    test si, si
-    jz .Beep
+    ; Save SI.
+    push si
 
+    ; Print the Error (slogan) Message.
+    mov si, ErrorMsg
+    call Print
+
+    ; Restore SI.
+    pop si
+
+    ; Print error message on to screen.
     call Print
 
 ; Do the basic error checking. Ignore AX.

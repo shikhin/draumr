@@ -145,7 +145,7 @@ void BootFilesInit()
         // If we were unable to allocate the small size, then abort boot.
         if(!Bouncer)
         {
-            AbortBoot("ERROR: Can't allocate enough pages for bouncer.\n");
+            AbortBoot("Unable to allocate enough pages for bouncer.\n");
         }
 
         BouncerSize = BOUNCER_SMALL_SIZE;
@@ -287,6 +287,7 @@ FILE_t BootFilesBGImg()
  *
  * Returns:
  *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if unable to load the KL.
  */
 FILE_t BootFilesKL()
 {
@@ -299,11 +300,7 @@ FILE_t BootFilesKL()
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
     {
-        // Close the file, anyway.
-        BIT.FileAPI(FILE_CLOSE);
-
-        // And return with the File structure.
-        return File;
+        AbortBoot("Unable to open the KL file.\n");
     }
 
     // Read 2048 bytes at KL_LOCATION.
@@ -316,25 +313,12 @@ FILE_t BootFilesKL()
        (Header->Signature[2] != 'K') ||
        (Header->Signature[3] != 'L'))
     {
-        // If it didn't match, make size 0.
-        File.Size = 0;
-
-        // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
-
-        // And return the file structure.
-        return File;
+        AbortBoot("Corrupt KL header.\n");
     }
 
     if(((File.Size + 0xFFF) / 0x1000) != (((Header->FileEnd - Header->FileStart) + 0xFFF) / 0x1000))
     {
-        // File size returned by FS, and in the image, didn't match.
-        File.Size = 0;
-
-        // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
-
-        return File;
+        AbortBoot("Corrupt KL header.\n");
     }
 
     // Allocate enough space to hold the file.
@@ -373,16 +357,7 @@ FILE_t BootFilesKL()
     // If CRC values are not equal. 
     if(Header->CRC32 != ~CRC(0xFFFFFFFF, (Header->FileEnd - Header->FileStart) - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
     {
-        // Free the space we allocated for the Image.
-        PMMFreeContigFrames((uint32_t)File.Location, (File.Size + 0xFFF) / 0x1000);
-
-        // Make file size 0.
-        File.Size = 0;
-
-        // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
-
-        return File;
+        AbortBoot("Incorrect CRC32 value of the KL file.\n");
     }
 
     return File;

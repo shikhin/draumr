@@ -214,23 +214,14 @@ ExtMain:
     jmp [0x9004]
     
 .ErrorOpenCBIOS:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorOpenCBIOSMsg
     jmp AbortBoot
 
 .ErrorCBIOSHeader:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorCBIOSHeaderMsg
     jmp AbortBoot
 
 .ErrorCBIOSCRC:
-    mov si, ErrorMsg
-    call Print
-
     mov si, ErrorCBIOSCRCMsg
     jmp AbortBoot
 

@@ -250,7 +250,7 @@ FileRead:
     
 .Cont:
     or ax, [PXENV_TFTP_READ] 
-    jnz .Error                        ; If any error occured, abort boot.
+    jnz .ErrorPXEAPI                  ; If any error occured, abort boot.
     
     movzx edx, word [PXENV_TFTP_READ.BufferSize]
     test dx, dx                       ; If size read is zero, then EOF reached.
@@ -299,8 +299,8 @@ FileRead:
     popad
     ret    
 
-.Error:
-    mov si, PXEAPIError
+.ErrorPXEAPI:
+    mov si, ErrorPXEAPIMsg
     jmp AbortBoot
 
  ; Closes the previously opened file.

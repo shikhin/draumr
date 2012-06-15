@@ -391,7 +391,7 @@ void PMMInit()
     // If the a suitable entry wasn't found, abort with error.
     if(!BaseBitmap.Size)
     {
-    	AbortBoot("ERROR: Unable to allocate enough space for boot bitmaps.\n");
+    	AbortBoot("Unable to allocate enough space for boot bitmaps.\n");
     }
 
     // Initialize the bitmaps (to 0xFFFFFFFF).

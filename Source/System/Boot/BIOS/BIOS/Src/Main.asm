@@ -83,11 +83,24 @@ FileClose:         dd 0
 %define VBE_PRESENT     (1 << 1)
 %define EDID_PRESENT    (1 << 2)
 
-; Abort boot if can't open file.
-ErrorIO db "ERROR: Error occured during file Input/Output.", 0
+; End (of) line.
+%define EL           0x0A, 0x0D
+
+; The error slogan! (hehe)
+ErrorMsg:
+    db "ERROR! ERROR! ERROR!", EL, EL, 0
+
+; Abort boot if can't open CBIOS file.
+ErrorOpenDBALMsg:
+    db "Unable to open the DBAL file.", EL, 0
 
 ; Or file is incorrect.
-ErrorParse db "ERROR: Error occured while trying to parse the DBAL file.", 0
+ErrorDBALHeaderMsg:
+    db "Corrupt DBAL header.", EL, 0
+
+; Or the CRC value is incorrect.
+ErrorDBALCRCMsg:
+    db "Incorrect CRC32 value of the DBAL file.", EL, 0
 
 SECTION .text
 
@@ -130,7 +143,7 @@ Startup:
     inc ax
     
     call [FileOpen]                   ; Open the File.
-    jc .ErrorIO
+    jc .ErrorOpenDBAL
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -141,10 +154,10 @@ Startup:
     
 .CheckDBAL1:
     cmp dword [0xE000], "DBAL"        ; Check the signature.
-    jne .ErrorParse
+    jne .ErrorDBALHeader
     
     cmp dword [0xE008], 0xE000        ; Check the starting address.
-    jne .ErrorParse
+    jne .ErrorDBALHeader
     
     mov ecx, [0xE000 + 12]            ; Get the end of file in ECX - actual file size.
     sub ecx, 0xE000                   ; Subtract 0xE000 from it to get it's size.
@@ -157,7 +170,7 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs).
     
     cmp ecx, edx
-    jne .ErrorParse                   ; If they aren't equal, error.
+    jne .ErrorDBALHeader              ; If they aren't equal, error.
   
 .LoadRestFile:
     add edi, 0x200
@@ -193,7 +206,7 @@ BITS 32
     je .BSSZero
     
     ; If error occured, switch to Real Modee
-    mov ebx, .ErrorParse
+    mov ebx, .ErrorDBALCRC
     call RMSwitch
 
 .BSSZero:
@@ -210,12 +223,16 @@ BITS 32
     jmp .Cont
 
 BITS 16
-.ErrorIO:
-    mov si, ErrorIO
+.ErrorOpenDBAL:
+    mov si, ErrorOpenDBALMsg
     jmp AbortBoot
 
-.ErrorParse:
-    mov si, ErrorParse
+.ErrorDBALHeader:
+    mov si, ErrorDBALHeaderMsg
+    jmp AbortBoot
+
+.ErrorDBALCRC:
+    mov si, ErrorDBALCRCMsg
     jmp AbortBoot
 
 BITS 32
