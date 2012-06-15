@@ -34,12 +34,6 @@ ScreenInit:
     mov ax, 0xB800
     mov es, ax
     
-    ; Set to mode 0x03, or 80*25 text mode.
-    mov ax, 0x03
-   
-    ; SWITCH! 
-    int 0x10
-
     xor ebx, ebx
     xor edx, edx
     mov eax, 0x200
