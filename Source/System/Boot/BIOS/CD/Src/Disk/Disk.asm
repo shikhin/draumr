@@ -159,47 +159,14 @@ DiskInit:
  ; Checks the boot file (us), and tries restoring it if (possible and) any error occured.
 BootFileCheck:
     pushad
-    
-    mov edi, 0x7C00
-    cmp word [di + 510], 0xAA55
-    jne .ErrorBootFile                     ; The boot signature at 510 byte offset was incorrect - can't assume anything. ABORT!
 
-    add edi, 0x800                    ; The file is four sectors long as of now.
-    cmp dword [di + 2040 + 256], "DRAU"    ; Check our Draumr signature.
-    jne .FixFile
+    cmp word [0x7E00 - 2], 0xAA55
+    jne .ErrorBootFile                 ; The boot signature at 510 byte offset was incorrect.
 
-    cmp dword [di + 2044 + 256], "MRSS"    ; Check our Draumr signature.
-    je .Return
-
-; Try to fix the boot file.
-.FixFile:
-    ; Get LBA of boot file.
-    mov ebx, [BootInfo.BFLBA]
-    ; Load only 1 sector.
-    mov ecx, 1
-
-    ; Calculate how many sectors to read.
-    mov eax, [BootInfo.BFLength]
-    add eax, 0x7FF                    ; Add 0x7FF to remain "safe".
-    shr eax, 11                       ; Find out the number of 2KiB sectors.
-
-.LoadSector:
-    call DiskReadSector                 ; Read the sector from disk.
-
-.NextSector: 
-    inc ebx                           ; Increment the LBA of sector to read.
-    add di, 0x800                     ; Add 0x800 to DI = that is the next sector.
-    
-    dec eax                           ; Decrement the number of sectors left to read.
-    jnz .LoadSector                   ; If not zero, load next sector.
-
-; Check whether the file on disk is corrupt or not.
-.CheckFileAgain:
-    mov edi, 0x7C00 + 0x800
-    cmp dword [di + 2040], "DRAU"     ; Check out the Draumr signature.
+    cmp dword [0x8E00 - 8], "DRAU"     ; Check out the Draumr signature.
     jne .ErrorBootFile
 
-    cmp dword [di + 2044], "MRSS"     ; Check out the Draumr signature.
+    cmp dword [0x8E00 - 4], "MRSS"     ; Check out the Draumr signature.
     je .Return
 
 .ErrorBootFile:
@@ -250,7 +217,7 @@ DiskReadSector:
     mov byte [Retry], 3
     mov ebp, edi
 
-    ; Get rid of the "perform advacned checking" flag, since it is already stored at in ebp.
+    ; Get rid of the "perform advanced checking" flag, since it is already stored at in ebp.
     and edi, 0x7FFFFFFF
     mov eax, edi
     and eax, 0xFFFF0000
@@ -260,7 +227,7 @@ DiskReadSector:
 .Retry:
     mov byte [LBAPacket.Size], 0x10   ; Size of the Packet - 0x10 if you specify Segment:Offset and not a 64-bit linear address.
     mov word [LBAPacket.Sectors], cx  ; Number of sectors to read.
-    mov [LBAPacket.BufferOff], di     ; Offset - Since we use 0x0000 as segment offset must be the address of the buffer - @di.
+    mov [LBAPacket.BufferOff], di     ; Offset.
     mov word [LBAPacket.BufferSeg], ax; Get the segment. 
     mov [LBAPacket.LBALow], ebx       ; Lower 32-bits of the LBA address.
     mov [LBAPacket.LBAHigh], dword 0  ; Higher 32-bits of the LBA address - useful for 48-bit LBA.
@@ -280,6 +247,14 @@ DiskReadSector:
     jmp .Retry
 
 .Abort:
+    push ax
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ax, 0x03
+   
+    ; SWITCH!
+    int 0x10
+    pop ax
+ 
     mov si, DiskErr0
 
     test ebp, 0x80000000

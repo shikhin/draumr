@@ -32,31 +32,26 @@ ENTRY(Startup)
 
 SECTIONS
 {
-    .base 0x7C00 : AT(0x7C00)
+    .base 0x7C00 :
     {
-        base = .;
         *(.base)
     }
 
-    .text 0x7C00 + (code - base) :
+    .text :
     {
-        code = .;
         *(.text)
         *(.rodata)
     }
 
-    .data 0x7C00 + (data - base) :
+    .data :
     {
-        data = .;
         *(.data)                                                                                             
     }
 
-    .pad 0x8CF8 :
+    .pad 0x8DF8 :
     {
-        pad = .;
         *(.pad)
     }
 
     end = .;
 }
-

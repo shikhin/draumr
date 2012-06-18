@@ -49,12 +49,17 @@ def _iso_builder(target, source, env) :
     BIOS = str(env["BIOS"][0])
     DBAL = str(env["DBAL"][0])
     KL = str(env["KL"][0])
+    Kernelx86 = str(env["Kernelx86"][0])
+    KernelAMD64 = str(env["KernelAMD64"][0])
     Background = str(env["BACK"])
 
     shutil.copy(Stage1, Boot)
     shutil.copy(BIOS, Boot)
     shutil.copy(DBAL, Boot)
     shutil.copy(KL, Boot)
+    shutil.copy(Kernelx86, Boot)
+    shutil.copy(KernelAMD64, Boot)
+    
     if env["BACK"] != 0:
         shutil.copy(Background, Boot)
 

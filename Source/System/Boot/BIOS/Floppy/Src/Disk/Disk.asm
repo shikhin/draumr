@@ -36,11 +36,11 @@ Info:
     .Read         dd 0                ; How many sectors have we read?
 
 BIOS:
-    .LBA      dd 8                    ; The LBA for the starting of the BIOS File.
+    .LBA      dd 9                    ; The LBA for the starting of the BIOS File.
     .Size     dd 0x2000               ; The size of the BIOS File - now we know the exact number.
 
 DBAL:
-    .LBA      dd 24                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
+    .LBA      dd 25                   ; The LBA of the starting of the DBAL File - hardcoded, since the BIOS is packed to 8KiB.
     .Size     dd 0                    ; The size for the DBAL file is unknown.
 
 KL:
@@ -81,7 +81,10 @@ BootFileGet:
     push ecx
     push edx
 
-    mov edi, 0x7C00 + 512             ; The load address for the sectors.
+    cmp word [0x7E00 - 2], 0xAA55
+    jne .Fail2                        ; The boot signature at 510 byte offset was incorrect.
+
+    mov edi, 0x7E00                   ; The load address for the sectors.
     mov al, 1                         ; Head 0; Cylinder 0; Sector 1; Read 2 sector.
     mov ch, 0
     mov cl, 2
@@ -92,17 +95,17 @@ BootFileGet:
     jc .Fail1
     
     inc cl                            ; Jump to the next sector.
-    cmp cl, 8                         ; If above 4th sector, finish.
+    cmp cl, 9
     ja .Done
 
     add di, 0x200
     jmp .LoopGet
 
 .Done:
-    cmp dword [0x8C00 - 8], "DRAU"    ; Compare the signature.
+    cmp dword [0x8E00 - 8], "DRAU"    ; Compare the signature.
     jne .Fail2
 
-    cmp dword [0x8C00 - 4], "MRSS"    ; And the rest of the signature.
+    cmp dword [0x8E00 - 4], "MRSS"    ; And the rest of the signature.
     jne .Fail2
 
 .Return:    
@@ -208,7 +211,7 @@ BootFilesInit:
     call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
-    sub ecx, 0x14000                  ; Subtract Start of File to get the size of the file.
+    sub ecx, 0x15000                  ; Subtract Start of File to get the size of the file.
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF
@@ -311,7 +314,13 @@ FloppyReadSectorM:
     mov ecx, [Info.Read]
     ret
 
-.Error:
+.Error:    
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ax, 0x03
+   
+    ; SWITCH!
+    int 0x10
+
     mov si, ErrorDiskMsg
     jmp AbortBoot
 
@@ -383,7 +392,7 @@ FileOpen:
 
 .Error:
     ; Set the file code to 0, and the carry flag.
-    mov byte [FILE.Code], 0
+    mov byte [FILE.Code], -1
     stc 
     
     pop eax
@@ -418,7 +427,7 @@ FileRead:
 
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
-    call FloppyReadSectorM              ; Do the CALL!
+    call FloppyReadSectorM            ; Do the CALL!
    
     add eax, ecx                      ; Advance the LBA by read sectors count.
 

@@ -32,30 +32,28 @@ ENTRY(Startup)
 
 SECTIONS
 {
-    .header 0x9000 : AT(0x9000)
+    .header 0x9000 :
     {
-        header = .;
         *(.header)
     }
 
-    .text 0x9000 + (code - header) :
+    .text :
     {
-        code = .;
         *(.text)
         *(.rodata)
     }
 
-    .data 0x9000 + (data - header) :
+    .data :
     {
-        data = .;
-        *(.data)                                                                                                                                                 }
+        *(.data)                                                                                                        
+    }
 
-    .bss 0x9000 + (bss - header) :
+    .bss :
     {
-        bss = .;
         bss_start = .;
         *(.bss)
     }
+
     bss_end = .;
 
     .pad 0xAFFC :

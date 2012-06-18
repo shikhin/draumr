@@ -49,15 +49,27 @@ def _floppy_builder(target, source, env) :
     KLAligned = Path([Dir, "KLAligned"])
     os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KL, KLAligned))
 
+    Kernelx86 = str(env["Kernelx86"][0])
+    Kernelx86Aligned = Path([Dir, "Kernelx86Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (Kernelx86, Kernelx86Aligned))
+
+    KernelAMD64 = str(env["KernelAMD64"][0])
+    KernelAMD64Aligned = Path([Dir, "KernelAMD64Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KernelAMD64, KernelAMD64Aligned))
+
     Combined1 = Path([Dir, "Combined1"])
     Combined2 = Path([Dir, "Combined2"])
     Combined3 = Path([Dir, "Combined3"])
+    Combined4 = Path([Dir, "Combined4"])
+    Combined5 = Path([Dir, "Combined5"])
 
     os.system("cat %s %s > %s" % (Stage1, BIOS, Combined1))
     os.system("cat %s %s > %s" % (Combined1, DBALAligned, Combined2))
     os.system("cat %s %s > %s" % (Combined2, KLAligned, Combined3))
+    os.system("cat %s %s > %s" % (Combined3, Kernelx86Aligned, Combined4))
+    os.system("cat %s %s > %s" % (Combined4, KernelAMD64Aligned, Combined5))
 
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined3, target[0]))
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined5, target[0]))
 
     print("  [FLP]   %s" % (target[0]) ) 
     

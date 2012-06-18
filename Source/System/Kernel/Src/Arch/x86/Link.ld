@@ -34,21 +34,18 @@ SECTIONS
 {
     .header 0xC0000000 :
     {
-        header = .;
         *(.header)
     }
 
     .text :
     {
-        code = .; _code = .; __code = .;
         *(.text)
         *(.rodata)
     }
 
     .data :
     {
-        data = .; _data = .; __data = .;
-        *(.data)                                                                                                                                                                                                            
+        *(.data)
     }
 
     file_end = .; _file_end = .; __file_end = .;
@@ -61,4 +58,3 @@ SECTIONS
 
     end = .; _end = .; __end = .;
 }
-

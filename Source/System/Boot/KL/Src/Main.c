@@ -1,5 +1,5 @@
-/* 
- * Draumr build system.
+/*
+ * Entry point for KL.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -26,33 +26,18 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-OUTPUT_FORMAT("binary")
-ENTRY(Startup)
 
-SECTIONS
+#include <Standard.h>
+#include <BIT.h>
+
+/* 
+ * The Main function for the KL sub-module.
+ *     uint32_t *BITPointer -> the pointer to the BIT.
+ */   
+void Main(BIT_t *BITPointer)
 {
-    .base 0x7C00 :
-    {
-        *(.base)
-    }
-
-    .text :
-    {
-        *(.text)
-        *(.rodata)
-    }
-
-    .data :
-    {
-        *(.data)                                                                                             
-    }
-
-    .pad 0x8DF8 :
-    {
-        pad = .;
-        *(.pad)
-    }
-
-    end = .;
+    BITPointer = BITPointer;
+    // We shouldn't reach here.
+    for(;;)
+        __asm__ __volatile__("hlt");
 }

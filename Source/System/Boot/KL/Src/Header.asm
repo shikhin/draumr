@@ -30,16 +30,17 @@ CPU 586
 
 %include "Source/System/Boot/KL/Format/Format.inc"
 
-SECTION .header
-
 EXTERN bss
 EXTERN end
 EXTERN file_end
+EXTERN Main
+
+SECTION .header
 
 ; Define the DBAL Header
 KL
 ENTRY_POINT       Start
-FILE_START        0x14000
+FILE_START        0x15000
 FILE_END          file_end
 BSS_START         bss
 BSS_END           end
@@ -53,4 +54,7 @@ GLOBAL Start
  ;     EAX -> the 32-bit address of the BIT.
  ;     ESP -> this should be equal to 0x7C00 - for clearing.
 Start:
-    jmp $
+    push eax
+    call Main
+    
+    ; We shouldn't be returning here.

@@ -45,13 +45,18 @@ def _pxe_builder(target, source, env) :
     Stage1 = str(env["PXE_STAGE1"][0])
     BIOS = str(env["BIOS"][0])
     DBAL = str(env["DBAL"][0])
-    Background = str(env["BACK"])
     KL = str(env["KL"][0])
+    Kernelx86 = str(env["Kernelx86"][0])
+    KernelAMD64 = str(env["KernelAMD64"][0])
+    Background = str(env["BACK"])
     
     shutil.copy(Stage1, TftpBoot)
     shutil.copy(BIOS, TftpBoot)
     shutil.copy(DBAL, TftpBoot)
     shutil.copy(KL, TftpBoot)
+    shutil.copy(Kernelx86, TftpBoot)
+    shutil.copy(KernelAMD64, TftpBoot)
+
     if env["BACK"] != 0:
         shutil.copy(Background, TftpBoot)
     

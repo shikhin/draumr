@@ -26,7 +26,7 @@
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 SECTION .bss
-; Reserve space for the palette AND the VBE controller information, since we only do it one t a time - where we store it.
+; Reserve space for the palette AND the VBE controller information, since we only do it one at a time - where we store it.
 Palette:
 ControllerInfo:
     resb (4 * 256)

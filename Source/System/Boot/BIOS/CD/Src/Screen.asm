@@ -47,7 +47,7 @@ ScreenInit:
 
     xor di, di
     mov ecx, 1000                     ; Since we are clearing DWORDs over here, we put the count as Count/4.
-    mov eax, 0x1F201F20               ; Set the value to set the screen to: Blue background, white foreground, blank spaces.
+    mov eax, 0x0F200F20               ; Set the value to set the screen to: Blue background, white foreground, blank spaces.
     rep stosd                         ; Clear the entire screen. 
     
     pop es                            ; Restore es

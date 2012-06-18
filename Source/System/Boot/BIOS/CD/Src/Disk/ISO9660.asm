@@ -315,7 +315,7 @@ FileOpen:
     jmp .Return
     
 .Error:
-    mov byte [FILE.Code], 0
+    mov byte [FILE.Code], -1
     mov dword [FILE.Extra], 0
     stc 
     
@@ -370,7 +370,7 @@ FileRead:
 
 ; Here we have the number of sectors to read in ECX, the LBA in EAX and the destination buffer in EDI. Let's shoot!
 .Loop:
-    call DiskReadSectorM                ; Do the CALL!
+    call DiskReadSectorM              ; Do the CALL!
     
     add ebx, ecx                      ; Advance the LBA by read sectors count.
    

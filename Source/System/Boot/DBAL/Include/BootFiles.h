@@ -37,7 +37,7 @@
 #define KL             0x03
 
 // The "standard" location of some files.
-#define KL_LOCATION    0x14000
+#define KL_LOCATION    0x15000
 
 // Bouncer has size of 64KiB.
 #define BOUNCER_SIZE        (64 * 1024)

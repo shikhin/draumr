@@ -49,7 +49,7 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
     if(Mode & (1 << 8))
     {
         // Switch to the mode, and save the status value.
-        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE, (uint16_t)Mode);
+        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE, Mode);
         
         // If the mode is 256 colors, then set up the palette.
         if((ModeInfo->BitsPerPixel == 8) && (Return == 0x4F))
@@ -72,7 +72,7 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
     else 
     {
         // Switch to the mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, (uint16_t)Mode);
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, Mode);
    
         // If the mode is 256 colors, then set up the palette.
         if(ModeInfo->BitsPerPixel == 8)

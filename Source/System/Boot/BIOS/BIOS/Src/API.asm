@@ -104,7 +104,6 @@ BITS 16
 .FileClose:
     call word [FileClose]             ; Close the file.
 
-    jc .ErrorFileClose                ; If any error occurs, print a error message and abort boot.
     xor eax, eax                      ; Clear out EAX, since we don't want to return anything anyway.
 
 .ReturnToPM:
@@ -112,14 +111,6 @@ BITS 16
 
     mov ebx, .PopEax
     jmp PMSwitch                      ; And switch back to protected mode for the return.
-
-.ErrorFileClose:
-    ; Switch to a text mode to ensure that we aren't in a video mode.
-    mov ax, 0x03
-    call VGASwitchMode
-
-    mov si, ErrorFileCloseMsg
-    jmp AbortBoot
 
 BITS 32
 .PopEax:
@@ -203,14 +194,14 @@ BITS 16
     call VGASwitchMode                ; Switch to the VGA mode defined.
 
     xor eax, eax                      ; Clear the return value.
-    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+    jmp .ReturnToPM                   ; And switch back to protected mode for the return.
 
 ; VGAPalette:
 .VGAPalette:
     call VGASetupPalette              ; Set up the palette.
 
     xor eax, eax                      ; Clear the return value.
-    jmp .ReturnToPM                    ; And switch back to protected mode for the return.
+    jmp .ReturnToPM                   ; And switch back to protected mode for the return.
 
 ; VBEGetModes:
 .VBEGetModes:

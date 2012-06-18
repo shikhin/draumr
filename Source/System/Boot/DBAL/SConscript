@@ -42,7 +42,8 @@ Src = ["Src/Header.asm",
        "Src/Output.c",
        "Src/FPU.asm",
        "Src/CPU.asm",
-       "Src/Math.c"]
+       "Src/Math.c",
+       "Src/API.c"]
 
 # A target for building the DBAL binary.
 DBAL = SysEnv.Program("DBAL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/DBAL/Link.ld", CCFLAGS = ["-march=i586", "-m32"], LIBS=['Bitmap'])

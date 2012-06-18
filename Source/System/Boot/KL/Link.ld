@@ -32,23 +32,20 @@ ENTRY(Start)
 
 SECTIONS
 {
-    .header 0x14000 :
+    .header 0x15000 :
     {
-        header = .;
         *(.header)
     }
 
     .text :
     {
-        code = .; _code = .; __code = .;
         *(.text)
         *(.rodata)
     }
 
     .data :
     {
-        data = .; _data = .; __data = .;
-        *(.data)                                                                                                                                                                                                            
+        *(.data)
     }
 
     file_end = .; _file_end = .; __file_end = .;

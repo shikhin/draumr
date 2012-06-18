@@ -22,5 +22,5 @@ Source/System/Kernel/KernelAMD64
 
 Utilities/*.util
 *.util
-Logs
+Logs/*
 *.sublime*

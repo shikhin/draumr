@@ -1,5 +1,5 @@
-/*
- * Entry point for DBAL file.
+/* 
+ * Contains functions to access the API.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -20,60 +20,69 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <Standard.h>
-#include <FPU.h>
-#include <BIT.h>
-#include <PMM.h>
-#include <BootFiles.h>
-#include <Output.h>
-#include <Abort.h>
 #include <API.h>
-#include <Log.h>
+#include <BIT.h>
+#include <Output.h>
+
+uint32_t (*OldVideoAPI)(uint32_t APICode, ...);
+
 /*
- * Function to "jump" to the kernel loader.
- *     void (*EntryPoint)(void) -> the function pointer of the entry point.
+ * Initializes the API, replacing old APIs with new one's.
  */
-_PROTOTYPE(void GotoKL, (void (*EntryPoint)(void)));
-
-/* 
- * The Main function for the DBAL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
-void Main(uint32_t *BITPointer)
+void APIInit()
 {
-    // Initialize the FPU, without which, we can't proceed.
-    FPUInit();
+    OldVideoAPI = BIT.Video.VideoAPI;
 
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
+    BIT.Video.VideoAPI = &VideoAPI;
+}
 
-    // Initialize the PMM.
-    PMMInit();
-    
-    // Initialize the bouncer for the boot files.
-    BootFilesInit();
+/*
+ * The video API, to access VGA/VBE* functions.
+ *     uint32_t -> the API code of the function.
+ *     ...      -> rest of the arguments.
+ *
+ * Returns:
+ *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
+ */
+uint32_t VideoAPI(uint32_t APICode, ...)
+{
+    if(APICode == VIDEO_OUTPUT_REVERT)
+    {
+    	OutputRevert();
+    	return 0;
+    }
 
-    // Load the KL file.
-    FILE_t KLFile = BootFilesKL();
+    else
+    {
+    	va_list List;
+        va_start(List, APICode);
 
-    // Initialize support for 'output'.
-    OutputInit();
+    	switch(APICode)
+    	{
+          case VIDEO_VGA_SWITCH_MODE:
+            return OldVideoAPI(APICode, va_arg(List, uint32_t));
 
-    // Initialize the new API.
-    APIInit();
+          case VIDEO_VGA_PALETTE:
+            return OldVideoAPI(APICode);
 
-    // Go to the kernel loader.
-    BootFileHeader_t *Header = (BootFileHeader_t*)KLFile.Location;
-    GotoKL(Header->EntryPoint);
+          case VIDEO_VBE_SWITCH_MODE:           
+            return OldVideoAPI(APICode, va_arg(List, uint32_t));
 
-    // We shouldn't reach here.
-    for(;;)
-        __asm__ __volatile__("hlt");
+          case VIDEO_VBE_PALETTE:
+            return OldVideoAPI(APICode);
+
+          case VIDEO_VBE_GET_MODES:
+            return OldVideoAPI(APICode, va_arg(List, uint32_t));
+    	}
+    }
+
+    return 0;
 }

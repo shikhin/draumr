@@ -1,5 +1,5 @@
 /* 
- * Draumr build system.
+ * Contains functions to access the API.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -20,39 +20,41 @@
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
-OUTPUT_FORMAT("binary")
-ENTRY(Startup)
 
-SECTIONS
-{
-    .base 0x7C00 :
-    {
-        *(.base)
-    }
+#ifndef _API_H
+#define _API_H
 
-    .text :
-    {
-        *(.text)
-        *(.rodata)
-    }
+#include <Standard.h>
 
-    .data :
-    {
-        *(.data)                                                                                             
-    }
+// The API codes for the video handling API.
+#define VIDEO_VGA_SWITCH_MODE   0
+#define VIDEO_VGA_PALETTE       1
 
-    .pad 0x8DF8 :
-    {
-        pad = .;
-        *(.pad)
-    }
+#define VIDEO_VBE_SWITCH_MODE   10
+#define VIDEO_VBE_PALETTE       11
+#define VIDEO_VBE_GET_MODES     12
 
-    end = .;
-}
+#define VIDEO_OUTPUT_REVERT     20
+
+/*
+ * Initializes the API, replacing old APIs with new one's.
+ */
+_PROTOTYPE(void APIInit, (void)) _COLD;
+
+/*
+ * The video API, to access VGA/VBE* functions.
+ *     uint32_t -> the API code of the function.
+ *     ...      -> rest of the arguments.
+ *
+ * Returns:
+ *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
+ */
+_PROTOTYPE(uint32_t VideoAPI, (uint32_t APICode, ...));
+
+#endif /* _BIT_H */

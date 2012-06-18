@@ -300,6 +300,12 @@ FileRead:
     ret    
 
 .ErrorPXEAPI:
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ax, 0x03
+   
+    ; SWITCH!
+    int 0x10
+    
     mov si, ErrorPXEAPIMsg
     jmp AbortBoot
 

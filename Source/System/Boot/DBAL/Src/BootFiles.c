@@ -295,7 +295,7 @@ FILE_t BootFilesKL()
     FILE_t File;
 
     // Open the file, with code, BACKGROUND_SIF.
-    File.Size = BIT.FileAPI(FILE_OPEN, (uint32_t)KL);
+    File.Size = BIT.FileAPI(FILE_OPEN, KL);
 
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
@@ -307,6 +307,7 @@ FILE_t BootFilesKL()
     BIT.FileAPI(FILE_READ, (uint32_t*)KL_LOCATION, 2048);
 
     BootFileHeader_t *Header = (BootFileHeader_t*)KL_LOCATION;
+
     // Check the file signature.
     if((Header->Signature[0] != ' ') ||
        (Header->Signature[1] != ' ') ||
@@ -323,7 +324,7 @@ FILE_t BootFilesKL()
 
     // Allocate enough space to hold the file.
     File.Location = (void*)KL_LOCATION;
-    
+   
     // Reduce the 2048 bytes we left and read the rest of the file.
     uint32_t FileSize = File.Size;
     if(FileSize < 2048)
@@ -357,6 +358,7 @@ FILE_t BootFilesKL()
     // If CRC values are not equal. 
     if(Header->CRC32 != ~CRC(0xFFFFFFFF, (Header->FileEnd - Header->FileStart) - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
     {
+        DebugPrintText("%x\n", Header->FileEnd);
         AbortBoot("Incorrect CRC32 value of the KL file.\n");
     }
 
