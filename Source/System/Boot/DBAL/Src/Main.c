@@ -35,7 +35,7 @@
 #include <Output.h>
 #include <Abort.h>
 #include <API.h>
-#include <Log.h>
+
 /*
  * Function to "jump" to the kernel loader.
  *     void (*EntryPoint)(void) -> the function pointer of the entry point.
