@@ -102,6 +102,10 @@ Main:
 BIOSSignature:
     dw 0xAA55
 
+BigVal1: dd 0xFFFFFFFF, 0x00000000
+BigVal2: dd 0xFFFFFFFE, 0xE0000000
+BigVal3: dd 0x00000000, 0x00000000
+
 ExtMain:
     call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.		
     call BootFilesInit                ; Initialize boot file data - get the size currently.

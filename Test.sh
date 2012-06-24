@@ -28,19 +28,38 @@
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Only one argument.
-ARGS=1
+ARGS=2
 
 # Some variables - which we'd be testing case.
 PXE="pxe"
-CD="cd"
+CD="iso"
 Floppy="floppy"
+Clean="clean"
+Release="release"
+Build="debug"
 
 for Var in "$@"
 do
-    if [ "$Var" == "$PXE" ] 
+    if [ "$Var" == "$Clean" ]
+    then
+        echo "Cleaning."
+        scons -j4 -c
+        exit
+        
+    elif [ "$Var" == "$Release" ]
+    then
+        echo "Release build."
+        Build="release"
+        
+    fi
+done
+
+for Var in "$@"
+do
+	if [ "$Var" == "$PXE" ] 
     then
         echo "Compiling for PXE."
-        scons target=pxe build=release
+        scons -j4 target=pxe build="$Build"
 
         echo -e "\nOpening QEMU, using PXE."
         qemu-system-i386 -s -monitor stdio -tftp /tftpboot/ -bootp /Stage1 -boot n -net user -net nic,model=rtl8139,macaddr=00:11:22:33:44:55
@@ -48,26 +67,21 @@ do
     elif [ "$Var" == "$Floppy" ] 
     then
         echo "Compiling for Floppy."
-	    scons target=floppy build=release
+	    scons -j4 target=floppy build="$Build"
 
         # Remove the Draumr iso file, in case it's already there.
         rm Draumr.iso
-
-	    echo -e "\nOpening bochs, using floppy."
-    	bochs -q
-
+        
         echo -e "\nOpening QEMU, using floppy."
 	    qemu-system-i386 -s -monitor stdio -fda Draumr.flp
 
     elif [ "$Var" == "$CD" ] 
     then
         echo "Compiling for CD."
-        scons target=iso build=release
+        scons -j4 target=iso build="$Build"
        
         rm Draumr.flp
-        echo -e "\nOpening bochs, using CD."
-        bochs -q
-
+        
         echo -e "\nOpening QEMU, using CD."
         qemu-system-i386 -s -monitor stdio -cdrom Draumr.iso
 

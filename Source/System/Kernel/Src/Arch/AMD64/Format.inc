@@ -28,10 +28,10 @@
 ; Offset 0        Kernel Identifier.
 ; Offset 4        Address of entry point.
 ; Offset 12       Start of file.
-; Offset 16       End of file.
-; Offset 20       Starting address of BSS section.
-; Offset 24       Ending address of BSS section.
-; Offset 28       CRC32 remainder.
+; Offset 20       End of file.
+; Offset 28       Starting address of BSS section.
+; Offset 36       Ending address of BSS section.
+; Offset 44       CRC32 remainder.
 
 ; This should just be at offset 0 of the file - identifies the Kernel.
 %define KERN_DEF db "KE64"

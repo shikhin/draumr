@@ -49,18 +49,19 @@ Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 Source = SConscript(dirs=["Source"], exports=["Env"])
 Depends(Source, Utils)
 
-Image = Env.Image("BootImage.comp", None)
-Depends(Image, Utils)
-Depends(Image, Env["CRC32"])
-
-if os.path.isfile(Env["BACK"]) :
-    Depends(Image, Env["ToSIF"])
-
 Dependancies = (Env["BIOS"],
                 Env["DBAL"],
                 Env["KL"],
                 Env["Kernelx86"],
                 Env["KernelAMD64"])
+
+Image = Env.Image("BootImage.comp", None)
+Depends(Image, Utils)
+Depends(Image, Env["CRC32"])
+Depends(Image, Dependancies)
+
+if os.path.isfile(Env["BACK"]) :
+    Depends(Image, Env["ToSIF"])
 
 if Cfg.Target == "all":
     ISO = Env.ISO("Draumr.iso", None)

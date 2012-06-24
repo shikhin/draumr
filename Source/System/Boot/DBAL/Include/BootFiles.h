@@ -99,7 +99,7 @@ _PROTOTYPE(void BootFilesInit, (void)) _COLD;
 _PROTOTYPE(void BootFilesClear, (void));
 
 /*
- * Gets the background image, verifying what we are getting to.
+ * Gets the background image, verifying what we are getting too.
  *
  * Returns:
  *     FILE_t -> the file structure containing address and length of the file.
@@ -107,12 +107,30 @@ _PROTOTYPE(void BootFilesClear, (void));
 _PROTOTYPE(FILE_t BootFilesBGImg, (void));
 
 /*
- * Gets the Kernel Loader file, verifying what we are getting to.
+ * Gets the Kernel Loader file, verifying what we are getting too.
  *
  * Returns:
  *     FILE_t -> the file structure containing address and length of the file.
  *     Boot   -> aborts boot if unable to load the KL.
  */
 _PROTOTYPE(FILE_t BootFilesKL, (void));
+
+/*
+ * Gets the x86 kernel, verifying what we are getting too.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if we are unable to load the kernel.
+ */
+_PROTOTYPE(FILE_t BootFilesKernelx86, (void));
+
+/*
+ * Gets the AMD64 kernel, verifying what we are getting too.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if we are unable to load the kernel.
+ */
+_PROTOTYPE(FILE_t BootFilesKernelAMD64, (void));
 
 #endif /* _BOOT_FILES_H */

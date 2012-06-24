@@ -47,6 +47,14 @@ KL:
     .LBA      dd 0 
     .Size     dd 0                    ; The size and the LBA of the KL is unknown.
 
+Kernelx86:
+    .LBA      dd 0                    ; The size and the LBA of the Kernelx86 & AMD64 is unknown.
+    .Size     dd 0
+
+KernelAMD64:
+    .LBA      dd 0                    ; The size and the LBA of the Kernelx86 & AMD64 is unknown.
+    .Size     dd 0
+
 FILE:
     .Code   db -1                     ; Code of the file opened.
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
@@ -216,6 +224,52 @@ BootFilesInit:
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF
     mov [KL.Size], ecx                ; And store it!
+
+    shr ecx, 9                        ; Shift left ECX (size of KL) by 9, dividing by 512.
+    add ecx, [KL.LBA]                 ; Add it to the LBA to get the LBA of Kernelx86.
+
+    mov dword [Kernelx86.LBA], ecx
+
+    mov eax, [Kernelx86.LBA]          ; Get the LBA into EAX.
+    mov ecx, 1                        ; Read one sectors.
+    mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files.
+
+    call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
+
+    mov ecx, [0x9000 + 24]            ; Offset 16 of the file is the EOF address.
+    sub ecx, 0xC0000000               ; Subtract Start of File to get the size of the file.
+
+    add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
+    and ecx, ~0x1FF
+    mov [Kernelx86.Size], ecx         ; And store it!
+
+    shr ecx, 9                        ; Shift left ECX (size of KL) by 9, dividing by 512.
+    add ecx, [Kernelx86.LBA]          ; Add it to the LBA to get the LBA of KernelAMD64.
+
+    mov dword [KernelAMD64.LBA], ecx
+
+    mov eax, [KernelAMD64.LBA]        ; Get the LBA into EAX.
+    mov ecx, 1                        ; Read one sectors.
+    mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files.
+
+    call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
+
+    ; Get the end in EDX:EAX.
+    mov edx, [0x9000 + 24]
+    mov eax, [0x9000 + 20]
+
+    ; Get the beginning in ECX:EBX.
+    mov ecx, [0x9000 + 16]
+    mov ebx, [0x9000 + 12]
+
+    ; The difference is now in EDX:EAX.
+    sub eax, ebx
+    sbb edx, ecx
+
+    ; Only store EAX, since the size SHOULD NOT exceed 4GiB in any case.
+    add eax, 0x1FF                    ; Pad it to the last 512 byte boundary.
+    and eax, ~0x1FF
+    mov [KernelAMD64.Size], eax       ; And store it!
 
 .Return:
     popad

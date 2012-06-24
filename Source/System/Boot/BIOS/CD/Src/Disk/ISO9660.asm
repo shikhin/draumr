@@ -52,6 +52,14 @@ KL:
     .LBA          dd 0                ; The LBA of the KL file.
     .Size         dd 0                ; The Size of the KL file in bytes.
 
+Kernelx86:
+    .LBA		  dd 0				  ; The LBA of the x86 kernel.
+    .Size		  dd 0                ; The Size of the x86 kernel in bytes.
+
+KernelAMD64:
+    .LBA		  dd 0                ; The LBA of the AMD64 kernel.
+    .Size		  dd 0                ; The Size of the AMD64 kernel in bytes.
+
 Background:
     .LBA          dd 0                ; The LBA of the Background file.
     .Size         dd 0                ; The size of the Background file in bytes.
@@ -118,7 +126,7 @@ BootFilesFind:
     mov [Boot.LBA], ebx
     mov [Boot.Size], eax
     
-    mov ebp, 4                        ; Number of files to load.
+    mov ebp, 6                        ; Number of files to load.
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
@@ -141,8 +149,8 @@ BootFilesFind:
     jmp .NextRecordBD
 
 .CheckKL:
-    cmp byte [di + 32], 5             ; If size of directory isn't 2, then try for BG image.
-    jne .CheckBGImage
+    cmp byte [di + 32], 5             ; If size of directory isn't 2, then try for x86 kernel.
+    jne .CheckKernelx86
 
     cmp word [di + 33], "KL"          ; If directory identifier doesn't match, next record.
     jne .NextRecordBD
@@ -159,8 +167,57 @@ BootFilesFind:
 
     jmp .CheckForAllDone
 
+.CheckKernelx86:
+    cmp byte [di + 32], 8             ; Check the size of the directory identifier. If not match, try for AMD64.
+    jne .CheckKernelAMD64
+
+    ; Try to match the name.
+    cmp dword [di + 33],  "KEX8"
+    jne .NextRecordBD
+
+    cmp byte [di + 37], '6'
+    jne .NextRecordBD
+
+    ; So we found the Kernelx86 here.
+
+    ; We don't use edx and esi in the loop/anywhere, so use them to move around
+    ; and store the LBA and Size.
+    mov edx, [di + 10]
+    mov esi, [di + 2]
+
+    mov [Kernelx86.LBA], esi
+    mov [Kernelx86.Size], edx
+
+    jmp .CheckForAllDone
+
+.CheckKernelAMD64:
+    cmp byte [di + 32], 10            ; If doesn't match, go to the background image.
+    jne .NextRecordBD
+
+    ; Try to match the name.
+    cmp dword [di + 33],  "KEAM"
+    jne .NextRecordBD
+
+    cmp word [di + 37], "D6"
+    jne .NextRecordBD
+
+    cmp byte [di + 39], '4'
+    jne .NextRecordBD
+
+    ; So we found the KernelAMD64 here.
+
+    ; We don't use edx and esi in the loop/anywhere, so use them to move around
+    ; and store the LBA and Size.
+    mov edx, [di + 10]
+    mov esi, [di + 2]
+
+    mov [KernelAMD64.LBA], esi
+    mov [KernelAMD64.Size], edx
+
+    jmp .CheckForAllDone
+
 .CheckBGImage:
-    cmp byte [di + 32], 14            ; Check the size of the directory identifier.
+    cmp byte [di + 32], 14            ; If doesn't match, go to the background image.
     jne .NextRecordBD
 
     cmp dword [di + 33], "BACK"       ; Check the file name.
@@ -245,6 +302,8 @@ BootFilesFind:
  ;      1   -> DBAL.
  ;      2   -> background image.
  ;      3   -> KL.
+ ;      4   -> Kernel x86.
+ ;      5   -> Kernel AMD64.
  ;
  ; Returns: 
  ;    ECX   -> the size of the file you want to open.
@@ -271,6 +330,12 @@ FileOpen:
 
     cmp al, 3                         ; 3 indicates the KL.
     je .KL
+
+    cmp al, 4                         ; 4 indicates the Kernel x86.
+    je .Kernelx86
+
+    cmp al, 5                         ; 5 indicates the Kernel AMD64.
+    je .KernelAMD64
 
     jmp .Error
    
@@ -314,6 +379,24 @@ FileOpen:
 
     jmp .Return
     
+.Kernelx86:
+    mov eax, [Kernelx86.LBA]
+    mov [FILE.LBA], eax
+
+    mov eax, [Kernelx86.Size]
+    mov [FILE.Size], eax
+
+    jmp .Return
+
+.KernelAMD64:
+    mov eax, [KernelAMD64.LBA]
+    mov [FILE.LBA], eax
+
+    mov eax, [KernelAMD64.Size]
+    mov [FILE.Size], eax
+
+    jmp .Return
+
 .Error:
     mov byte [FILE.Code], -1
     mov dword [FILE.Extra], 0

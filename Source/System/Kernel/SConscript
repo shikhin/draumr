@@ -34,11 +34,11 @@ GenSrc = ["Header.asm"]
 # A target for building the KL binary.
 x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Src/Arch/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])
 x86SysEnv.VariantDir('Src/Arch/x86', 'Src/Arch/Generic', duplicate=0)
-Kernelx86 = x86SysEnv.Program("Kernelx86", ['Src/Arch/x86/' + File for File in GenSrc])
+Kernelx86 = x86SysEnv.Program("KEx86", ['Src/Arch/x86/' + File for File in GenSrc])
 
 AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Src/Arch/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64"])
 AMD64SysEnv.VariantDir('Src/Arch/AMD64', 'Src/Arch/Generic', duplicate=0)
-KernelAMD64 = AMD64SysEnv.Program("KernelAMD64", ['Src/Arch/AMD64/' + File for File in GenSrc])
+KernelAMD64 = AMD64SysEnv.Program("KEAMD64", ['Src/Arch/AMD64/' + File for File in GenSrc])
 
 Depends(Kernelx86, ['Src/Arch/Generic/' + File for File in GenSrc])
 Depends(KernelAMD64, ['Src/Arch/Generic/' + File for File in GenSrc])

@@ -364,3 +364,29 @@ FILE_t BootFilesKL()
 
     return File;
 }
+
+/*
+ * Gets the x86 kernel, verifying what we are getting too.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if we are unable to load the kernel.
+ */
+FILE_t BootFilesKernelx86()
+{
+    FILE_t Kernelx86;
+    return Kernelx86;
+}
+
+/*
+ * Gets the AMD64 kernel, verifying what we are getting too.
+ *
+ * Returns:
+ *     FILE_t -> the file structure containing address and length of the file.
+ *     Boot   -> aborts boot if we are unable to load the kernel.
+ */
+FILE_t BootFilesKernelAMD64()
+{
+    FILE_t KernelAMD64;
+    return KernelAMD64;
+}
