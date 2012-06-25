@@ -42,6 +42,13 @@
 
 #define VIDEO_OUTPUT_REVERT     20
 
+// The API codes for the file access API.
+#define FILE_OPEN      0
+#define FILE_READ      1
+#define FILE_CLOSE     2
+
+#define FILE_KERNEL    10
+
 /*
  * Initializes the API, replacing old APIs with new one's.
  */
@@ -56,5 +63,15 @@ _PROTOTYPE(void APIInit, (void)) _COLD;
  *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
  */
 _PROTOTYPE(uint32_t VideoAPI, (uint32_t APICode, ...));
+
+/*
+ * The file API, contains both raw accesses and file reads.
+ *     uint32_t -> the API code of the function.
+ *     ...      -> rest of the arguments.
+ *
+ * Returns:
+ *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
+ */
+_PROTOTYPE(uint32_t FileAPI, (uint32_t APICode, ...));
 
 #endif /* _BIT_H */

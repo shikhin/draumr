@@ -31,17 +31,24 @@
 #include <API.h>
 #include <BIT.h>
 #include <Output.h>
+#include <BootFiles.h>
 
+// The old video and file API - saved for access by the new API.
 uint32_t (*OldVideoAPI)(uint32_t APICode, ...);
+uint32_t (*OldFileAPI)(uint32_t APICode, ...);
 
 /*
  * Initializes the API, replacing old APIs with new one's.
  */
 void APIInit()
 {
+    // Save the old APIs.
     OldVideoAPI = BIT.Video.VideoAPI;
+    OldFileAPI = BIT.FileAPI;
 
+    // Restore them by the new ones.
     BIT.Video.VideoAPI = &VideoAPI;
+    BIT.FileAPI = &FileAPI;
 }
 
 /*
@@ -54,34 +61,96 @@ void APIInit()
  */
 uint32_t VideoAPI(uint32_t APICode, ...)
 {
-    if(APICode == VIDEO_OUTPUT_REVERT)
-    {
-    	OutputRevert();
-    	return 0;
-    }
-
-    else
-    {
-    	va_list List;
+    va_list List;
+  	switch(APICode)
+  	{
+      case VIDEO_VGA_SWITCH_MODE:
+      case VIDEO_VBE_SWITCH_MODE:
+      case VIDEO_VBE_GET_MODES:
+        // Start a list for the arguments for this mode.
         va_start(List, APICode);
 
-    	switch(APICode)
-    	{
-          case VIDEO_VGA_SWITCH_MODE:
-            return OldVideoAPI(APICode, va_arg(List, uint32_t));
+        // Retrieve the argument.
+        uint32_t Arg = va_arg(List, uint32_t);
 
-          case VIDEO_VGA_PALETTE:
-            return OldVideoAPI(APICode);
+        // End the list.
+        va_end(List);
 
-          case VIDEO_VBE_SWITCH_MODE:           
-            return OldVideoAPI(APICode, va_arg(List, uint32_t));
+        return OldVideoAPI(APICode, Arg);
 
-          case VIDEO_VBE_PALETTE:
-            return OldVideoAPI(APICode);
+      case VIDEO_VGA_PALETTE:
+        return OldVideoAPI(APICode);
 
-          case VIDEO_VBE_GET_MODES:
-            return OldVideoAPI(APICode, va_arg(List, uint32_t));
-    	}
+      case VIDEO_VBE_PALETTE:
+        return OldVideoAPI(APICode);
+
+      case VIDEO_OUTPUT_REVERT:
+        OutputRevert();
+        return 0;
+    }
+
+  	return 0;
+}
+
+/*
+ * The file API, contains both raw accesses and file reads.
+ *     uint32_t -> the API code of the function.
+ *     ...      -> rest of the arguments.
+ *
+ * Returns:
+ *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
+ */
+uint32_t FileAPI(uint32_t APICode, ...)
+{
+    // Start a list for the arguments.
+    va_list List;
+    va_start(List, APICode);
+
+    // Set of arguments.
+    uint32_t Arg[2];
+
+    // The pointer to the file structure.
+    FILE_t *FILEPointer, FILEStruct;
+
+    switch(APICode)
+    {
+      case FILE_OPEN:
+        // Get the argument and close the list of args.
+        Arg[0] = va_arg(List, uint32_t);
+        va_end(List);
+
+        // Call the old file API.
+        return OldFileAPI(APICode, Arg[0]);
+
+      case FILE_READ:
+        // Get the list of arguments, and close the va.
+        Arg[0] = va_arg(List, uint32_t);
+        Arg[1] = va_arg(List, uint32_t);
+        va_end(List);
+
+        // Call the old file API.
+        return OldFileAPI(APICode, Arg[0], Arg[1]);
+
+      case FILE_CLOSE:
+        // No arguments in the case of close.
+        va_end(List);
+
+        return OldFileAPI(APICode);
+
+      case FILE_KERNEL:
+        // Get the list of arguments, and close the va.
+        Arg[0] = va_arg(List, uint32_t);
+        Arg[1] = va_arg(List, uint32_t);
+
+        FILEPointer = (FILE_t*)Arg[1];
+
+        // Load the kernel file (the arch is passed as argument).
+        FILEStruct = BootFilesKernel(Arg[0]);
+
+        // Fill up the pointer to the file structure that we have been given.
+        FILEPointer->Size = FILEStruct.Size;
+        FILEPointer->Location = FILEStruct.Location;
+        return 0;
     }
 
     return 0;
