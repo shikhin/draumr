@@ -397,6 +397,8 @@ static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
       default:
         HorizontalRatio = 4;
         VerticalRatio = 3;
+
+        break;
     }
 
     // Calculate the Y resolution - using the ratio.
@@ -810,13 +812,16 @@ void OutputRevert()
             // And return.
             return;
         }
- 
+
+        break;
+
       case LEVEL_VGA:
         // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
         BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         // If we need to go down a level from Serial, ABORT!
         AbortBoot("Unable to find any suitable display system (VGA, VBE).\n");
+        break;
     }
 }
 
@@ -927,7 +932,7 @@ static void VBEInit()
         return;
     }
 }
-
+#include <Log.h>
 /*
  * Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
  */

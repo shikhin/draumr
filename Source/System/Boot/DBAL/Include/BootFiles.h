@@ -35,9 +35,15 @@
 // Define the "file code" of every file, for easy usage.
 #define BACKGROUND_SIF 0x02
 #define KL             0x03
+#define KERNEL_X86     0x04
+#define KERNEL_AMD64   0x05
+
+// Architecture.
+#define ARCH_X86       0x00
+#define ARCH_AMD64     0x01
 
 // The "standard" location of some files.
-#define KL_LOCATION    0x15000
+#define KL_LOCATION    0x18000
 
 // Bouncer has size of 64KiB.
 #define BOUNCER_SIZE        (64 * 1024)
@@ -74,6 +80,20 @@ struct BootFileHeader
     uint32_t CRC32;
 } _PACKED;
 
+// The Kernel generic header format.
+struct KernelHeader
+{
+    uint8_t  Signature[4];
+    uint64_t EntryPoint;
+    uint64_t FileStart;
+    uint64_t FileEnd;
+
+    uint64_t BSSStart;
+    uint64_t BSSEnd;
+
+    uint32_t CRC32;
+} _PACKED;
+
 // The file structure, which is returned by opening files.
 typedef struct
 {
@@ -87,6 +107,7 @@ typedef struct
 // Some typedef's to make stuff easier.
 typedef struct SIFHeader      SIFHeader_t;
 typedef struct BootFileHeader BootFileHeader_t;
+typedef struct KernelHeader   KernelHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
@@ -125,12 +146,16 @@ _PROTOTYPE(FILE_t BootFilesKL, (void));
 _PROTOTYPE(FILE_t BootFilesKernelx86, (void));
 
 /*
- * Gets the AMD64 kernel, verifying what we are getting too.
+ * Gets the x86 kernel, verifying what we are getting too.
+ *     uint32-t Arch -> the arch of the kernel to load.
+ *
+ *                          0x01 -> x86
+ *                          0x02 -> AMD64
  *
  * Returns:
- *     FILE_t -> the file structure containing address and length of the file.
- *     Boot   -> aborts boot if we are unable to load the kernel.
+ *     FILE_t        -> the file structure containing address and length of the file.
+ *     Boot          -> aborts boot if we are unable to load the kernel.
  */
-_PROTOTYPE(FILE_t BootFilesKernelAMD64, (void));
+_PROTOTYPE(FILE_t BootFilesKernel, (uint32_t Arch));
 
 #endif /* _BOOT_FILES_H */

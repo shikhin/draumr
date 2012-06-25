@@ -35,7 +35,7 @@
 
 #define GOOD_LENGTH (1024)
 
-// Use the lookup table pre-built, rather than pre-generating it.
+// Use the lookup table pre-built, rather than generating it.
 uint32_t Table[256] = 
 { 
     0x00000000,    0x77073096,    0xEE0E612C,    0x990951BA,
@@ -192,7 +192,15 @@ int main(int argc, char *argv[])
 
         Signature[3] = '\0';
     }
-        
+
+    else if((Signature[0] == 'K') && (Signature[1] == 'E'))
+    {
+        // Offset to the header.
+        HeaderOffset = 48;
+        // Offset to the CRC value.
+        CRCValueOffset = 44;
+    }
+
     else
     {
         // Offset to the header.

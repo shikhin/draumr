@@ -279,6 +279,7 @@ FILE_t BootFilesBGImg()
         return File;
     }
 
+    BIT.FileAPI(FILE_CLOSE);
     return File;
 }
 
@@ -294,7 +295,7 @@ FILE_t BootFilesKL()
     // The file structure in which we'd store data about the KL file.
     FILE_t File;
 
-    // Open the file, with code, BACKGROUND_SIF.
+    // Open the file, with code, KL.
     File.Size = BIT.FileAPI(FILE_OPEN, KL);
 
     // If we were unable to open it, return blank file structure.
@@ -356,37 +357,175 @@ FILE_t BootFilesKL()
     }
 
     // If CRC values are not equal. 
-    if(Header->CRC32 != ~CRC(0xFFFFFFFF, (Header->FileEnd - Header->FileStart) - sizeof(BootFileHeader_t), (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
+    if(Header->CRC32 != ~CRC(0xFFFFFFFF, (Header->FileEnd - Header->FileStart) - sizeof(BootFileHeader_t),
+       (uint8_t*)File.Location + sizeof(BootFileHeader_t)))
     {
         DebugPrintText("%x\n", Header->FileEnd);
         AbortBoot("Incorrect CRC32 value of the KL file.\n");
     }
 
+    BIT.FileAPI(FILE_CLOSE);
     return File;
 }
 
 /*
  * Gets the x86 kernel, verifying what we are getting too.
+ *     uint32-t Arch -> the arch of the kernel to load.
+ *
+ *                          0x00 -> x86
+ *                          0x01 -> AMD64
  *
  * Returns:
- *     FILE_t -> the file structure containing address and length of the file.
- *     Boot   -> aborts boot if we are unable to load the kernel.
+ *     FILE_t        -> the file structure containing address and length of the file.
+ *     Boot          -> aborts boot if we are unable to load the kernel.
  */
-FILE_t BootFilesKernelx86()
+FILE_t BootFilesKernel(uint32_t Arch)
 {
-    FILE_t Kernelx86;
-    return Kernelx86;
-}
+    // The file structure in which we'd store data about the kernel (file).
+    FILE_t File;
 
-/*
- * Gets the AMD64 kernel, verifying what we are getting too.
- *
- * Returns:
- *     FILE_t -> the file structure containing address and length of the file.
- *     Boot   -> aborts boot if we are unable to load the kernel.
- */
-FILE_t BootFilesKernelAMD64()
-{
-    FILE_t KernelAMD64;
-    return KernelAMD64;
+    uint32_t FileCode;
+    const uint8_t *String;
+    switch(Arch)
+    {
+      case ARCH_X86:
+        FileCode = KERNEL_X86;
+        // Initialize string for error messages.
+        String = (uint8_t*)"x86";
+
+        break;
+
+      case ARCH_AMD64:
+        FileCode = KERNEL_AMD64;
+        // Initialize string for error messages.
+        String = (uint8_t*)"AMD64";
+
+        break;
+
+      default:
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        AbortBoot("Unrecognizable architecture passed to file API for kernel.");
+        break;
+    }
+
+    // Open the file, with code, FileCode.
+    File.Size = BIT.FileAPI(FILE_OPEN, FileCode);
+
+    // If we were unable to open it, abort.
+    if(!File.Size)
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Unable to open the kernel file.\n");
+    }
+
+    // Read 2048 bytes at the bouncer.
+    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+
+    KernelHeader_t *KernelHeader = (KernelHeader_t*)Bouncer;
+
+    // Check the file signature.
+    if((KernelHeader->Signature[0] != 'K') ||
+       (KernelHeader->Signature[1] != 'E'))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Corrupt Kernel header.");
+    }
+
+    if(((Arch == ARCH_X86)                    &&
+        (KernelHeader->Signature[2]  != '3'   ||
+         KernelHeader->Signature[3]  != '2')) ||
+
+       ((Arch == ARCH_AMD64)                  &&
+        (KernelHeader->Signature[2]  != '6'   ||
+         KernelHeader->Signature[3]  != '4')))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Kernel header's architecture does not match file name.");
+    }
+
+    if(((File.Size + 0xFFF) / 0x1000) != (((KernelHeader->FileEnd - KernelHeader->FileStart) + 0xFFF) / 0x1000))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Corrupt Kernel header.");
+    }
+
+    // Allocate enough space to hold the file.
+    File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP, (File.Size + 0xFFF)/0x1000);
+
+    // So we can't allocate space for the image.
+    if(!File.Location)
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Cannot allocate enough space for Kernel file.");
+    }
+
+    // Reduce the 2048 bytes we left and read the rest of the file.
+    uint32_t FileSize = File.Size;
+    if(FileSize < 2048)
+    {
+        FileSize = 0;
+    }
+
+    else
+    {
+        FileSize -= 2048;
+    }
+
+    uint8_t *OutputBuffer = (uint8_t*)File.Location;
+
+    // Copy the 2048 bytes we read.
+    memcpy(OutputBuffer, Bouncer, 2048);
+
+    // Update the address of the SIF Header.
+    KernelHeader = (KernelHeader_t*)OutputBuffer;
+
+    OutputBuffer += 2048;
+
+    // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
+    while(FileSize >= BouncerSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        memcpy(OutputBuffer, Bouncer, BouncerSize);
+
+        FileSize -= BouncerSize;
+        OutputBuffer += BouncerSize;
+    }
+
+    // If they are any left over bytes, read them.
+    if(FileSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);
+        memcpy(OutputBuffer, Bouncer, FileSize);
+    }
+
+    // If CRC values are not equal.
+    if(KernelHeader->CRC32 != ~CRC(0xFFFFFFFF, ((KernelHeader->FileEnd - KernelHeader->FileStart) - sizeof(KernelHeader_t)),
+       (uint8_t*)File.Location + sizeof(KernelHeader_t)))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel!\n", String);
+        AbortBoot("Incorrect CRC32 value of the Kernel file.");
+    }
+
+    BIT.FileAPI(FILE_CLOSE);
+    return File;
 }

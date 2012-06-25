@@ -219,7 +219,7 @@ BootFilesInit:
     call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
     
     mov ecx, [0x9000 + 12]            ; Offset 12 of the file is the EOF address.
-    sub ecx, 0x15000                  ; Subtract Start of File to get the size of the file.
+    sub ecx, 0x18000                  ; Subtract Start of File to get the size of the file.
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF
@@ -236,7 +236,7 @@ BootFilesInit:
 
     call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
 
-    mov ecx, [0x9000 + 24]            ; Offset 16 of the file is the EOF address.
+    mov ecx, [0x9000 + 20]            ; Offset 24 of the file is the EOF address.
     sub ecx, 0xC0000000               ; Subtract Start of File to get the size of the file.
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
@@ -384,6 +384,8 @@ FloppyReadSectorM:
  ;       1   -> DBAL.
  ;       2   -> background image.
  ;       3   -> KL.
+ ;       4   -> Kernel x86.
+ ;       5   -> Kernel AMD64.
  ;
  ; Returns: 
  ;     Carry -> set if any error occured.
@@ -403,6 +405,12 @@ FileOpen:
 
     cmp al, 3                         ; Code 3 indicates the KL.
     je .KL
+
+    cmp al, 4                         ; Code 4 indicates the x86 kernel.
+    je .Kernelx86
+
+    cmp al, 5                         ; Code 5 indicates the AMD64 kernel.
+    je .KernelAMD64
 
     ; Don't recognize Background image in floppies.
     jmp .Error
@@ -437,6 +445,30 @@ FileOpen:
 
     mov eax, [KL.Size]                ; And the size.
     mov [FILE.Size], eax
+
+    jmp .Return
+
+.Kernelx86:
+    mov [FILE.Code], al
+
+    mov eax, [Kernelx86.LBA]          ; Get the LBA in EAX.
+    mov [FILE.LBA], eax
+
+    mov eax, [Kernelx86.Size]         ; And the size.
+    mov [FILE.Size], eax
+
+    jmp .Return
+
+.KernelAMD64:
+    mov [FILE.Code], al
+
+    mov eax, [KernelAMD64.LBA]        ; Get the LBA in EAX.
+    mov [FILE.LBA], eax
+
+    mov eax, [KernelAMD64.Size]       ; And the size.
+    mov [FILE.Size], eax
+
+    jmp .Return
 
 .Return:
     mov ecx, [FILE.Size] 

@@ -40,7 +40,7 @@ SECTION .header
 ; Define the DBAL Header
 KL
 ENTRY_POINT       Start
-FILE_START        0x15000
+FILE_START        0x18000
 FILE_END          file_end
 BSS_START         bss
 BSS_END           end

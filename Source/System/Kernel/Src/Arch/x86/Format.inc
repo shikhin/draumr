@@ -38,32 +38,31 @@
 
 ; Defines the entry point of the Kernel.
 %macro ENTRY_POINT 1
-    dd 0
     dd %1
-%endmacro 
+    dd 0x00000000
+%endmacro
 
 ; Defines the starting address of BSS section.
 %macro BSS_START 1
-    dd 0
     dd %1
+    dd 0x00000000
 %endmacro
 
 ; Defines the ending address of BSS section.
 %macro BSS_END 1
-    dd 0
     dd %1
+    dd 0x00000000
 %endmacro
 
 ; Defines the end of the file.
 %macro FILE_END 1
-    dd 0
     dd %1
+    dd 0x00000000
 %endmacro
 
 ; Defines the start of the file.
 %macro FILE_START 0
-    dd 0
-    dd 0xC0000000
+    dq 0xC0000000
 %endmacro
 
 ; The CRC32 remainder.

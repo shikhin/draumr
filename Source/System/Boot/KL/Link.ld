@@ -32,7 +32,7 @@ ENTRY(Start)
 
 SECTIONS
 {
-    .header 0x15000 :
+    .header 0x18000 :
     {
         *(.header)
     }

@@ -47,14 +47,16 @@ PXENV_TFTP_READ:
 
 ; Code of the file currently opened.
 FILE:
-    .Code:             db -1
-    .Size:             dd 0
+    .Code:        db -1
+    .Size:        dd 0
     
 Files:
     .BIOS         dw BIOSStr          ; Define the BIOS String in the table.
     .DBAL         dw DBALStr          ; And the DBAL string in the table.
     .Background   dw BackgroundStr    ; And the Background string in the table.
     .KL           dw KLStr            ; And the KL string in the table.
+    .Kernelx86    dw Kernelx86Str     ; And the x86 kernel string in the table.
+    .KernelAMD64  dw KernelAMD64Str   ; And the AMD64 kernel string in the table.
 
 ALIGN 4
 ; Reserve some space to read *one* packet (512) to find out the size of the file.
@@ -64,10 +66,12 @@ FirstPacket:
 ; A flag to signify first packet - 1 if yes, 0 if not.
 FirstPacketFlag: db 0
     
-BIOSStr db "BIOS", 0
-DBALStr db "DBAL", 0
-BackgroundStr db "Background.sif", 0
-KLStr db "KL", 0
+BIOSStr:        db "BIOS", 0
+DBALStr:        db "DBAL", 0
+BackgroundStr:  db "Background.sif", 0
+KLStr:          db "KL", 0
+Kernelx86Str:   db "KEx86", 0
+KernelAMD64Str: db "KEAMD64", 0
 
 SECTION .text
 
@@ -77,6 +81,8 @@ SECTION .text
  ;      1     -> DBAL.
  ;      2     -> Background image.
  ;      3     -> KL.
+ ;      4     -> Kernel x86.
+ ;      5     -> Kernel AMD64.
  ;
  ; Returns: 
  ;      Carry -> set if ANY error occured (technically, no error should be happening, but still).
@@ -84,7 +90,7 @@ SECTION .text
 FileOpen:
     pushad
 
-    cmp byte [FILE.Code], -1               ; Check whether any file has already been opened or not.
+    cmp byte [FILE.Code], -1           ; Check whether any file has already been opened or not.
     jne .Error                         ; If yes, abort boot.
 
     mov byte [FILE.Code], al
@@ -182,6 +188,9 @@ GetFileSize:
     cmp dword [FirstPacket], "  KL"
     je .BootFiles
 
+    cmp word [FirstPacket], "KE"
+    je .Kernel
+
     cmp word [FirstPacket], "SI"
     jne .Return
 
@@ -204,6 +213,33 @@ GetFileSize:
 .BackgroundImg:
     ; Put the length into ecx.
     mov ecx, [FirstPacket + 3]
+    ret
+
+; So it's matched with one of the kernel.
+.Kernel:
+    push eax
+    push ebx
+    push edx
+
+    ; Get the end in EDX:EAX.
+    mov edx, [FirstPacket + 24]
+    mov eax, [FirstPacket + 20]
+
+    ; Get the beginning in ECX:EBX.
+    mov ecx, [FirstPacket + 16]
+    mov ebx, [FirstPacket + 12]
+
+    ; The difference is now in EDX:EAX.
+    sub eax, ebx
+    sbb edx, ecx
+
+    ; Only return EAX, since the size SHOULD NOT exceed 4GiB in any case.
+    mov ecx, eax
+
+    ; Pop back the used registers.
+    pop edx
+    pop ebx
+    pop eax
     ret
 
  ; Reads the required bytes of the file currently opened.
