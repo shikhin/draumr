@@ -1,5 +1,5 @@
 /*
- * Entry point for KL.
+ * File containing functions for detecting CPU features.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,40 +27,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Standard.h>
-#include <BIT.h>
 #include <CPU.h>
 
-BIT_t *BIT;
-
-/* 
- * The Main function for the KL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
-void Main(BIT_t *BITPointer)
+/*
+ * Initializes all the feature flags required by the KL.
+ *
+ * Returns:
+ *     uint32_t -> the 32-bits containing all the feature flags (required).
+ */
+uint32_t CPUFeatureFlags()
 {
-    // Save BITPointer into a global variable.
-    BIT = BITPointer;
+    // The feature flags.
+    uint32_t FeatureFlags = 0;
 
-    uint32_t FeatureFlags = CPUFeatureFlags();
+    // The registers.
+    uint32_t EAX, EBX, ECX, EDX; EAX = EBX = ECX = EDX = 0;
 
-    // Long mode is present - load the related files.
-    if(FeatureFlags & LONG_MODE_PRESENT)
+    // Try to find out the extended levels supported.
+    EAX = 0x80000000;
+    CPUID(EAX, EBX, ECX, EDX);
+
+    // If 0x80000001 is supported, try.
+    if(EAX >= 0x80000001)
     {
-        // Load the AMD64 kernel.
-        FILE_t KernelAMD64File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &KernelAMD64File);
+        EAX = 0x80000001;
+        CPUID(EAX, EBX, ECX, EDX);
+
+        // Check whether long mode is supported or not.
+        if(EDX & LONG_MODE_CPUID)
+        {
+            FeatureFlags |= LONG_MODE_PRESENT;
+        }
     }
 
-    // Else, load the x86 files.
-    else
-    {
-        // Load the x86 kernel.
-        FILE_t Kernelx86File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernelx86File);
-    }
-
-    // We shouldn't reach here.
-    for(;;)
-        __asm__ __volatile__("hlt");
+    return FeatureFlags;
 }

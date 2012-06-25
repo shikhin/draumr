@@ -45,11 +45,6 @@
 #define BD_FLOPPY       1
 #define BD_PXE          2
 
-// The API codes for the file access API.
-#define FILE_OPEN   0
-#define FILE_READ   1
-#define FILE_CLOSE  2
-
 // The API codes for the video handling API.
 #define VIDEO_VGA_SWITCH_MODE   0
 #define VIDEO_VGA_PALETTE       1
@@ -57,6 +52,19 @@
 #define VIDEO_VBE_SWITCH_MODE   10
 #define VIDEO_VBE_PALETTE       11
 #define VIDEO_VBE_GET_MODES     12
+
+#define VIDEO_OUTPUT_REVERT     20
+
+// The API codes for the file access API.
+#define FILE_OPEN      0
+#define FILE_READ      1
+#define FILE_CLOSE     2
+
+#define FILE_KERNEL    10
+
+// Architecture.
+#define ARCH_X86       0x00
+#define ARCH_AMD64     0x01
 
 // The file structure, which is returned by opening files.
 typedef struct

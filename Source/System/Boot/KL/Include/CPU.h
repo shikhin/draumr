@@ -1,5 +1,5 @@
 /*
- * Entry point for KL.
+ * File containing functions for detecting CPU features.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,40 +27,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _CPU_H
+#define _CPU_H
+
 #include <Standard.h>
-#include <BIT.h>
-#include <CPU.h>
 
-BIT_t *BIT;
+#define LONG_MODE_PRESENT (1 << 0)
 
-/* 
- * The Main function for the KL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
-void Main(BIT_t *BITPointer)
-{
-    // Save BITPointer into a global variable.
-    BIT = BITPointer;
+#define LONG_MODE_CPUID   (1 << 29)
 
-    uint32_t FeatureFlags = CPUFeatureFlags();
+// Define a macro to simplify the CPUID inline assembly command.
+#define CPUID(EAX, EBX, ECX, EDX) __asm__ __volatile__("cpuid": "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
+                                                        : "a"(EAX), "b"(EBX), "c"(ECX), "d"(EDX))
 
-    // Long mode is present - load the related files.
-    if(FeatureFlags & LONG_MODE_PRESENT)
-    {
-        // Load the AMD64 kernel.
-        FILE_t KernelAMD64File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &KernelAMD64File);
-    }
+/*
+ * Initializes all the feature flags required by the KL.
+ *
+ * Returns:
+ *     uint32_t -> the 32-bits containing all the feature flags (required).
+ */
+_PROTOTYPE(uint32_t CPUFeatureFlags, (void));
 
-    // Else, load the x86 files.
-    else
-    {
-        // Load the x86 kernel.
-        FILE_t Kernelx86File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernelx86File);
-    }
-
-    // We shouldn't reach here.
-    for(;;)
-        __asm__ __volatile__("hlt");
-}
+#endif /* _CPU_H */

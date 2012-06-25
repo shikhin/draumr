@@ -88,6 +88,13 @@ CPUCheck:
     jz .ErrorCPUUnsupported
 
 CPU 586
+    ; Get the maximum supported basic level.
+    xor eax, eax
+    cpuid
+
+    ; If standard level 1 isn't supported, ERROR!
+    cmp eax, 0x00000001
+    jb .ErrorFPUNotPresent
 
     ; Check for FPU.
     ; Increase EAX to 0000_0001h.
