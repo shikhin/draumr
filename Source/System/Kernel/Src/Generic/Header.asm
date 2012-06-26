@@ -29,12 +29,12 @@
 
 BITS 32
 CPU 586
-%include "Source/System/Kernel/Src/Arch/x86/Format.inc"
+%include "Source/System/Kernel/Src/x86/Format.inc"
 
 %elifdef _AMD64
 
 BITS 64
-%include "Source/System/Kernel/Src/Arch/AMD64/Format.inc"
+%include "Source/System/Kernel/Src/AMD64/Format.inc"
 
 %endif
 
@@ -44,7 +44,7 @@ EXTERN bss
 EXTERN end
 EXTERN file_end
 
-; Define the DBAL Header
+; Define the kernel header.
 KERN_DEF
 ENTRY_POINT       Start
 FILE_START
@@ -57,7 +57,7 @@ SECTION .text
 
 GLOBAL Start
 
- ; The entry point for the KL sub-module.
+ ; The entry point for the Kernel.
  ;     R/EAX -> the 32-bit address of the BIT.
  ;     R/ESP -> the properly defined stack.
 Start:

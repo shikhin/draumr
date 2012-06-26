@@ -1,4 +1,4 @@
- ; Header definition for KL file.
+ ; Contains macros defined to "define" the PMM header.
  ;
  ; Copyright (c) 2012, Shikhin Sethi
  ; All rights reserved.
@@ -19,42 +19,51 @@
  ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  ; DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ; - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
  ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-BITS 32
-CPU 586
+; Offset 0        PMM Identifier.
+; Offset 4        Address of entry point.
+; Offset 12       Start of file.
+; Offset 20       End of file.
+; Offset 28       Starting address of BSS section.
+; Offset 36       Ending address of BSS section.
+; Offset 44       CRC32 remainder.
 
-%include "Source/System/Boot/KL/Format/Format.inc"
+; This should just be at offset 0 of the file - identifies the PMM (x86).
+%define PMM_DEF db "PM32"
 
-EXTERN bss
-EXTERN end
-EXTERN file_end
-EXTERN Main
+; Defines the entry point of the PMM.
+%macro ENTRY_POINT 1
+    dd %1
+    dd 0x00000000
+%endmacro 
 
-SECTION .header
+; Defines the starting address of BSS section.
+%macro BSS_START 1
+    dd %1
+    dd 0x00000000
+%endmacro
 
-; Define the KL Header
-KL
-ENTRY_POINT       Start
-FILE_START        0x18000
-FILE_END          file_end
-BSS_START         bss
-BSS_END           end
-CRC32_DEFINE
+; Defines the ending address of BSS section.
+%macro BSS_END 1
+    dd %1
+    dd 0x00000000
+%endmacro
 
-SECTION .text
+; Defines the end of the file.
+%macro FILE_END 1
+    dd %1
+    dd 0x00000000
+%endmacro
 
-GLOBAL Start
+; Defines the start of the file.
+%macro FILE_START 0
+    dq 0xC0000000
+%endmacro
 
- ; The entry point for the KL sub-module.
- ;     EAX -> the 32-bit address of the BIT.
- ;     ESP -> this should be equal to 0x7C00 - for clearing.
-Start:
-    push eax
-    call Main
-    
-    ; We shouldn't be returning here.
+; The CRC32 remainder.
+%define CRC32_DEFINE dd 0

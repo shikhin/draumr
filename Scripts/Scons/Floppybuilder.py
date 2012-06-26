@@ -57,19 +57,36 @@ def _floppy_builder(target, source, env) :
     KernelAMD64Aligned = Path([Dir, "KernelAMD64Aligned"])
     os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KernelAMD64, KernelAMD64Aligned))
 
-    Combined1 = Path([Dir, "Combined1"])
-    Combined2 = Path([Dir, "Combined2"])
-    Combined3 = Path([Dir, "Combined3"])
-    Combined4 = Path([Dir, "Combined4"])
-    Combined5 = Path([Dir, "Combined5"])
+    PMMx86 = str(env["PMMx86"][0])
+    PMMx86Aligned = Path([Dir, "PMMx86Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMx86, PMMx86Aligned))
 
-    os.system("cat %s %s > %s" % (Stage1, BIOS, Combined1))
-    os.system("cat %s %s > %s" % (Combined1, DBALAligned, Combined2))
-    os.system("cat %s %s > %s" % (Combined2, KLAligned, Combined3))
-    os.system("cat %s %s > %s" % (Combined3, Kernelx86Aligned, Combined4))
-    os.system("cat %s %s > %s" % (Combined4, KernelAMD64Aligned, Combined5))
+    PMMx86PAE = str(env["PMMx86PAE"][0])
+    PMMx86PAEAligned = Path([Dir, "PMMx86PAEAligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMx86PAE, PMMx86PAEAligned))
 
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined5, target[0]))
+    PMMAMD64 = str(env["PMMAMD64"][0])
+    PMMAMD64Aligned = Path([Dir, "PMMAMD64Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMAMD64, PMMAMD64Aligned))
+
+    VMMx86 = str(env["VMMx86"][0])
+    VMMx86Aligned = Path([Dir, "VMMx86Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMx86, VMMx86Aligned))
+
+    VMMx86PAE = str(env["VMMx86PAE"][0])
+    VMMx86PAEAligned = Path([Dir, "VMMx86PAEAligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMx86PAE, VMMx86PAEAligned))
+
+    VMMAMD64 = str(env["VMMAMD64"][0])
+    VMMAMD64Aligned = Path([Dir, "VMMAMD64Aligned"])
+    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMAMD64, VMMAMD64Aligned))
+  
+    Combined = Path([Dir, "Combined"])
+
+    os.system("cat %s %s %s %s %s %s %s %s %s %s %s %s > %s" % (Stage1, BIOS, DBALAligned, KLAligned, Kernelx86Aligned, KernelAMD64Aligned,
+						                PMMx86, PMMx86PAE, PMMAMD64, VMMx86, VMMx86PAE, VMMAMD64, Combined))
+
+    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined, target[0]))
 
     print("  [FLP]   %s" % (target[0]) ) 
     

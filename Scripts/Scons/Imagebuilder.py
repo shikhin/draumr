@@ -41,6 +41,12 @@ def _image_builder(target, source, env) :
     os.system("%s %s" % (env["CRC32"][0], env["KL"][0]))
     os.system("%s %s" % (env["CRC32"][0], env["Kernelx86"][0]))
     os.system("%s %s" % (env["CRC32"][0], env["KernelAMD64"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["PMMx86"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["PMMx86PAE"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["PMMAMD64"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["VMMx86"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["VMMx86PAE"][0]))
+    os.system("%s %s" % (env["CRC32"][0], env["VMMAMD64"][0]))
     
     if os.path.isfile(env["BACK"]) :
 

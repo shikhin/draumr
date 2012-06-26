@@ -51,7 +51,12 @@ def _iso_builder(target, source, env) :
     KL = str(env["KL"][0])
     Kernelx86 = str(env["Kernelx86"][0])
     KernelAMD64 = str(env["KernelAMD64"][0])
-    Background = str(env["BACK"])
+    PMMx86 = str(env["PMMx86"][0])
+    PMMx86PAE = str(env["PMMx86PAE"][0])
+    PMMAMD64 = str(env["PMMAMD64"][0])
+    VMMx86 = str(env["VMMx86"][0])
+    VMMx86PAE = str(env["VMMx86PAE"][0])
+    VMMAMD64 = str(env["VMMAMD64"][0])
 
     shutil.copy(Stage1, Boot)
     shutil.copy(BIOS, Boot)
@@ -59,7 +64,14 @@ def _iso_builder(target, source, env) :
     shutil.copy(KL, Boot)
     shutil.copy(Kernelx86, Boot)
     shutil.copy(KernelAMD64, Boot)
-    
+    shutil.copy(PMMx86, Boot)
+    shutil.copy(PMMx86PAE, Boot)
+    shutil.copy(PMMAMD64, Boot)
+    shutil.copy(VMMx86, Boot)
+    shutil.copy(VMMx86PAE, Boot)
+    shutil.copy(VMMAMD64, Boot)
+ 
+    Background = str(env["BACK"])   
     if env["BACK"] != 0:
         shutil.copy(Background, Boot)
 

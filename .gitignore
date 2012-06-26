@@ -19,6 +19,12 @@ Source/System/Boot/DBAL/DBAL
 Source/System/Boot/KL/KL
 Source/System/Kernel/KEx86
 Source/System/Kernel/KEAMD64
+Source/System/Kernel/Modules/PMM/PMMx86
+Source/System/Kernel/Modules/PMM/PMMPAE
+Source/System/Kernel/Modules/PMM/PMMAMD64
+Source/System/Kernel/Modules/VMM/VMMx86
+Source/System/Kernel/Modules/VMM/VMMPAE
+Source/System/Kernel/Modules/VMM/VMMAMD64
 
 Utilities/*.util
 *.util

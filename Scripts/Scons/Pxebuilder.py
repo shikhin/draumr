@@ -48,7 +48,12 @@ def _pxe_builder(target, source, env) :
     KL = str(env["KL"][0])
     Kernelx86 = str(env["Kernelx86"][0])
     KernelAMD64 = str(env["KernelAMD64"][0])
-    Background = str(env["BACK"])
+    PMMx86 = str(env["PMMx86"][0])
+    PMMx86PAE = str(env["PMMx86PAE"][0])
+    PMMAMD64 = str(env["PMMAMD64"][0])
+    VMMx86 = str(env["VMMx86"][0])
+    VMMx86PAE = str(env["VMMx86PAE"][0])
+    VMMAMD64 = str(env["VMMAMD64"][0])
     
     shutil.copy(Stage1, TftpBoot)
     shutil.copy(BIOS, TftpBoot)
@@ -56,7 +61,14 @@ def _pxe_builder(target, source, env) :
     shutil.copy(KL, TftpBoot)
     shutil.copy(Kernelx86, TftpBoot)
     shutil.copy(KernelAMD64, TftpBoot)
+    shutil.copy(PMMx86, TftpBoot)
+    shutil.copy(PMMx86PAE, TftpBoot)
+    shutil.copy(PMMAMD64, TftpBoot)
+    shutil.copy(VMMx86, TftpBoot)
+    shutil.copy(VMMx86PAE, TftpBoot)
+    shutil.copy(VMMAMD64, TftpBoot)
 
+    Background = str(env["BACK"])
     if env["BACK"] != 0:
         shutil.copy(Background, TftpBoot)
     

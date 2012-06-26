@@ -53,7 +53,13 @@ Dependancies = (Env["BIOS"],
                 Env["DBAL"],
                 Env["KL"],
                 Env["Kernelx86"],
-                Env["KernelAMD64"])
+                Env["KernelAMD64"],
+		Env["PMMx86"],
+		Env["PMMx86PAE"],
+		Env["PMMAMD64"],
+		Env["VMMx86"],
+		Env["VMMx86PAE"],
+		Env["VMMAMD64"],)
 
 Image = Env.Image("BootImage.comp", None)
 Depends(Image, Utils)

@@ -1,4 +1,4 @@
- ; Header definition for KL file.
+ ; Header definition for Kernel.
  ;
  ; Copyright (c) 2012, Shikhin Sethi
  ; All rights reserved.
@@ -25,22 +25,38 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
+%ifdef _x86PAE
+
+BITS 32
+
+%include "Source/System/Kernel/Modules/VMM/Src/x86/PAE/Format.inc"
+
+%elifdef _x86
+
 BITS 32
 CPU 586
 
-%include "Source/System/Boot/KL/Format/Format.inc"
+%include "Source/System/Kernel/Modules/VMM/Src/x86/Format.inc"
+
+%elifdef _AMD64
+
+BITS 64
+
+%include "Source/System/Kernel/Modules/VMM/Src/AMD64/Format.inc"
+
+%endif
+
+SECTION .header
 
 EXTERN bss
 EXTERN end
 EXTERN file_end
-EXTERN Main
 
-SECTION .header
-
-; Define the KL Header
-KL
+; Define the VMM Header
+VMM_DEF
 ENTRY_POINT       Start
-FILE_START        0x18000
+FILE_START
 FILE_END          file_end
 BSS_START         bss
 BSS_END           end
@@ -50,11 +66,6 @@ SECTION .text
 
 GLOBAL Start
 
- ; The entry point for the KL sub-module.
- ;     EAX -> the 32-bit address of the BIT.
- ;     ESP -> this should be equal to 0x7C00 - for clearing.
+ ; The entry point for the VMM kmodule.
 Start:
-    push eax
-    call Main
-    
-    ; We shouldn't be returning here.
+    jmp $
