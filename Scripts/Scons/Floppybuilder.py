@@ -84,7 +84,8 @@ def _floppy_builder(target, source, env) :
     Combined = Path([Dir, "Combined"])
 
     os.system("cat %s %s %s %s %s %s %s %s %s %s %s %s > %s" % (Stage1, BIOS, DBALAligned, KLAligned, Kernelx86Aligned, KernelAMD64Aligned,
-						                PMMx86, PMMx86PAE, PMMAMD64, VMMx86, VMMx86PAE, VMMAMD64, Combined))
+						                PMMx86Aligned, PMMx86PAEAligned, PMMAMD64Aligned, VMMx86Aligned,
+								VMMx86PAEAligned, VMMAMD64Aligned, Combined))
 
     os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined, target[0]))
 

@@ -57,6 +57,12 @@ Files:
     .KL           dw KLStr            ; And the KL string in the table.
     .Kernelx86    dw Kernelx86Str     ; And the x86 kernel string in the table.
     .KernelAMD64  dw KernelAMD64Str   ; And the AMD64 kernel string in the table.
+    .PMMx86       dw PMMx86Str        ; The PMM x86 module string.
+    .PMMx86PAE    dw PMMx86PAEStr     ; The PMM PAE module string.
+    .PMMAMD64     dw PMMAMD64Str      ; The AMD64 PMM module string.
+    .VMMx86       dw VMMx86Str        ; The VMM x86 module string.
+    .VMMx86PAE    dw VMMx86PAEStr     ; The VMM PAE module string.
+    .VMMAMD64     dw VMMAMD64Str      ; The AMD64 module string.
 
 ALIGN 4
 ; Reserve some space to read *one* packet (512) to find out the size of the file.
@@ -72,6 +78,12 @@ BackgroundStr:  db "Background.sif", 0
 KLStr:          db "KL", 0
 Kernelx86Str:   db "KEx86", 0
 KernelAMD64Str: db "KEAMD64", 0
+PMMx86Str:      db "PMMx86", 0
+PMMx86PAEStr:   db "PMMPAE", 0
+PMMAMD64Str:    db "PMMAMD64", 0
+VMMx86Str:      db "VMMx86", 0
+VMMx86PAEStr:   db "VMMPAE", 0
+VMMAMD64Str:    db "VMMAMD64", 0
 
 SECTION .text
 
@@ -83,6 +95,12 @@ SECTION .text
  ;      3     -> KL.
  ;      4     -> Kernel x86.
  ;      5     -> Kernel AMD64.
+ ;      6     -> PMM x86.
+ ;      7     -> PMM x86 PAE.
+ ;      8     -> PMM AMD64.
+ ;      9     -> VMM x86.
+ ;      10    -> VMM x86 PAE.
+ ;      11    -> VMM AMD64.
  ;
  ; Returns: 
  ;      Carry -> set if ANY error occured (technically, no error should be happening, but still).
@@ -92,6 +110,10 @@ FileOpen:
 
     cmp byte [FILE.Code], -1           ; Check whether any file has already been opened or not.
     jne .Error                         ; If yes, abort boot.
+
+    ; If above file code 11 (last known file code), abort boot.
+    cmp byte al, 11
+    ja .Error
 
     mov byte [FILE.Code], al
 
@@ -179,18 +201,30 @@ GetFileSize:
     ; Clear out ecx, so we return with "undetectable" if can't detect.
     xor ecx, ecx
     
+    ; The BIOS boot file.
     cmp dword [FirstPacket], "BIOS"
     je .BootFiles
 
+    ; The DBAL file.
     cmp dword [FirstPacket], "DBAL"
     je .BootFiles
 
+    ; The kernel loader file.
     cmp dword [FirstPacket], "  KL"
     je .BootFiles
 
+    ; The kernel executable.
     cmp word [FirstPacket], "KE"
     je .Kernel
 
+    ; Kernel modules.
+    cmp word [FirstPacket], "PM"
+    je .Kernel
+
+    cmp word [FirstPacket], "VM"
+    je .Kernel
+
+    ; The background image.
     cmp word [FirstPacket], "SI"
     jne .Return
 
@@ -215,7 +249,7 @@ GetFileSize:
     mov ecx, [FirstPacket + 3]
     ret
 
-; So it's matched with one of the kernel.
+; So it's matched with one of the kernel/kernel modules.
 .Kernel:
     push eax
     push ebx

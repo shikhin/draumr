@@ -48,12 +48,37 @@ KL:
     .Size     dd 0                    ; The size and the LBA of the KL is unknown.
 
 Kernelx86:
-    .LBA      dd 0                    ; The size and the LBA of the Kernelx86 & AMD64 is unknown.
+    .LBA      dd 0                    ; The size and the LBA of the Kernelx86 is unknown.
     .Size     dd 0
 
 KernelAMD64:
-    .LBA      dd 0                    ; The size and the LBA of the Kernelx86 & AMD64 is unknown.
+    .LBA      dd 0                    ; The size and the LBA of the Kernel AMD64 is unknown.
     .Size     dd 0
+
+PMMx86:
+    .LBA      dd 0                    ; The size and the LBA of the PMM x86 module is unknown.
+    .Size     dd 0
+
+PMMx86PAE:
+    .LBA      dd 0                    ; The size and the LBA of the PMM x86 PAE module is unknown.
+    .Size     dd 0
+
+PMMAMD64:
+    .LBA      dd 0                    ; The size and the LBA of the PMM AMD64 module is unknown.
+    .Size     dd 0
+
+VMMx86:
+    .LBA      dd 0                    ; The size and the LBA of the VMM x86 module is unknown.
+    .Size     dd 0
+
+VMMx86PAE:
+    .LBA      dd 0                    ; The size and the LBA of the VMM x86 PAE module is unknown.
+    .Size     dd 0
+
+VMMAMD64:
+    .LBA      dd 0                    ; The size and the LBA of the VMM AMD64 module is unknown.
+    .Size     dd 0
+
 
 FILE:
     .Code   db -1                     ; Code of the file opened.
@@ -194,6 +219,8 @@ SECTION .text
 BootFilesInit:
     pushad
 
+; Handle the size and LBA of the DBAL.
+.DBAL:
     mov eax, [DBAL.LBA]               ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
@@ -207,12 +234,14 @@ BootFilesInit:
     and ecx, ~0x1FF
     mov [DBAL.Size], ecx              ; And store it!
 
+; Handle the size and LBA of the KL.
+.KL:
     shr ecx, 9                        ; Shift left ECX (size of DBAL) by 9, dividing by 512.
     add ecx, [DBAL.LBA]               ; Add it to the LBA to get the LBA of KL.
 
     mov dword [KL.LBA], ecx
 
-    mov eax, [KL.LBA]                 ; Get the LBA into EAX.
+    mov eax, ecx                      ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
     
@@ -225,30 +254,23 @@ BootFilesInit:
     and ecx, ~0x1FF
     mov [KL.Size], ecx                ; And store it!
 
-    shr ecx, 9                        ; Shift left ECX (size of KL) by 9, dividing by 512.
-    add ecx, [KL.LBA]                 ; Add it to the LBA to get the LBA of Kernelx86.
+; Handle the kernel and the kernel modules.
+.KernelM:
+    ; There are 2 kernels and 6 kernel modules as of now.
+    mov ebp, 8
+    mov esi, KL
 
-    mov dword [Kernelx86.LBA], ecx
+.Loop:
+    shr ecx, 9                        ; Shift left ECX (size of last file) by 9, dividing by 512.
+    add ecx, [esi]                    ; Add it to the LBA of the last file to get the LBA of current file.
 
-    mov eax, [Kernelx86.LBA]          ; Get the LBA into EAX.
-    mov ecx, 1                        ; Read one sectors.
-    mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files.
+    ; Move on to the next file (esi).
+    add esi, 8
 
-    call FloppyReadSectorM            ; Read from the floppy - multiple sectors, with advanced error checking.
+    ; Store the LBA of the file.
+    mov dword [esi], ecx
 
-    mov ecx, [0x9000 + 20]            ; Offset 24 of the file is the EOF address.
-    sub ecx, 0xC0000000               ; Subtract Start of File to get the size of the file.
-
-    add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
-    and ecx, ~0x1FF
-    mov [Kernelx86.Size], ecx         ; And store it!
-
-    shr ecx, 9                        ; Shift left ECX (size of KL) by 9, dividing by 512.
-    add ecx, [Kernelx86.LBA]          ; Add it to the LBA to get the LBA of KernelAMD64.
-
-    mov dword [KernelAMD64.LBA], ecx
-
-    mov eax, [KernelAMD64.LBA]        ; Get the LBA into EAX.
+    mov eax, ecx                      ; Get the LBA in EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files.
 
@@ -269,7 +291,15 @@ BootFilesInit:
     ; Only store EAX, since the size SHOULD NOT exceed 4GiB in any case.
     add eax, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and eax, ~0x1FF
-    mov [KernelAMD64.Size], eax       ; And store it!
+    mov [esi + 4], eax                ; And store it!
+
+    ; Put last file size into ecx.
+    mov ecx, eax
+
+.LoopC:
+    ; Decrease the number of files left, and loop if not 0.
+    dec ebp
+    jnz .Loop
 
 .Return:
     popad
@@ -379,100 +409,65 @@ FloppyReadSectorM:
     jmp AbortBoot
 
  ; Opens a file to be read from.
- ;      AL   -> contains the code number of the file to FILE.
- ;       0   -> common BIOS File.
- ;       1   -> DBAL.
- ;       2   -> background image.
- ;       3   -> KL.
- ;       4   -> Kernel x86.
- ;       5   -> Kernel AMD64.
+ ;     AL    -> contains the code number of the file to open.
+ ;      0    -> Common BIOS File.
+ ;      1    -> DBAL.
+ ;      3    -> KL.
+ ;      4    -> Kernel x86.
+ ;      5    -> Kernel AMD64.
+ ;      6    -> PMM x86.
+ ;      7    -> PMM x86 PAE.
+ ;      8    -> PMM AMD64.
+ ;      9    -> VMM x86.
+ ;      10   -> VMM x86 PAE.
+ ;      11   -> VMM AMD64.
  ;
  ; Returns: 
  ;     Carry -> set if any error occured.
  ;     ECX   -> the size of the file you want to FILE.
 FileOpen:
     push eax
+    push esi
     
     ; If file code isn't -1, then return with error.
     cmp byte [FILE.Code], -1
     jne .Error
 
-    cmp al, 0
-    je .BIOS                          ; Code 0 indicates the common BIOS file.
+    ; If it is 2 (background image), then return with error.
+    cmp al, 2
+    je .Error
 
-    cmp al, 1                         ; While 1 indicates the DBAL file.
-    je .DBAL
+    ; If it is above 2, then minus 1.
+    jb .Cont
 
-    cmp al, 3                         ; Code 3 indicates the KL.
-    je .KL
+    ; If it is above the maximum file code (11), go to error.
+    cmp al, 11
+    ja .Error
 
-    cmp al, 4                         ; Code 4 indicates the x86 kernel.
-    je .Kernelx86
+    dec al
 
-    cmp al, 5                         ; Code 5 indicates the AMD64 kernel.
-    je .KernelAMD64
-
-    ; Don't recognize Background image in floppies.
-    jmp .Error
-
-.BIOS:
+.Cont:
+    ; Store the file code.
     mov [FILE.Code], al
 
-    mov eax, [BIOS.LBA]               ; Get the LBA in EAX.
+    ; Get the file code in ESI, and multiply by 3.
+    movzx esi, al
+    shl esi, 3
+
+    ; Add address of BIOS file descriptor.
+    add esi, BIOS
+
+    ; Store the LBA and Size in the open file descriptor.
+    mov eax, [esi]
     mov [FILE.LBA], eax
 
-    mov eax, [BIOS.Size]              ; Get the Size in EAX.
+    mov eax, [esi + 4]
     mov [FILE.Size], eax
-
-    jmp .Return
-
-.DBAL:
-    mov [FILE.Code], al
-
-    mov eax, [DBAL.LBA]               ; Get the LBA in EAX.
-    mov [FILE.LBA], eax
-
-    mov eax, [DBAL.Size]
-    mov [FILE.Size], eax              ; And the size.
-
-    jmp .Return
-
-.KL:
-    mov [FILE.Code], al
-
-    mov eax, [KL.LBA]                 ; Get the LBA in EAX.
-    mov [FILE.LBA], eax
-
-    mov eax, [KL.Size]                ; And the size.
-    mov [FILE.Size], eax
-
-    jmp .Return
-
-.Kernelx86:
-    mov [FILE.Code], al
-
-    mov eax, [Kernelx86.LBA]          ; Get the LBA in EAX.
-    mov [FILE.LBA], eax
-
-    mov eax, [Kernelx86.Size]         ; And the size.
-    mov [FILE.Size], eax
-
-    jmp .Return
-
-.KernelAMD64:
-    mov [FILE.Code], al
-
-    mov eax, [KernelAMD64.LBA]        ; Get the LBA in EAX.
-    mov [FILE.LBA], eax
-
-    mov eax, [KernelAMD64.Size]       ; And the size.
-    mov [FILE.Size], eax
-
-    jmp .Return
 
 .Return:
     mov ecx, [FILE.Size] 
     
+    pop esi
     pop eax
     ret
 
@@ -481,6 +476,7 @@ FileOpen:
     mov byte [FILE.Code], -1
     stc 
     
+    pop esi
     pop eax
     ret
 

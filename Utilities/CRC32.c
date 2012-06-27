@@ -193,7 +193,9 @@ int main(int argc, char *argv[])
         Signature[3] = '\0';
     }
 
-    else if((Signature[0] == 'K') && (Signature[1] == 'E'))
+    else if(((Signature[0] == 'K') && (Signature[1] == 'E')) ||
+            ((Signature[0] == 'P') && (Signature[1] == 'M')) ||
+            ((Signature[0] == 'V') && (Signature[1] == 'M')))
     {
         // Offset to the header.
         HeaderOffset = 48;
