@@ -62,34 +62,34 @@ void APIInit()
 uint32_t VideoAPI(uint32_t APICode, ...)
 {
     va_list List;
-  	switch(APICode)
-  	{
-      case VIDEO_VGA_SWITCH_MODE:
-      case VIDEO_VBE_SWITCH_MODE:
-      case VIDEO_VBE_GET_MODES:
-        // Start a list for the arguments for this mode.
-        va_start(List, APICode);
+    switch (APICode)
+    {
+        case VIDEO_VGA_SWITCH_MODE:
+        case VIDEO_VBE_SWITCH_MODE:
+        case VIDEO_VBE_GET_MODES:
+            // Start a list for the arguments for this mode.
+            va_start(List, APICode);
 
-        // Retrieve the argument.
-        uint32_t Arg = va_arg(List, uint32_t);
+            // Retrieve the argument.
+            uint32_t Arg = va_arg(List, uint32_t);
 
-        // End the list.
-        va_end(List);
+            // End the list.
+            va_end(List);
 
-        return OldVideoAPI(APICode, Arg);
+            return OldVideoAPI(APICode, Arg);
 
-      case VIDEO_VGA_PALETTE:
-        return OldVideoAPI(APICode);
+        case VIDEO_VGA_PALETTE:
+            return OldVideoAPI(APICode);
 
-      case VIDEO_VBE_PALETTE:
-        return OldVideoAPI(APICode);
+        case VIDEO_VBE_PALETTE:
+            return OldVideoAPI(APICode);
 
-      case VIDEO_OUTPUT_REVERT:
-        OutputRevert();
-        return 0;
+        case VIDEO_OUTPUT_REVERT:
+            OutputRevert();
+            return 0;
     }
 
-  	return 0;
+    return 0;
 }
 
 /*
@@ -112,45 +112,45 @@ uint32_t FileAPI(uint32_t APICode, ...)
     // The pointer to the file structure.
     FILE_t *FILEPointer, FILEStruct;
 
-    switch(APICode)
+    switch (APICode)
     {
-      case FILE_OPEN:
-        // Get the argument and close the list of args.
-        Arg[0] = va_arg(List, uint32_t);
-        va_end(List);
+        case FILE_OPEN:
+            // Get the argument and close the list of args.
+            Arg[0] = va_arg(List, uint32_t);
+            va_end(List);
 
-        // Call the old file API.
-        return OldFileAPI(APICode, Arg[0]);
+            // Call the old file API.
+            return OldFileAPI(APICode, Arg[0]);
 
-      case FILE_READ:
-        // Get the list of arguments, and close the va.
-        Arg[0] = va_arg(List, uint32_t);
-        Arg[1] = va_arg(List, uint32_t);
-        va_end(List);
+        case FILE_READ:
+            // Get the list of arguments, and close the va.
+            Arg[0] = va_arg(List, uint32_t);
+            Arg[1] = va_arg(List, uint32_t);
+            va_end(List);
 
-        // Call the old file API.
-        return OldFileAPI(APICode, Arg[0], Arg[1]);
+            // Call the old file API.
+            return OldFileAPI(APICode, Arg[0], Arg[1]);
 
-      case FILE_CLOSE:
-        // No arguments in the case of close.
-        va_end(List);
+        case FILE_CLOSE:
+            // No arguments in the case of close.
+            va_end(List);
 
-        return OldFileAPI(APICode);
+            return OldFileAPI(APICode);
 
-      case FILE_KERNEL:
-        // Get the list of arguments, and close the va.
-        Arg[0] = va_arg(List, uint32_t);
-        Arg[1] = va_arg(List, uint32_t);
+        case FILE_KERNEL:
+            // Get the list of arguments, and close the va.
+            Arg[0] = va_arg(List, uint32_t);
+            Arg[1] = va_arg(List, uint32_t);
 
-        FILEPointer = (FILE_t*)Arg[1];
+            FILEPointer = (FILE_t*)Arg[1];
 
-        // Load the kernel file (the arch is passed as argument).
-        FILEStruct = BootFilesKernel(Arg[0]);
+            // Load the kernel file (the arch is passed as argument).
+            FILEStruct = BootFilesKernel(Arg[0]);
 
-        // Fill up the pointer to the file structure that we have been given.
-        FILEPointer->Size = FILEStruct.Size;
-        FILEPointer->Location = FILEStruct.Location;
-        return 0;
+            // Fill up the pointer to the file structure that we have been given.
+            FILEPointer->Size = FILEStruct.Size;
+            FILEPointer->Location = FILEStruct.Location;
+            return 0;
     }
 
     return 0;

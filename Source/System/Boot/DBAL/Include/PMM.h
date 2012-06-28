@@ -35,9 +35,9 @@
 // The Header structure for the MMap.
 struct MMapHeader
 {
-    uint16_t Entries;                 // The number of entries in the memory map.
+    uint16_t Entries;                // The number of entries in the memory map.
     uint32_t Address;                 // The starting address of the memory map.
-} _PACKED;
+}_PACKED;
 
 // The Entry structure for the MMap.
 struct MMapEntry
@@ -45,11 +45,11 @@ struct MMapEntry
     // The Start of the entry, and it's length.
     uint64_t Start;
     uint64_t Length;
-    
+
     // The Type of the entry, and it's Length.
     uint32_t Type;
     uint32_t Flags;
-} _PACKED;
+}_PACKED;
 
 typedef struct MMapHeader MMapHeader_t;
 typedef struct MMapEntry MMapEntry_t;
@@ -61,7 +61,6 @@ typedef struct MMapEntry MMapEntry_t;
 // Type 4 - Unusable RAM
 // Type 5 - ACPI NVS
 // Type 6 - Bad RAM
-
 // The USABLE flag - is the first bit.
 #define USABLE    (1 << 0)
 
@@ -80,12 +79,11 @@ typedef struct MMapEntry MMapEntry_t;
 
 // Define the pointers to the headers and entries.
 extern MMapHeader_t *MMapHeader;
-extern MMapEntry_t  *MMapEntries;
+extern MMapEntry_t *MMapEntries;
 
 /*
  * Initializes the physical memory manager for ourselves.
- */
-_PROTOTYPE(void PMMInit, (void)) _COLD;
+ */_PROTOTYPE(void PMMInit, (void)) _COLD;
 
 /*
  * Allocates a frame in the PMM, and returns it's address.
@@ -100,7 +98,7 @@ _PROTOTYPE(uint32_t PMMAllocFrame, (uint32_t Type));
  * Frees a frame in the PMM.
  *     uint32_t Addr -> the address of the frame to free.
  */
-_PROTOTYPE(void PMMFreeFrame, (uint32_t Addr));            
+_PROTOTYPE(void PMMFreeFrame, (uint32_t Addr));
 
 /*
  * Allocates contiguous number of 'Number' frames.

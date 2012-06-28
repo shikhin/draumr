@@ -40,31 +40,31 @@ static uint8_t *Buffer;
 // The BMP image file format's header.
 struct BMPHeader
 {
-    uint8_t  Type[2];
+    uint8_t Type[2];
     uint32_t FileSize;
     uint32_t Reserved;
     uint32_t Offset;
-    
+
     uint32_t Size;
     uint32_t XSize, YSize;
     uint16_t Plane, BPP;
     uint32_t Compression, ImageSize;
     uint32_t XRes, YRes;
     uint16_t NColors, ImpColors;
-} __attribute__((packed));
+}__attribute__((packed));
 
 // The SIF image file format's header.
 struct SIFHeader
 {
-    uint8_t  Type[3];
+    uint8_t Type[3];
     uint32_t FileSize;
     uint32_t CRC32;
     uint32_t Offset;
-    
+
     uint16_t Plane, BPP;
     uint32_t Compression, ImageSize;
     uint32_t XRes, YRes;
-} __attribute__((packed));
+}__attribute__((packed));
 
 // Some data about the image.
 struct ImageData
@@ -74,7 +74,7 @@ struct ImageData
     uint32_t XSize, YSize;
     uint32_t ImageSize;
     uint32_t ScaledX, ScaledY;
-} __attribute__((packed));
+}__attribute__((packed));
 
 typedef struct BMPHeader BMPHeader_t;
 typedef struct ImageData ImageData_t;
@@ -91,7 +91,7 @@ static void BMPToBuf()
 {
     BMPHeader_t BMPHeader;
     uint32_t Status, BytesRead = 0;
-    
+
     if(!fread(&BMPHeader, sizeof(BMPHeader_t), 1, ImageData.InFile))
     {
         // Close the files - avoiding leaks.
@@ -102,10 +102,9 @@ static void BMPToBuf()
         perror("Unable to read the BMP header from the input file");
         exit(EXIT_FAILURE);
     }
-    
+
     // Do some error checking to verify that the file we are reading is of type 'bmp'.
-    if(BMPHeader.Type[0] != 'B' ||
-       BMPHeader.Type[1] != 'M')
+    if(BMPHeader.Type[0] != 'B' || BMPHeader.Type[1] != 'M')
     {
         // Close the input file - avoiding leaks.
         fclose(ImageData.OutFile);
@@ -115,20 +114,21 @@ static void BMPToBuf()
         printf("ERROR: File image is not of expected bitmap file format.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // Check for bpp type.
-    if((BMPHeader.Plane * BMPHeader.BPP) != 24)
+    if( (BMPHeader.Plane * BMPHeader.BPP) != 24)
     {
         // Close the input file - avoiding leaks.
         fclose(ImageData.OutFile);
         fclose(ImageData.InFile);
 
         // Print error.
-        printf("ERROR: Input image isn't of 24-bpp format, and thus can't be opened.\n\tBPP: %d\tPlane: %d\n",
-               BMPHeader.Plane, BMPHeader.BPP);
+        printf(
+                "ERROR: Input image isn't of 24-bpp format, and thus can't be opened.\n\tBPP: %d\tPlane: %d\n",
+                BMPHeader.Plane, BMPHeader.BPP);
         exit(EXIT_FAILURE);
     }
-    
+
     // Check for compression type.
     if(BMPHeader.Compression != 0)
     {
@@ -137,10 +137,11 @@ static void BMPToBuf()
         fclose(ImageData.InFile);
 
         // Print error.
-        printf("ERROR: Input image is compressed, and can't be handled correctly.\n");
+        printf(
+                "ERROR: Input image is compressed, and can't be handled correctly.\n");
         exit(EXIT_FAILURE);
     }
-    
+
     // Check for palette.
     if(BMPHeader.NColors != 0)
     {
@@ -149,10 +150,11 @@ static void BMPToBuf()
         fclose(ImageData.InFile);
 
         // Print error.
-        printf("ERROR: Image has a palette appended to it, and can't be parsed");
+        printf(
+                "ERROR: Image has a palette appended to it, and can't be parsed");
         exit(EXIT_FAILURE);
     }
-    
+
     // Allocate a temporary buffer, where we read from file.
     uint8_t *TempBuffer = malloc(BMPHeader.ImageSize);
     if(!TempBuffer)
@@ -176,8 +178,8 @@ static void BMPToBuf()
     do
     {
         // Read the bytes left in the buffer.
-        Status = fread(TempBuffer + BytesRead, sizeof(uint8_t), 
-                       (BMPHeader.ImageSize - BytesRead), ImageData.InFile);
+        Status = fread(TempBuffer + BytesRead, sizeof(uint8_t),
+                (BMPHeader.ImageSize - BytesRead), ImageData.InFile);
 
         // If some error occured during read, then..
         if(ferror(ImageData.InFile))
@@ -191,10 +193,10 @@ static void BMPToBuf()
             perror("Unable to read image from file");
             exit(EXIT_FAILURE);
         }
-        
+
         BytesRead += Status;
     } while(BytesRead < BMPHeader.ImageSize);
-    
+
     Buffer = malloc(BMPHeader.ImageSize);
     if(!Buffer)
     {
@@ -207,12 +209,12 @@ static void BMPToBuf()
         perror("Unable to allocate enough space to read input image");
         exit(EXIT_FAILURE);
     }
-    
+
     // Get the data into ImageData.
     ImageData.XSize = BMPHeader.XSize;
     ImageData.YSize = BMPHeader.YSize;
     ImageData.ImageSize = BMPHeader.ImageSize;
-    
+
     // Bytes to be copied - i.e., each line.
     uint32_t BytesToCopy = ImageData.XSize * 3;
 
@@ -222,12 +224,13 @@ static void BMPToBuf()
     for(uint32_t i = BMPHeader.YSize, Index = 0; i > 0; i--)
     {
         // Copy the bytes.
-        memcpy(Buffer + ((i - 1) * BytesToCopy), &TempBuffer[Index], BytesToCopy);
+        memcpy(Buffer + ( (i - 1) * BytesToCopy), &TempBuffer[Index],
+                BytesToCopy);
 
         // And take care of the padding.
         Index += BytesToCopy + (BytesToCopy % 4);
     }
-    
+
     // Free the temporary buffer.
     free(TempBuffer);
 }
@@ -241,79 +244,80 @@ static void BMPToBuf()
  *     uint32_t NewX     -> the X to be resized to.
  *     uint32_t NewY     -> the Y to be resized to.
  */
-static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X, uint32_t Y, uint32_t NewX, uint32_t NewY) 
+static void ResizeBilinear(uint8_t *Input, uint8_t *Output, uint32_t X,
+        uint32_t Y, uint32_t NewX, uint32_t NewY)
 {
-    double XNewX = ((double)(X - 1)) / ((double)(NewX - 1));
-    double YNewY = ((double)(Y - 1)) / ((double)(NewY - 1));
+    double XNewX = ((double) (X - 1)) / ((double) (NewX - 1));
+    double YNewY = ((double) (Y - 1)) / ((double) (NewY - 1));
 
-    double  cj = 0, ci;
+    double cj = 0, ci;
     uint32_t X1, Y1 = 0, X2;
     double XOff, YOff;
-    
+
     uint32_t C1RGB[3], C2RGB[3], C3RGB[3], C4RGB[3];
     uint32_t Red, Green, Blue, Offset = 0;
 
     uint8_t *Line1, *Line2;
-    
+
     // Calculate the sum of the ratio of the y axic in cj.
     X *= 3;
     for(uint32_t j = 0; j < NewY; j++, cj += YNewY, Y1 = cj)
     {
         YOff = cj - Y1;
-        
+
         // Get the two lines from where we would be taking the four reference pixels.
         Line1 = (uint8_t*)&Input[Y1 * X];
         // Get the next line - and if we have reached the end of the input buffer, then take the last line as the next line.
-        Line2 = (Y1 < (Y - 1) ? Line1 + X : (uint8_t*)&Input[(Y - 1) * X]);
-         
+        Line2 = (Y1 < (Y - 1) ? Line1 + X : (uint8_t*)&Input[ (Y - 1) * X]);
+
         // Calculate the sum of the ratio of the x axis in ci.
         // And the index in X1.
-        ci = 0; X1 = 0;
-        for(uint32_t i = 0; i < NewX; i++, ci += XNewX, 
-                                           X1 = (int)ci)
-        {            
+        ci = 0;
+        X1 = 0;
+        for(uint32_t i = 0; i < NewX; i++, ci += XNewX, X1 = (int)ci)
+        {
             // The distance between the "actual index", and the "index".
             // (simply calculated by subtracting (int)index from index)
-            XOff = ci  - X1;
+            XOff = ci - X1;
             X1 *= 3;
             // If it is the end of the X axis, then take the next pixel as the last pixel.
             // Else, the next pixel.
             X2 = X1 < (X - 3) ? X1 + 3 : (X - 3);
-            
+
             // Get the RGB values for the four pixels we'd be using to calculate the final pixel.
             C1RGB[0] = Line1[X1];
             C1RGB[1] = Line1[X1 + 1];
             C1RGB[2] = Line1[X1 + 2];
-            
+
             C2RGB[0] = Line1[X2];
             C2RGB[1] = Line1[X2 + 1];
             C2RGB[2] = Line1[X2 + 2];
-            
+
             C3RGB[0] = Line2[X1];
             C3RGB[1] = Line2[X1 + 1];
             C3RGB[2] = Line2[X1 + 2];
-                        
+
             C4RGB[0] = Line2[X2];
             C4RGB[1] = Line2[X2 + 1];
             C4RGB[2] = Line2[X2 + 2];
- 
+
             // Formula used to calculate the pixel.
             // Y = A(1-w)(1-h) + B(w)(1-h) + C(h)(1-w) + D(wh)
-            Blue = (C1RGB[0] * ((1 - XOff) * (1 - YOff))) + 
-                   (C2RGB[0] * (XOff * (1 - YOff))) +
-                   (C3RGB[0] * (YOff * (1 - XOff))) +
-                   (C4RGB[0] * (XOff * YOff));
-   
-            Green = (C1RGB[1] * ((1 - XOff) * (1 - YOff))) + 
-                    (C2RGB[1] * (XOff * (1 - YOff))) +
-                    (C3RGB[1] * (YOff * (1 - XOff))) +
-                    (C4RGB[1] * (XOff * YOff));
-            
-            Red = (C1RGB[2] * ((1 - XOff) * (1 - YOff))) + 
-                  (C2RGB[2] * (XOff * (1 - YOff))) +
-                  (C3RGB[2] * (YOff * (1 - XOff))) +
-                  (C4RGB[2] * (XOff * YOff));
-            
+            Blue = (C1RGB[0] * ( (1 - XOff) * (1 - YOff)))
+                    + (C2RGB[0] * (XOff * (1 - YOff)))
+                    + (C3RGB[0] * (YOff * (1 - XOff)))
+                    + (C4RGB[0] * (XOff * YOff));
+
+            Green = (C1RGB[1] * ( (1 - XOff) * (1 - YOff)))
+                    + (C2RGB[1] * (XOff * (1 - YOff)))
+                    + (C3RGB[1] * (YOff * (1 - XOff)))
+                    + (C4RGB[1] * (XOff * YOff));
+
+            Red = (C1RGB[2] * ( (1 - XOff) * (1 - YOff)))
+                    + (C2RGB[2] * (XOff * (1 - YOff)))
+                    + (C3RGB[2] * (YOff * (1 - XOff)))
+                    + (C4RGB[2] * (XOff * YOff));
+
             // And then, store it.
             Output[Offset++] = Blue;
             Output[Offset++] = Green;
@@ -329,9 +333,9 @@ static void BufToSIF()
 {
     // So, if we can rescale, we allocate another buffer, or we don't.
     uint8_t *TempBuffer = Buffer;
-    
-    if(ImageData.XSize != ImageData.ScaledX ||
-       ImageData.YSize != ImageData.ScaledY)
+
+    if(ImageData.XSize != ImageData.ScaledX
+            || ImageData.YSize != ImageData.ScaledY)
     {
         // If we need to rescale, allocate another buffer, resize, and free the original one.
         Buffer = malloc(ImageData.ScaledX * ImageData.ScaledY * 3);
@@ -347,7 +351,8 @@ static void BufToSIF()
             exit(EXIT_FAILURE);
         }
 
-        ResizeBilinear(TempBuffer, Buffer, ImageData.XSize, ImageData.YSize, ImageData.ScaledX, ImageData.ScaledY);
+        ResizeBilinear(TempBuffer, Buffer, ImageData.XSize, ImageData.YSize,
+                ImageData.ScaledX, ImageData.ScaledY);
         free(TempBuffer);
     }
 
@@ -408,14 +413,16 @@ int main(int argc, char *argv[])
     // If usage wasn't correct, gracefully exit.
     if(argc < 3)
     {
-        printf("ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile Flags.\n", argv[0], argv[0]);
+        printf(
+                "ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile Flags.\n",
+                argv[0], argv[0]);
         exit(EXIT_FAILURE);
     }
-    
+
     // The default would be 1024*768.
     ImageData.ScaledX = 1024;
     ImageData.ScaledY = 768;
-    
+
     // Open ImageData.InFile and ImageData.OutFile with error checking.
     ImageData.InFile = fopen(argv[1], "r+b");
     if(!ImageData.InFile)
@@ -435,16 +442,16 @@ int main(int argc, char *argv[])
         printf("ERROR: Unable to open output file %s.\n", argv[2]);
         exit(EXIT_FAILURE);
     }
-    
+
     // Find the last instance of the '.' character - to find the extension.
     char *Extension = strrchr(argv[1], '.');
-    
+
     // BMP file.
     if(!strcmp(Extension, ".bmp"))
     {
         BMPToBuf(ImageData.InFile);
     }
-    
+
     // Unrecognizable file.
     else
     {
@@ -453,19 +460,21 @@ int main(int argc, char *argv[])
         fclose(ImageData.OutFile);
 
         // Print error.
-        printf("ERROR: Unable to parse the input file.\nExtension (%s) is unrecognizable.\n", Extension);
+        printf(
+                "ERROR: Unable to parse the input file.\nExtension (%s) is unrecognizable.\n",
+                Extension);
         exit(EXIT_FAILURE);
     }
 
     // Convert the buffer to SIF file format, which is actually just modified BMP.
     BufToSIF(ImageData.OutFile);
-                
+
     // Close the opened files.
     fclose(ImageData.InFile);
     fclose(ImageData.OutFile);
-    
+
     // Free the buffer.
     free(Buffer);
-    
+
     printf("  [ToSIF] %s -> %s\n", argv[1], argv[2]);
 }

@@ -41,30 +41,30 @@
  */
 int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From)
 {
-	uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
-	uint32_t ClearedBit = 0;
+    uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
+    uint32_t ClearedBit = 0;
 
-	// Do all the 32-bits till the end.
+    // Do all the 32-bits till the end.
     for(int64_t i = INDEX_BIT(From); i < INDEX_BIT(Bitmap->Size); i++, Data++)
     {
-    	// If all the bits are set, continue.
-    	if(*Data == 0xFFFFFFFF)
-    	{
-    		continue;
-    	}
+        // If all the bits are set, continue.
+        if(*Data == 0xFFFFFFFF)
+        {
+            continue;
+        }
 
-    	if(*Data == 0x00000000)
-    	{
-    		return i * 32;
-    	}
+        if(*Data == 0x00000000)
+        {
+            return i * 32;
+        }
 
         // Find the first bit set starting from LSB in the inversed data.
         // And return with it.
         __asm__ __volatile__("bsf %1, %0" : "=r"(ClearedBit) : "r"(~(*Data)));
-        
+
         return (i * 32) + ClearedBit;
     }
-    
+
     // Since if no set bit is found, ClearedBit would remain the same, set it such that you can
     // verify if "not changed" and "changed" are different.
     ClearedBit = 0xFFFFFFFF;
@@ -72,18 +72,19 @@ int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From)
     // Check the left-over bits at the end.
     if(OFFSET_BIT(Bitmap->Size))
     {
-    	// Find the first bit set starting from LSB in the inversed data.
-    	__asm__ __volatile__("bsf %1, %0" : "=r"(ClearedBit) : "r"(~(*Data)));
-        
-        if((ClearedBit != 0xFFFFFFFF) && (ClearedBit < OFFSET_BIT(Bitmap->Size)))
+        // Find the first bit set starting from LSB in the inversed data.
+        __asm__ __volatile__("bsf %1, %0" : "=r"(ClearedBit) : "r"(~(*Data)));
+
+        if( (ClearedBit != 0xFFFFFFFF)
+                && (ClearedBit < OFFSET_BIT(Bitmap->Size)))
         {
-        	// Return the new "first zero" bit.
-        	return (INDEX_BIT(Bitmap->Size) * 32) + ClearedBit;
-        }	
+            // Return the new "first zero" bit.
+            return (INDEX_BIT(Bitmap->Size) * 32) + ClearedBit;
+        }
     }
 
     // Return -1.
-    return -1;	
+    return -1;
 }
 
 /*
@@ -103,69 +104,70 @@ static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
         return FindFirstZero(Bitmap, From);
     }
 
-	uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
-	// The number of contiguous bits found.
-	uint32_t ContigBitsFound = 0;
+    uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
+    // The number of contiguous bits found.
+    uint32_t ContigBitsFound = 0;
 
-	// The 'j' index for the bits in the dword.
-	uint32_t j = 0;
+    // The 'j' index for the bits in the dword.
+    uint32_t j = 0;
 
-	// Do all the 32-bits till the end.
-    for(int64_t i = INDEX_BIT(From); i < INDEX_BIT(Bitmap->Size); i++, Data++, j = 0)
+    // Do all the 32-bits till the end.
+    for(int64_t i = INDEX_BIT(From); i < INDEX_BIT(Bitmap->Size);
+            i++, Data++, j = 0)
     {
-    	// If all the bits are set, continue.
-    	if(*Data == 0xFFFFFFFF)
-    	{
-    		ContigBitsFound = 0;
-    		continue;
-    	}
+        // If all the bits are set, continue.
+        if(*Data == 0xFFFFFFFF)
+        {
+            ContigBitsFound = 0;
+            continue;
+        }
 
-    	if(!ContigBitsFound)
-    	{
-    		// Find the first bit which is zero by starting from LSB in the inversed data to find the set bit.
-    		// And then loop from it.
-    		__asm__ __volatile__("bsf %1, %0" : "=r"(j) : "r"(~(*Data)));
+        if(!ContigBitsFound)
+        {
+            // Find the first bit which is zero by starting from LSB in the inversed data to find the set bit.
+            // And then loop from it.
+            __asm__ __volatile__("bsf %1, %0" : "=r"(j) : "r"(~(*Data)));
 
             // So we found one bit which is zero.
-    		ContigBitsFound = 1;
+            ContigBitsFound = 1;
 
-    		// Increase the j counter.
-    		++j;
-    	}
-        
+            // Increase the j counter.
+            ++j;
+        }
+
         // Check the rest of the bits.
         for(uint32_t BitToCheck = (1 << j); j < 32; j++, BitToCheck <<= 1)
         {
-        	if(*Data & BitToCheck)
-        	{
-        		ContigBitsFound = 0;
-        	}
+            if(*Data & BitToCheck)
+            {
+                ContigBitsFound = 0;
+            }
 
-        	else
-        	{
-        		ContigBitsFound++;
-        		if(ContigBitsFound == Count)
-        		{
-        			return ((i * 32) + j) - (Count - 1);
-        		}
-        	}
+            else
+            {
+                ContigBitsFound++;
+                if(ContigBitsFound == Count)
+                {
+                    return ( (i * 32) + j) - (Count - 1);
+                }
+            }
         }
     }
-    
+
     // Reset the 'j' counter.
     j = 0;
 
     // Check the left-over bits at the end.
     if(OFFSET_BIT(Bitmap->Size))
     {
-    	if(!ContigBitsFound)
-    	{
-    		// Find the first bit which is zero by starting from LSB in the inversed data to find the set bit.
-    		// And then loop from it.
-    		__asm__ __volatile__("bsf %1, %0" : "=r"(j) : "r"(~(*Data)));
+        if(!ContigBitsFound)
+        {
+            // Find the first bit which is zero by starting from LSB in the inversed data to find the set bit.
+            // And then loop from it.
+            __asm__ __volatile__("bsf %1, %0" : "=r"(j) : "r"(~(*Data)));
 
-    		// So we found one bit which is zero.
-    		ContigBitsFound = 1;
+            // So we found one bit which is zero.
+            ContigBitsFound = 1;
 
             // If the clear bit is outside the boundary, then, return.
             if(j >= OFFSET_BIT(Bitmap->Size))
@@ -173,31 +175,32 @@ static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
                 return -1;
             }
 
-    		// Increase the j counter.
-    		++j;
-    	}	
+            // Increase the j counter.
+            ++j;
+        }
 
-    	// Check the rest of the bits.
-    	for(uint32_t BitToCheck = (1 << j); j < OFFSET_BIT(Bitmap->Size); j++, BitToCheck <<= 1)
-    	{
-    		if(*Data & BitToCheck)
-    		{
-    			ContigBitsFound = 0;
-    		}
+        // Check the rest of the bits.
+        for(uint32_t BitToCheck = (1 << j); j < OFFSET_BIT(Bitmap->Size);
+                j++, BitToCheck <<= 1)
+        {
+            if(*Data & BitToCheck)
+            {
+                ContigBitsFound = 0;
+            }
 
-    		else
-    		{
-    		    ContigBitsFound++;
-    		    if(ContigBitsFound == Count)
-    		    {
-    		    	return ((Bitmap->Size & ~31) + j) - (Count - 1);
-    		    }	
-    		}
-    	}
+            else
+            {
+                ContigBitsFound++;
+                if(ContigBitsFound == Count)
+                {
+                    return ( (Bitmap->Size & ~31) + j) - (Count - 1);
+                }
+            }
+        }
     }
 
     // Return -1.
-    return -1;	
+    return -1;
 }
 
 /*
@@ -211,16 +214,16 @@ static int64_t FindContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
  */
 Bitmap_t BitmapInit(uint32_t *Data, int64_t Size, uint32_t Seed)
 {
-	Bitmap_t Bitmap;
+    Bitmap_t Bitmap;
 
     // Fill in the data.
-	Bitmap.Data = Data;
+    Bitmap.Data = Data;
 
     // Make size one based.
-	Bitmap.Size = Size;
+    Bitmap.Size = Size;
 
     Bitmap.FirstZero = 0;
-    
+
     for(int64_t i = 0; i < INDEX_BIT(Size); i++)
     {
         Data[i] = Seed;
@@ -247,14 +250,14 @@ void BitmapSetBit(Bitmap_t *Bitmap, int64_t Index)
         return;
     }
 
-	// Set the bit.
-	Bitmap->Data[INDEX_BIT(Index)] |= (1 << OFFSET_BIT(Index));
+    // Set the bit.
+    Bitmap->Data[INDEX_BIT(Index)] |= (1 << OFFSET_BIT(Index));
 
-	// If the bit we set was the first zero bit, then find the new first zero bit.
-	if(Bitmap->FirstZero == Index)
-	{
-		Bitmap->FirstZero = FindFirstZero(Bitmap, Bitmap->FirstZero + 1);
-	}
+    // If the bit we set was the first zero bit, then find the new first zero bit.
+    if(Bitmap->FirstZero == Index)
+    {
+        Bitmap->FirstZero = FindFirstZero(Bitmap, Bitmap->FirstZero + 1);
+    }
 }
 
 /*
@@ -270,14 +273,14 @@ void BitmapClearBit(Bitmap_t *Bitmap, int64_t Index)
         return;
     }
 
-	// Clear the bit.
-	Bitmap->Data[INDEX_BIT(Index)] &= ~(1 << OFFSET_BIT(Index));
+    // Clear the bit.
+    Bitmap->Data[INDEX_BIT(Index)] &= ~ (1 << OFFSET_BIT(Index));
 
-	// If the bit we cleared is lower than the current first zero, then make the cleared bit the new first zero bit.
-	if((Bitmap->FirstZero == -1) || (Index < Bitmap->FirstZero))
-	{
-		Bitmap->FirstZero = Index;
-	}
+    // If the bit we cleared is lower than the current first zero, then make the cleared bit the new first zero bit.
+    if( (Bitmap->FirstZero == -1) || (Index < Bitmap->FirstZero))
+    {
+        Bitmap->FirstZero = Index;
+    }
 }
 
 /*
@@ -296,7 +299,7 @@ uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index)
         return (uint32_t)NULL;
     }
 
-	return Bitmap->Data[INDEX_BIT(Index)] & (1 << OFFSET_BIT(Index));
+    return Bitmap->Data[INDEX_BIT(Index)] & (1 << OFFSET_BIT(Index));
 }
 
 /*
@@ -308,11 +311,11 @@ uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index)
  */
 int64_t BitmapFindFirstZero(Bitmap_t *Bitmap)
 {
-	// If no bit is zero, then return -1.
-	if(Bitmap->FirstZero == -1)
-	{
-		return -1;
-	}
+    // If no bit is zero, then return -1.
+    if(Bitmap->FirstZero == -1)
+    {
+        return -1;
+    }
 
     // Temporarily save the first zero bit's index.
     int64_t FirstZero = Bitmap->FirstZero;
@@ -342,7 +345,8 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
     }
 
     // Find the contiguous bits, starting from FirstZero.
-    int64_t From, ContiguousBits = From = FindContigZero(Bitmap, Bitmap->FirstZero, Count);
+    int64_t From, ContiguousBits = From = FindContigZero(Bitmap,
+            Bitmap->FirstZero, Count);
     if(ContiguousBits == -1)
     {
         // If unable to find contiguous bits, then return with -1.
@@ -354,9 +358,8 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count)
 
     // Do the first odd bits.
     for(uint32_t j = OFFSET_BIT(From), BitToSet = 1 << j;
-        // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
-        (j < 32) && (Count);                                       
-        BitToSet <<= 1, Count--, j++)
+    // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
+            (j < 32) && (Count); BitToSet <<= 1, Count--, j++)
     {
         *Data |= BitToSet;
     }
@@ -393,18 +396,17 @@ void BitmapClearContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count)
 {
     // Clear the contiguous bits.
     uint32_t *Data = &Bitmap->Data[INDEX_BIT(From)];
-    
+
     // If the first zero counter is -1, or it is above the area we are clearing, then update it.
-    if((Bitmap->FirstZero == -1) || (From < Bitmap->FirstZero))
+    if( (Bitmap->FirstZero == -1) || (From < Bitmap->FirstZero))
     {
         Bitmap->FirstZero = From;
     }
 
     // Do the first odd bits.
     for(uint32_t j = OFFSET_BIT(From), BitToClear = 1 << j;
-        // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
-        (j < 32) && (Count);                                       
-        BitToClear <<= 1, Count--, j++)
+    // Keep looping till we reach a dword boundary or we finish the amount we need to clear.
+            (j < 32) && (Count); BitToClear <<= 1, Count--, j++)
     {
         *Data &= ~BitToClear;
     }

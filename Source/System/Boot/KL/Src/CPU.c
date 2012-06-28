@@ -41,7 +41,8 @@ uint32_t CPUFeatureFlags()
     uint32_t FeatureFlags = 0;
 
     // The registers.
-    uint32_t EAX, EBX, ECX, EDX; EAX = EBX = ECX = EDX = 0;
+    uint32_t EAX, EBX, ECX, EDX;
+    EAX = EBX = ECX = EDX = 0;
 
     // Try to find out the extended levels supported.
     EAX = 0x80000000;

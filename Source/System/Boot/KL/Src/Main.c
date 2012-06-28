@@ -36,7 +36,7 @@ BIT_t *BIT;
 /* 
  * The Main function for the KL sub-module.
  *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
+ */
 void Main(BIT_t *BITPointer)
 {
     // Save BITPointer into a global variable.

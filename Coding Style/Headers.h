@@ -29,13 +29,12 @@
 
 // NOTES about the file here.
 // LIKE - the functions in this file won't actually compile. It's garbage stuff.
-
-#ifndef HEADER_H										/* Header.h */
+#ifndef HEADER_H    /* Header.h */
 #define HEADER_H
-				
-// This is a comment, if neccessary, describing the includes.
+
+// This is a comment, if necessary, describing the includes.
 #include <IncludeFolder/IncludeFile.h>
-			
+
 // This is a comment for a macro, followed by the macro itself.
 #define MACRO (1)
 
@@ -52,5 +51,5 @@ extern void *ModNameVarName;
  */
 // NOTE, TODO regarding functions here.
 void ModNameFuncName(void);
-														
-#endif													/* Header.h */
+
+#endif    /* Header.h */

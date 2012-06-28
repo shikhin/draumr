@@ -31,11 +31,10 @@
 // LIKE - the functions in this file won't actually compile. It's garbage stuff.
 // Some people say that coding style should actually be.. um, compilable. I believe 
 // it should simply demonstrate the style, not be compilable or something.
-
 // This is a comment, if neccessary, describing the includes.
 #include <Headers.h>
 #include <IncludeFolder/IncludeFile.h>
-			
+
 // This is a comment for a macro, followed by the macro itself - all macros for this file only here.
 #define MACRO_2 (1)
 
@@ -77,7 +76,7 @@ void ModNameFuncName(void)
 
     if(Rand > 0x1000)
     {
-    	DebugPrintText("Woah! That's crazy shit!");
+        DebugPrintText("Woah! That's crazy shit!");
     }
 
     else

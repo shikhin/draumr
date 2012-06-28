@@ -36,9 +36,9 @@
 #define OFFSET_BIT(bit) ((bit) % 32)
 
 // The standard structure for a new bitmap.
-typedef struct 
+typedef struct
 {
-	// The area where to keep the data for the bitmap.
+    // The area where to keep the data for the bitmap.
     uint32_t *Data;
     // The size of the bitmap - in terms of number of bits.
     int64_t Size;
