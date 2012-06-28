@@ -102,6 +102,7 @@ extern BIT_t BIT;
 /*
  * Initializes the BIT structure, copying it to somewhere appropriate.
  *     uint32_t *BITPointer -> the pointer to the BIT structure, as passed to us.
- */_PROTOTYPE(void BITInit, (uint32_t *BITPointer)) _COLD;
+ */
+_PROTOTYPE(void BITInit, (uint32_t *BITPointer)) _COLD;
 
 #endif /* _BIT_H */

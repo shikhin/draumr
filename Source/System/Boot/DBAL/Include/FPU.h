@@ -33,7 +33,6 @@
 /*
  * Initializes the FPU.
  */
-_PROTOTYPE(extern void FPUInit, (void))
-_COLD;
+_PROTOTYPE(extern void FPUInit, (void)) _COLD;
 
 #endif /* _FPU_h */

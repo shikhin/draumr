@@ -83,7 +83,8 @@ extern MMapEntry_t *MMapEntries;
 
 /*
  * Initializes the physical memory manager for ourselves.
- */_PROTOTYPE(void PMMInit, (void)) _COLD;
+ */
+_PROTOTYPE(void PMMInit, (void)) _COLD;
 
 /*
  * Allocates a frame in the PMM, and returns it's address.

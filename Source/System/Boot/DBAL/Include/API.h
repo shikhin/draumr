@@ -51,7 +51,8 @@
 
 /*
  * Initializes the API, replacing old APIs with new one's.
- */_PROTOTYPE(void APIInit, (void)) _COLD;
+ */
+_PROTOTYPE(void APIInit, (void)) _COLD;
 
 /*
  * The video API, to access VGA/VBE* functions.
