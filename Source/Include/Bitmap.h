@@ -27,9 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef BITMAP_H							/* Bitmap.h */
+#ifndef BITMAP_H    /* Bitmap.h */
 #define BITMAP_H
 
+#include <Standard.h>
 #include <stdint.h>
 
 #define INDEX_BIT(bit)  ((bit) / 32)
@@ -120,4 +121,4 @@ _PROTOTYPE(int64_t BitmapFindContigZero, (Bitmap_t *Bitmap, int64_t Count));
  */
 _PROTOTYPE(void BitmapClearContigZero, (Bitmap_t *Bitmap, int64_t From, int64_t Count));
 
-#endif										/* Bitmap.h */
+#endif    /* Bitmap.h */

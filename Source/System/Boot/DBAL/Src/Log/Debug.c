@@ -82,7 +82,7 @@ static void DebugPrintCharText(char C)
     else if(C >= ' ')
     {
         // Get the right location to print at - and then put the character there.
-        Location = VGAFrameBuffer + ( ( (CursorY * 80) + CursorX) * 2);
+        Location = VGAFrameBuffer + (((CursorY * 80) + CursorX) * 2);
         *Location = C;
         CursorX++;
     }
@@ -187,7 +187,7 @@ static void DebugPrintHexadecimalText(uint32_t N)
     Tmp = N & 0xF;
     if(Tmp >= 0xA)
     {
-        DebugPrintCharText( (Tmp - 0xA) + 'A');
+        DebugPrintCharText((Tmp - 0xA) + 'A');
     }
 
     else

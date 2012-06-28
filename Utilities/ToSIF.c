@@ -116,15 +116,14 @@ static void BMPToBuf()
     }
 
     // Check for bpp type.
-    if( (BMPHeader.Plane * BMPHeader.BPP) != 24)
+    if((BMPHeader.Plane * BMPHeader.BPP) != 24)
     {
         // Close the input file - avoiding leaks.
         fclose(ImageData.OutFile);
         fclose(ImageData.InFile);
 
         // Print error.
-        printf(
-                "ERROR: Input image isn't of 24-bpp format, and thus can't be opened.\n\tBPP: %d\tPlane: %d\n",
+        printf("ERROR: Input image isn't of 24-bpp format, and thus can't be opened.\n\tBPP: %d\tPlane: %d\n",
                 BMPHeader.Plane, BMPHeader.BPP);
         exit(EXIT_FAILURE);
     }
@@ -137,8 +136,7 @@ static void BMPToBuf()
         fclose(ImageData.InFile);
 
         // Print error.
-        printf(
-                "ERROR: Input image is compressed, and can't be handled correctly.\n");
+        printf("ERROR: Input image is compressed, and can't be handled correctly.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -150,8 +148,7 @@ static void BMPToBuf()
         fclose(ImageData.InFile);
 
         // Print error.
-        printf(
-                "ERROR: Image has a palette appended to it, and can't be parsed");
+        printf("ERROR: Image has a palette appended to it, and can't be parsed");
         exit(EXIT_FAILURE);
     }
 
@@ -413,8 +410,7 @@ int main(int argc, char *argv[])
     // If usage wasn't correct, gracefully exit.
     if(argc < 3)
     {
-        printf(
-                "ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile Flags.\n",
+        printf("ERROR: Incorrect usage of %s.\nCorrect Usage: %s InputFile OutputFile Flags.\n",
                 argv[0], argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -460,8 +456,7 @@ int main(int argc, char *argv[])
         fclose(ImageData.OutFile);
 
         // Print error.
-        printf(
-                "ERROR: Unable to parse the input file.\nExtension (%s) is unrecognizable.\n",
+        printf("ERROR: Unable to parse the input file.\nExtension (%s) is unrecognizable.\n",
                 Extension);
         exit(EXIT_FAILURE);
     }

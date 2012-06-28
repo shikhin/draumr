@@ -68,7 +68,7 @@ void *memmove(void *dest, _CONST void *src, uint32_t count)
     }
 
     // See if src and destination are overlapping - and the src block lies previous to the destination block.
-    if( (src < dest) && ( ((uint32_t)src + count) > (uint32_t)dest))
+    if((src < dest) && (((uint32_t)src + count) > (uint32_t)dest))
     {
         // If yes, use a reverse copy.
         __asm__ __volatile__("std\n\t"    // std sets the direction flag, performing the rep movsb in reverse.

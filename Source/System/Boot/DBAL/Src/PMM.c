@@ -59,7 +59,7 @@ static void PMMFixMMap()
         // If the entries are the same start and length:
         // ******
         // ******
-        if( (MMapEntries[i].Start == MMapEntries[i + 1].Start)
+        if((MMapEntries[i].Start == MMapEntries[i + 1].Start)
                 && (MMapEntries[i].Length == MMapEntries[i + 1].Length))
         {
             MMapEntries[i].Type = Type;
@@ -73,9 +73,9 @@ static void PMMFixMMap()
         // If the entries overlap in the standard way:
         // ******
         //    ******
-        else if( ( (MMapEntries[i].Start + MMapEntries[i].Length)
+        else if(( (MMapEntries[i].Start + MMapEntries[i].Length)
                 > MMapEntries[i + 1].Start)
-                && ( (MMapEntries[i].Start + MMapEntries[i].Length)
+                && ((MMapEntries[i].Start + MMapEntries[i].Length)
                         < (MMapEntries[i + 1].Start + MMapEntries[i + 1].Length)))
         {
             // If type's are same, then remove one entry, and increase the length in one entry.
@@ -129,7 +129,7 @@ static void PMMFixMMap()
         // If the starting of the entries were same, while the second entry was shorter than the first one:
         // ******
         // ***
-        else if( (MMapEntries[i].Start == MMapEntries[i + 1].Start)
+        else if((MMapEntries[i].Start == MMapEntries[i + 1].Start)
                 && (MMapEntries[i].Length > MMapEntries[i + 1].Length))
         {
             // If the types are same, remove the second (smaller) entry.
@@ -169,7 +169,7 @@ static void PMMFixMMap()
         // If the entries begin at the same address, and the first one is smaller than the second one:
         // ***
         // ******
-        else if( (MMapEntries[i].Start == MMapEntries[i + 1].Start)
+        else if((MMapEntries[i].Start == MMapEntries[i + 1].Start)
                 && (MMapEntries[i + 1].Length > MMapEntries[i].Length))
         {
             // Is both are of same type, delete the first one.
@@ -202,7 +202,7 @@ static void PMMFixMMap()
         // If length of both entries adds up to them ending at the same address:
         // ******
         //    ***
-        else if( (MMapEntries[i].Start + MMapEntries[i].Length)
+        else if((MMapEntries[i].Start + MMapEntries[i].Length)
                 == (MMapEntries[i + 1].Start + MMapEntries[i + 1].Length))
         {
             // If types of both the entries are same, then delete the second entry.
@@ -231,7 +231,7 @@ static void PMMFixMMap()
         // If second entry is 'inside' first entry, without touching the borders:
         // ******
         //  ****
-        else if( (MMapEntries[i + 1].Start + MMapEntries[i + 1].Length)
+        else if((MMapEntries[i + 1].Start + MMapEntries[i + 1].Length)
                 < (MMapEntries[i].Start + MMapEntries[i].Length))
         {
             // If types are same, remove second entry.
@@ -275,8 +275,8 @@ static void PMMFixMMap()
         }
 
         // Check whether it is adjacent areas of same type, and if yes, merge.
-        if( (MMapEntries[i].Type == MMapEntries[i + 1].Type)
-                && ( (MMapEntries[i].Start + MMapEntries[i].Length)
+        if((MMapEntries[i].Type == MMapEntries[i + 1].Type)
+                && ((MMapEntries[i].Start + MMapEntries[i].Length)
                         == MMapEntries[i + 1].Start))
         {
             // Increase the length of the first entry.
@@ -363,7 +363,7 @@ void PMMInit()
             + MMapEntries[MMapHeader->Entries - 1].Start);
 
     // Calculate the size of the bitmap.
-    uint32_t BitmapSize = ( ( (HighestAddress / 0x1000) + 31) & ~31) / 8;
+    uint32_t BitmapSize = (( (HighestAddress / 0x1000) + 31) & ~31) / 8;
     BitmapSize = (BitmapSize + 0xFFF) & ~0xFFF;
 
     // Try to find a region in the memory map to hold that much space. 
@@ -376,14 +376,14 @@ void PMMInit()
         }
 
         // If the starting address is over 0xFFFF0000, then simply break..
-        else if( (MMapEntries[i].Start + MMapEntries[i].Length) > 0xFFFF0000)
+        else if((MMapEntries[i].Start + MMapEntries[i].Length) > 0xFFFF0000)
         {
             break;
         }
 
         // If, the entry can accomodate the bitmap, and, the address doesn't go over the 4GiB boundary, then use that area.
-        else if( (MMapEntries[i].Length >= BitmapSize)
-                && ( (MMapEntries[i].Start + BitmapSize) <= 0xFFFF0000))
+        else if((MMapEntries[i].Length >= BitmapSize)
+                && ((MMapEntries[i].Start + BitmapSize) <= 0xFFFF0000))
         {
             // Asign the 'data' and 'size' of the pool and base bitmap.
             BaseBitmap.Data = (uint32_t*) ((uint32_t)MMapEntries[i].Start
@@ -460,7 +460,7 @@ uint32_t PMMAllocFrame(uint32_t Type)
         return (uint32_t)NULL;
     }
 
-    if( ((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
+    if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
     {
         BitmapClearBit(Bitmap, Bit);
         return (uint32_t)NULL;
@@ -538,7 +538,7 @@ uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number)
     }
 
     Bit += Number;
-    if( ((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
+    if(((uint64_t)Bit * 0x1000ULL) > 0xFFFF0000ULL)
     {
         BitmapClearContigZero(Bitmap, Bit - Number, Number);
         return (uint32_t)NULL;

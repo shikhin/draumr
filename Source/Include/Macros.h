@@ -34,7 +34,7 @@
 #define MIN(a, b) (((a) > (b)) ? (a) : (b))
 
 // The NULL macro.
-#define NULL       (void*)0
+#define NULL       (void *)0
 
 // To find a specific bit.
 #define BIT(x)     (1 << (x))

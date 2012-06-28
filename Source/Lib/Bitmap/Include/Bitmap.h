@@ -27,9 +27,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef BITMAP_H							/* Bitmap.h */
+#ifndef BITMAP_H    /* Bitmap.h */
 #define BITMAP_H
 
+#include <Standard.h>
 #include <stdint.h>
 
 #define INDEX_BIT(bit)  ((bit) / 32)
@@ -56,7 +57,7 @@ typedef struct
  *     int64_t          -> the new "first zero bit". -1 if none found. 
  */
 // NOTE: This finds the first zero bit for local usage.
-int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From);
+_PROTOTYPE(int64_t FindFirstZero, (Bitmap_t *Bitmap, int64_t From));
 
 /*
  * Initializes a bitmap.
@@ -67,21 +68,21 @@ int64_t FindFirstZero(Bitmap_t *Bitmap, int64_t From);
  * Returns:
  *     Bitmap_t       -> a bitmap structure containing the newly initialized bitmap.
  */
-Bitmap_t BitmapInit(uint32_t *Data, int64_t Size, uint32_t Seed);
+_PROTOTYPE(Bitmap_t BitmapInit, (uint32_t *Data, int64_t Size, uint32_t Seed));
 
 /*
  * Set a particular bit in the bitmap.
  *     Bitmap_t *Bitmap -> the bitmap in which to set the particular bit.
  *     int64_t Index    -> the index of the bit to set.
  */
-void BitmapSetBit(Bitmap_t *Bitmap, int64_t Index);
+_PROTOTYPE(void BitmapSetBit, (Bitmap_t *Bitmap, int64_t Index));
 
 /*
  * Clears a particular bit in the bitmap.
  *     Bitmap_t *Bitmap -> the bitmap in which to clear the particular bit.
  *     int64_t Index    -> the index of the bit to clear.
  */
-void BitmapClearBit(Bitmap_t *Bitmap, int64_t Index);
+_PROTOTYPE(void BitmapClearBit, (Bitmap_t *Bitmap, int64_t Index));
 
 /*
  * Tests a particular bit in the bitmap.
@@ -91,7 +92,7 @@ void BitmapClearBit(Bitmap_t *Bitmap, int64_t Index);
  * Returns:
  *     uint32_t        -> 0 if it isn't set, else, non-zero value.
  */
-uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index);
+_PROTOTYPE(uint32_t BitmapTestBit, (Bitmap_t *Bitmap, int64_t Index));
 
 /*
  * Finds a zero bit. Sets and returns it if found. Else, returns -1.
@@ -100,7 +101,7 @@ uint32_t BitmapTestBit(Bitmap_t *Bitmap, int64_t Index);
  * Returns:
  *     int64_t          -> the index of the bit found. -1 if none found.
  */
-int64_t BitmapFindFirstZero(Bitmap_t *Bitmap);
+_PROTOTYPE(int64_t BitmapFindFirstZero, (Bitmap_t *Bitmap));
 
 /*
  * Finds a contiguous series of zero bits. Sets and returns them if found. Else, returns -1.
@@ -110,7 +111,7 @@ int64_t BitmapFindFirstZero(Bitmap_t *Bitmap);
  * Returns:
  *     int64_t          -> the index of the starting of the series found. -1 if none found.
  */
-int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count);
+_PROTOTYPE(int64_t BitmapFindContigZero, (Bitmap_t *Bitmap, int64_t Count));
 
 /*
  * Clears a contiguous series of zero bits. 
@@ -118,6 +119,6 @@ int64_t BitmapFindContigZero(Bitmap_t *Bitmap, int64_t Count);
  *     int64_t From     -> the area from where to start clearing the series of bits.
  *     int64_t Count    -> the number of contiguous bits to clear.
  */
-void BitmapClearContigZero(Bitmap_t *Bitmap, int64_t From, int64_t Count);
+_PROTOTYPE(void BitmapClearContigZero, (Bitmap_t *Bitmap, int64_t From, int64_t Count));
 
-#endif										/* Bitmap.h */
+#endif    /* Bitmap.h */

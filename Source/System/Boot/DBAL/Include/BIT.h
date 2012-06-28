@@ -79,9 +79,9 @@ struct BIT
     struct
     {
         uint8_t VideoFlags;                      // The video flags.
-        VBECntrlrInfo_t *VBECntrlrInfo;    // The 32-bit adddress of the VBE Controller Mode Info block.
-        VBEModeInfo_t *VBEModeInfo;    // The 32-bit address of the (allocated) VBE mode info block.
-        uint32_t VBEModeInfoN;                    // The number of entries.
+        VBECntrlrInfo_t *VBECntrlrInfo;          // The 32-bit adddress of the VBE Controller Mode Info block.
+        VBEModeInfo_t *VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
+        uint32_t VBEModeInfoN;                   // The number of entries.
 
         EDIDInfo_t EDIDInfo;                            // The EDID information.
 

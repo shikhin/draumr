@@ -138,8 +138,10 @@ struct VBECntrlrInfo
 #define GRAPHICAL_MODE   (1 << 4)  // If set, graphical mode. Else, text.
 #define LFB_AVAILABLE    (1 << 7)  // If set, LFB is supported.
 #define VGA_COMPATIBLE   (1 << 5)  // If zero, the mode is VGA compatible.
+
 // Flags for DirectColorModeInfo.
 #define COLOR_RAMP_PROGRAMMABLE (1 << 0)    // If set, color ramp is programmable.
+
 // The factor used for scaling BPP.
 #define BPP_SCALING_FACTOR (240)
 

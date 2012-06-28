@@ -50,6 +50,6 @@ extern void *ModNameVarName;
  *     uint32_t -> Return value 1.
  */
 // NOTE, TODO regarding functions here.
-void ModNameFuncName(void);
+_PROTOTYPE(void ModNameFuncName, (void));
 
 #endif    /* Header.h */
