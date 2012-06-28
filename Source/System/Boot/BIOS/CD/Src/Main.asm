@@ -100,7 +100,7 @@ Main:
 
     call DiskInit
     call BootFileCheck                ; Check whether the boot file (us) is intact or not.
-    
+
     ; Now, once we have checked whether we are intact or not, and done stuff -
     ; jump to extended main.
     jmp ExtMain
@@ -125,7 +125,7 @@ ExtMain:
     
 .LoadCommonBIOS:
     xor ax, ax                        ; Open File 0, or common BIOS file.
-    
+
     call FileOpen                     ; Open the File.
     jc .ErrorOpenCBIOS
     
@@ -212,7 +212,7 @@ ExtMain:
     xor ebp, ebp
 
     jmp [0x9004]
-    
+
 .ErrorOpenCBIOS:
     mov si, ErrorOpenCBIOSMsg
     jmp AbortBoot

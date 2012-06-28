@@ -48,6 +48,10 @@ DBAL:
     .LBA          dd 0                ; The LBA of the DBAL file.
     .Size         dd 0                ; The Size of the DBAL file in bytes.
 
+Background:
+    .LBA          dd 0                ; The LBA of the Background file.
+    .Size         dd 0                ; The size of the Background file in bytes.
+
 KL:
     .LBA          dd 0                ; The LBA of the KL file.
     .Size         dd 0                ; The Size of the KL file in bytes.
@@ -60,9 +64,30 @@ KernelAMD64:
     .LBA		  dd 0                ; The LBA of the AMD64 kernel.
     .Size		  dd 0                ; The Size of the AMD64 kernel in bytes.
 
-Background:
-    .LBA          dd 0                ; The LBA of the Background file.
-    .Size         dd 0                ; The size of the Background file in bytes.
+PMMx86:
+    .LBA      dd 0                    ; The size and the LBA of the PMM x86 module is unknown.
+    .Size     dd 0
+
+PMMx86PAE:
+    .LBA      dd 0                    ; The size and the LBA of the PMM x86 PAE module is unknown.
+    .Size     dd 0
+
+PMMAMD64:
+    .LBA      dd 0                    ; The size and the LBA of the PMM AMD64 module is unknown.
+    .Size     dd 0
+
+VMMx86:
+    .LBA      dd 0                    ; The size and the LBA of the VMM x86 module is unknown.
+    .Size     dd 0
+
+VMMx86PAE:
+    .LBA      dd 0                    ; The size and the LBA of the VMM x86 PAE module is unknown.
+    .Size     dd 0
+
+VMMAMD64:
+    .LBA      dd 0                    ; The size and the LBA of the VMM AMD64 module is unknown.
+    .Size     dd 0
+
 
 FILE:
     .Code   db -1                     ; The "code" of the file opened. If -1, no file opened.
@@ -74,6 +99,215 @@ FILE:
                                       ; the last transaction, we carry that much over.
     
 SECTION .text
+
+ ; Checks the record in the boot directory for any matching files.
+ ;     DI  -> the address of the record.
+ ;
+ ; Returns:
+ ;     EBP -> decremented by one if file found.
+CheckRecordBootDir:
+    push esi
+    push eax
+
+    movzx eax, byte [di + 32]
+
+    cmp eax, 5             ; Identifier size: 5.
+    je .1
+
+    cmp eax, 7             ; Identifier size: 7.
+    je .2
+
+    cmp eax, 8             ; Identifier size: 8.
+    je .3
+
+    cmp eax, 9             ; Identifier size: 9.
+    je .4
+
+    cmp eax, 10            ; Identifier size: 10.
+    je .5
+
+    cmp eax, 11            ; Identifier size: 11.
+    je .6
+
+    cmp eax, 14            ; Identifier size: 14.
+    je .7
+
+    ; None matches.
+    jmp .Return
+
+; Identifier size 5.
+.1:
+.1KL:
+    ; Compare for KL.
+    cmp word  [di + 33], "KL"
+    jne .Return
+
+    mov esi, KL
+    jmp .FileFound
+
+; Identifier size 7.
+.2:
+.2BIOS:
+    ; Check if it's the common BIOS boot file.
+    cmp dword [di + 33], "BIOS"
+    jne .2DBAL
+
+    ; If it is, load esi with BIOS and go to file found.
+    mov esi, BIOS
+    jmp .FileFound
+
+.2DBAL:
+    ; Check if it's the DBAL.
+    cmp dword [di + 33], "DBAL"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, DBAL
+    jmp .FileFound
+
+; Identifier size 8.
+.3:
+.3KEx86:
+    ; Check if it's the kernel x86 file.
+    cmp dword [di + 33], "KEX8"
+    jne .Return
+
+    cmp byte  [di + 37], '6'
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, Kernelx86
+    jmp .FileFound
+
+; Identifier size 9
+.4:
+.4PMMx86:
+    ; Check if it's the PMM x86 module.
+    cmp dword [di + 33], "PMMX"
+    jne .4PMMPAE
+
+    cmp word  [di + 37], "86"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, PMMx86
+    jmp .FileFound
+
+.4PMMPAE:
+    ; Check if it's the PMM PAE module.
+    cmp dword [di + 33], "PMMP"
+    jne .4VMMx86
+
+    cmp word  [di + 37], "AE"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, PMMx86PAE
+    jmp .FileFound
+
+.4VMMx86:
+    ; Check if it's the VMM x86 module.
+    cmp dword [di + 33], "VMMX"
+    jne .4VMMPAE
+
+    cmp word  [di + 37], "86"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, VMMx86
+    jmp .FileFound
+
+.4VMMPAE:
+    ; Check if it's the VMM PAE module.
+    cmp dword [di + 33], "VMMP"
+    jne .Return
+
+    cmp word  [di + 37], "AE"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, VMMx86PAE
+    jmp .FileFound
+
+; Identifier size 10.
+.5:
+.5KEAMD64:
+    ; Check if it's the Kernel AMD64.
+    cmp dword [di + 33], "KEAM"
+    jne .Return
+
+    cmp word  [di + 37], "D6"
+    jne .Return
+
+    cmp byte  [di + 39], '4'
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, KernelAMD64
+    jmp .FileFound
+
+; Identifier size 11.
+.6:
+.6PMMAMD64:
+    ; Check if it's the PMM AMD64 module.
+    cmp dword [di + 33], "PMMA"
+    jne .6VMMAMD64
+
+    cmp dword [di + 37], "MD64"
+    jne .Return
+
+    ; If it is, load esi with PMM AMD64 and go to file found.
+    mov esi, PMMAMD64
+    jmp .FileFound
+
+.6VMMAMD64:
+    ; Check if it's the VMM AMD64 module.
+    cmp dword [di + 33], "VMMA"
+    jne .Return
+
+    cmp dword [di + 37], "MD64"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, VMMAMD64
+    jmp .FileFound
+
+.7:
+.7Background:
+    ; Check if it's the background sif.
+    cmp dword [di + 33], "BACK"
+    jne .Return
+
+    cmp dword [di + 37], "GROU"
+    jne .Return
+
+    cmp dword [di + 41], ".SIF"
+    jne .Return
+
+    ; If it is, go to file found.
+    mov esi, Background
+    jmp .FileFound
+
+; If the file is found.
+.FileFound:
+    ; Store the LBA.
+    mov eax, [di + 2]
+    mov [esi], eax
+
+    ; Store the size.
+    mov eax, [di + 10]
+    mov [esi + 4], eax
+
+    ; Decrement EBP.
+    dec ebp
+
+; Return.
+.Return:
+    ; Pop all the registers.
+    pop eax
+    pop esi
+
+    ret
 
  ; Is responsible for finding boot files.
  ;
@@ -126,7 +360,7 @@ BootFilesFind:
     mov [Boot.LBA], ebx
     mov [Boot.Size], eax
     
-    mov ebp, 6                        ; Number of files to load.
+    mov ebp, 12                       ; Number of files to load.
 
 .LoadSectorBD:
     mov edi, 0x9000 | 0x80000000      ; Enable advanced error checking.
@@ -136,111 +370,11 @@ BootFilesFind:
     cmp byte [di], 0                  ; If zero, we have finished this sector. Move on to next sector.
     je .NextSectorBD
 
-    cmp byte [di + 32], 7             ; If size of directory identifier isn't 4, then try for KL.
-    jne .CheckKL
-
-    cmp dword [di + 33], "BIOS"       ; If directory identifier doesn't match, next record.
-    je .FoundBIOS
-
-    cmp dword [di + 33], "DBAL"       ; Sigh, how many 4 byte entries do we have?
-    je .FoundDBAL
-
-    ; If not matched with anything, go on to next record.
-    jmp .NextRecordBD
-
-.CheckKL:
-    cmp byte [di + 32], 5             ; If size of directory isn't 2, then try for x86 kernel.
-    jne .CheckKernelx86
-
-    cmp word [di + 33], "KL"          ; If directory identifier doesn't match, next record.
-    jne .NextRecordBD
-
-    ; So we found the KL here.
-
-    ; We don't use edx and esi in the loop/anywhere, so use them to move around
-    ; and store the LBA and Size.
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [KL.LBA], esi
-    mov [KL.Size], edx
-
-    jmp .CheckForAllDone
-
-.CheckKernelx86:
-    cmp byte [di + 32], 8             ; Check the size of the directory identifier. If not match, try for AMD64.
-    jne .CheckKernelAMD64
-
-    ; Try to match the name.
-    cmp dword [di + 33],  "KEX8"
-    jne .NextRecordBD
-
-    cmp byte [di + 37], '6'
-    jne .NextRecordBD
-
-    ; So we found the Kernelx86 here.
-
-    ; We don't use edx and esi in the loop/anywhere, so use them to move around
-    ; and store the LBA and Size.
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [Kernelx86.LBA], esi
-    mov [Kernelx86.Size], edx
-
-    jmp .CheckForAllDone
-
-.CheckKernelAMD64:
-    cmp byte [di + 32], 10            ; If doesn't match, go to the background image.
-    jne .NextRecordBD
-
-    ; Try to match the name.
-    cmp dword [di + 33],  "KEAM"
-    jne .NextRecordBD
-
-    cmp word [di + 37], "D6"
-    jne .NextRecordBD
-
-    cmp byte [di + 39], '4'
-    jne .NextRecordBD
-
-    ; So we found the KernelAMD64 here.
-
-    ; We don't use edx and esi in the loop/anywhere, so use them to move around
-    ; and store the LBA and Size.
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [KernelAMD64.LBA], esi
-    mov [KernelAMD64.Size], edx
-
-    jmp .CheckForAllDone
-
-.CheckBGImage:
-    cmp byte [di + 32], 14            ; If doesn't match, go to the background image.
-    jne .NextRecordBD
-
-    cmp dword [di + 33], "BACK"       ; Check the file name.
-    jne .NextRecordBD
-
-    cmp dword [di + 37], "GROU"       ; And the rest of the file name.
-    jne .NextRecordBD
-    
-    cmp dword [di + 41], ".SIF"       ; And the rest. Woof.
-    jne .NextRecordBD
-
-    ; So we found the background image here. 
-    
-    ; We don't use edx and esi in the loop/anywhere, so use them to move around
-    ; and store the LBA and Size.
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [Background.LBA], esi
-    mov [Background.Size], edx
+    ; Check the record in the boot dirctory.
+    call CheckRecordBootDir
 
 .CheckForAllDone:
-    dec ebp
+    test ebp, ebp
     ; If found all files, return.
     jz .Return
 
@@ -258,24 +392,6 @@ BootFilesFind:
     jnz .LoadSectorBD                 ; If EAX isn't zero, load next sector and continue.
 
     jmp .NotFound                     ; If we reached here, we haven't found all the files. Abort.
-
-.FoundBIOS:   
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [BIOS.LBA], esi
-    mov [BIOS.Size], edx
-
-    jmp .CheckForAllDone
-
-.FoundDBAL: 
-    mov edx, [di + 10]
-    mov esi, [di + 2]
-
-    mov [DBAL.LBA], esi
-    mov [DBAL.Size], edx
-   
-    jmp .CheckForAllDone
   
 ; Not found - abort boot.
 .NotFound:
@@ -297,117 +413,77 @@ BootFilesFind:
     ret
 
  ; Opens a file to be read from.
- ;     AL   -> contains the code number of the file to open.
- ;      0   -> common BIOS File.
- ;      1   -> DBAL.
- ;      2   -> background image.
- ;      3   -> KL.
- ;      4   -> Kernel x86.
- ;      5   -> Kernel AMD64.
+ ;     AL    -> contains the code number of the file to open.
+ ;      0    -> Common BIOS File.
+ ;      1    -> DBAL.
+ ;      2    -> Background Image.
+ ;      3    -> KL.
+ ;      4    -> Kernel x86.
+ ;      5    -> Kernel AMD64.
+ ;      6    -> PMM x86.
+ ;      7    -> PMM x86 PAE.
+ ;      8    -> PMM AMD64.
+ ;      9    -> VMM x86.
+ ;      10   -> VMM x86 PAE.
+ ;      11   -> VMM AMD64.
  ;
  ; Returns: 
- ;    ECX   -> the size of the file you want to open.
- ;    Carry -> set if any error occured.
+ ;     Carry -> set if any error occured.
+ ;     ECX   -> the size of the file you want to FILE.
 FileOpen:
-    ; Save some variables.
     push eax
-    push ebx
+    push esi
 
-    ; Check if any file is already opened. If yes, return with carry set.
+    ; If file code isn't -1, then return with error.
     cmp byte [FILE.Code], -1
     jne .Error
 
+    ; If it is above the maximum file code (11), go to error.
+    cmp al, 11
+    ja .Error
+
+    ; Store the file code.
     mov [FILE.Code], al
-    
-    cmp al, 0
-    je .BIOS                          ; 0 indicates the common BIOS file.
 
-    cmp al, 1                         ; 1 indicates the DBAL file.
-    je .DBAL
+    ; Get the file code in ESI, and multiply by 3.
+    movzx esi, al
+    shl esi, 3
 
-    cmp al, 2                         ; 2 indicates the Background image.
-    je .Background
+    ; Add address of BIOS file descriptor.
+    add esi, BIOS
 
-    cmp al, 3                         ; 3 indicates the KL.
-    je .KL
-
-    cmp al, 4                         ; 4 indicates the Kernel x86.
-    je .Kernelx86
-
-    cmp al, 5                         ; 5 indicates the Kernel AMD64.
-    je .KernelAMD64
-
-    jmp .Error
-   
-; Store the required thingies.
-.BIOS:
-    mov eax, [BIOS.LBA]
+    ; Store the LBA and Size in the open file descriptor.
+    mov eax, [esi]
     mov [FILE.LBA], eax
 
-    mov eax, [BIOS.Size]
-    mov [FILE.Size], eax
-   
-    jmp .Return
-
-.DBAL:
-    mov eax, [DBAL.LBA]
-    mov [FILE.LBA], eax
-
-    mov eax, [DBAL.Size]
+    mov eax, [esi + 4]
     mov [FILE.Size], eax
 
-    jmp .Return
+    cmp byte [FILE.Code], 2
+    jne .Return
 
-.Background:
-    ; If the background file isn't present, return with carry set.
     mov eax, [Background.LBA]
     test eax, eax
     jz .Error
-    mov [FILE.LBA], eax
 
-    mov eax, [Background.Size]
-    mov [FILE.Size], eax
-
-    jmp .Return
-
-.KL:
-    mov eax, [KL.LBA]
-    mov [FILE.LBA], eax
-
-    mov eax, [KL.Size]
-    mov [FILE.Size], eax
-
-    jmp .Return
-    
-.Kernelx86:
-    mov eax, [Kernelx86.LBA]
-    mov [FILE.LBA], eax
-
-    mov eax, [Kernelx86.Size]
-    mov [FILE.Size], eax
-
-    jmp .Return
-
-.KernelAMD64:
-    mov eax, [KernelAMD64.LBA]
-    mov [FILE.LBA], eax
-
-    mov eax, [KernelAMD64.Size]
-    mov [FILE.Size], eax
-
-    jmp .Return
-
-.Error:
-    mov byte [FILE.Code], -1
-    mov dword [FILE.Extra], 0
-    stc 
-    
 .Return:
     ; Restore registers.
-    pop ebx
+    pop esi
     pop eax
-    
+    clc
+
     mov ecx, [FILE.Size] 
+    ret
+
+.Error:
+    ; Set the file code to -1, and the carry flag.
+    mov byte  [FILE.Code], -1
+    mov dword [FILE.Extra], 0
+
+    stc
+
+    pop esi
+    pop eax
     ret
 
  ; Reads the 'next LBA' of the file currently opened.

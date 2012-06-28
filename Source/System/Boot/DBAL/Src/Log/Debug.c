@@ -258,6 +258,7 @@ void DebugPrintText(_CONST char *Fmt, ...)
 	      default:
 	        DebugPrintCharText('X');
 	        DebugPrintCharText(C);
+	        break;
 	    }
     }
     
