@@ -66,33 +66,33 @@ struct BIT
     // The open, read and close file functions.
     uint32_t (*FileAPI)(uint32_t APICode, ...);
 
-    uint8_t  HrdwreFlags;             // The "hardware" flags.
-    uint8_t  BDFlags;                 // The boot device flags.
-    
+    uint8_t HrdwreFlags;             // The "hardware" flags.
+    uint8_t BDFlags;                 // The boot device flags.
+
     uint32_t ACPI;                    // The 32-bit address of the RSDP.
     uint32_t MPS;                     // The 32-bit address of the MPS tables.
-    uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
+    uint32_t SMBIOS;                 // The 32-bit address of the SMBIOS tables.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
-    
+
     // Define the Video related things here.
     struct
     {
-        uint8_t         VideoFlags;                      // The video flags.
-        VBECntrlrInfo_t *VBECntrlrInfo;                  // The 32-bit adddress of the VBE Controller Mode Info block.
-        VBEModeInfo_t   *VBEModeInfo;                    // The 32-bit address of the (allocated) VBE mode info block.
-        uint32_t        VBEModeInfoN;                    // The number of entries.
-        
-        EDIDInfo_t EDIDInfo;                             // The EDID information.
- 
-        uint32_t (*VideoAPI)(uint32_t APICode, ...);     // The video API function.
-        void     (*OutputRevert)(void);                  // The function to revert back from the current level.
-        
-        VBEModeInfo_t ModeInfo;                          // The mode we switched to's information.
-    
-        FILE_t   BackgroundImg;                          // Pointer to the boot image.
-    } _PACKED Video;    
-} _PACKED;
+        uint8_t VideoFlags;                      // The video flags.
+        VBECntrlrInfo_t *VBECntrlrInfo;    // The 32-bit adddress of the VBE Controller Mode Info block.
+        VBEModeInfo_t *VBEModeInfo;    // The 32-bit address of the (allocated) VBE mode info block.
+        uint32_t VBEModeInfoN;                    // The number of entries.
+
+        EDIDInfo_t EDIDInfo;                            // The EDID information.
+
+        uint32_t (*VideoAPI)(uint32_t APICode, ...);    // The video API function.
+        void (*OutputRevert)(void);    // The function to revert back from the current level.
+
+        VBEModeInfo_t ModeInfo;        // The mode we switched to's information.
+
+        FILE_t BackgroundImg;                      // Pointer to the boot image.
+    }_PACKED Video;
+}_PACKED;
 
 typedef struct BIT BIT_t;
 
@@ -102,7 +102,6 @@ extern BIT_t BIT;
 /*
  * Initializes the BIT structure, copying it to somewhere appropriate.
  *     uint32_t *BITPointer -> the pointer to the BIT structure, as passed to us.
- */
-_PROTOTYPE(void BITInit, (uint32_t *BITPointer)) _COLD;
+ */_PROTOTYPE(void BITInit, (uint32_t *BITPointer)) _COLD;
 
 #endif /* _BIT_H */

@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 #include <BIT.h>
 #include <String.h>
 #include <Output.h>
@@ -44,8 +44,9 @@ void BITInit(uint32_t *BITPointer)
     memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
 
     // Clear out the rest of the BIT.
-    memset((void*)&BIT.Video.ModeInfo, 0, ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
-    
+    memset((void*)&BIT.Video.ModeInfo, 0,
+            ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
+
     BIT.Video.OutputRevert = &OutputRevert;
-    return; 
+    return;
 }

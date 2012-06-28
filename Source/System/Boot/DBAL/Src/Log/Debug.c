@@ -41,20 +41,20 @@ uint8_t CursorX = 0, CursorY = 0;
  */
 static void ScrollText()
 {
-   // If time has come to scroll (text mode is 80x25), then scroll.
-   if(CursorY >= 25)
-   {
-       // Move everything up a line.
-       memmove(VGAFrameBuffer, VGAFrameBuffer + 160, (24 * 80) * 2);
+    // If time has come to scroll (text mode is 80x25), then scroll.
+    if(CursorY >= 25)
+    {
+        // Move everything up a line.
+        memmove(VGAFrameBuffer, VGAFrameBuffer + 160, (24 * 80) * 2);
 
-       // Blank the last line - scroll "up".
-       for(uint32_t i = (24 * 80) * 2; i < (25 * 80) * 2; i += 2)
-       {
-           VGAFrameBuffer[i] = ' ';
-       }
-       // Shift the cursor a line up.
-       CursorY = 24;
-   }
+        // Blank the last line - scroll "up".
+        for(uint32_t i = (24 * 80) * 2; i < (25 * 80) * 2; i += 2)
+        {
+            VGAFrameBuffer[i] = ' ';
+        }
+        // Shift the cursor a line up.
+        CursorY = 24;
+    }
 }
 
 /*
@@ -77,12 +77,12 @@ static void DebugPrintCharText(char C)
         CursorX = 0;
         CursorY++;
     }
-    
+
     // If it's any other printable character, print it.
     else if(C >= ' ')
     {
         // Get the right location to print at - and then put the character there.
-        Location = VGAFrameBuffer + (((CursorY * 80) + CursorX) * 2);
+        Location = VGAFrameBuffer + ( ( (CursorY * 80) + CursorX) * 2);
         *Location = C;
         CursorX++;
     }
@@ -125,7 +125,7 @@ static void DebugPrintDecimalText(uint32_t N)
 
     int32_t Temp = N;
     char C[32];
-    
+
     // Get all the numbers as characters starting from the end.
     int i = 0;
     while(Temp > 0)
@@ -134,12 +134,12 @@ static void DebugPrintDecimalText(uint32_t N)
         Temp /= 10;
         i++;
     }
-    
+
     C[i] = 0;
 
     char C2[32];
     C2[i--] = 0;
-    
+
     // Now, since it is reversed, get it straight. And then print it as a string.
     int j = 0;
     while(i >= 0)
@@ -168,26 +168,26 @@ static void DebugPrintHexadecimalText(uint32_t N)
         // Get the 'i'th thingy.
         Tmp = (N >> i) & 0xF;
         if(Tmp == 0 && NoZeroes != 0)
-	    DebugPrintCharText('0');
-    
+            DebugPrintCharText('0');
+
         else if(Tmp >= 0xA)
         {
             NoZeroes = 0;
-            DebugPrintCharText((Tmp - 0xA) + 'A');
+            DebugPrintCharText( (Tmp - 0xA) + 'A');
         }
-        
+
         else
         {
             NoZeroes = 0;
             DebugPrintCharText(Tmp + '0');
         }
     }
-  
+
     // And the last thingy left print it if there.
     Tmp = N & 0xF;
     if(Tmp >= 0xA)
     {
-        DebugPrintCharText((Tmp - 0xA) + 'A');
+        DebugPrintCharText( (Tmp - 0xA) + 'A');
     }
 
     else
@@ -210,57 +210,57 @@ void DebugPrintText(_CONST char *Fmt, ...)
     // Sshh.
     va_list List;
     va_start(List, Fmt);
-    
+
     // Store the character temporarily here.
     char C;
-    while((C = *Fmt++) != 0)
+    while( (C = *Fmt++) != 0)
     {
         if(C != '%')
-	    {
-	        DebugPrintCharText(C);
-	        continue;
-	    }
-	    
+        {
+            DebugPrintCharText(C);
+            continue;
+        }
+
         uint32_t Arg;
         char *StringArg;
 
-	    C = *Fmt++;
-	    switch(C)
-	    {
-	      case '%':
-	        DebugPrintCharText('%');
-	        break;
-	    
-	      case 'd':
-	        // Retrieve the decimal and then print it.
-	        Arg = va_arg(List, uint32_t);
-	        DebugPrintDecimalText(Arg);
-	        break;
-	  
-	      case 'x':
-	        // Retrieve the hexadecimal and then print it.
-	        Arg = va_arg(List, uint32_t);
-	        DebugPrintHexadecimalText(Arg);
-	        break;
-	  
-	      case 's':
-	        // Retrieve the string and then print it.
-	        StringArg = va_arg(List, char *);
-	        DebugPrintStringText((_CONST char*)StringArg);
-	        break;
-	  
-	      case 'c':
-	        // Retieve the character and then print it.
-	        Arg = va_arg(List, uint32_t);
-	        DebugPrintCharText((char)Arg);
-	        break;
-	  
-	      default:
-	        DebugPrintCharText('X');
-	        DebugPrintCharText(C);
-	        break;
-	    }
+        C = *Fmt++;
+        switch (C)
+        {
+            case '%':
+                DebugPrintCharText('%');
+                break;
+
+            case 'd':
+                // Retrieve the decimal and then print it.
+                Arg = va_arg(List, uint32_t);
+                DebugPrintDecimalText(Arg);
+                break;
+
+            case 'x':
+                // Retrieve the hexadecimal and then print it.
+                Arg = va_arg(List, uint32_t);
+                DebugPrintHexadecimalText(Arg);
+                break;
+
+            case 's':
+                // Retrieve the string and then print it.
+                StringArg = va_arg(List, char *);
+                DebugPrintStringText((_CONST char*)StringArg);
+                break;
+
+            case 'c':
+                // Retieve the character and then print it.
+                Arg = va_arg(List, uint32_t);
+                DebugPrintCharText((char)Arg);
+                break;
+
+            default:
+                DebugPrintCharText('X');
+                DebugPrintCharText(C);
+                break;
+        }
     }
-    
+
     va_end(List);
 }

@@ -56,21 +56,21 @@
 // The SIF image file format's header.
 struct SIFHeader
 {
-    uint8_t  Type[3];
+    uint8_t Type[3];
     uint32_t FileSize;
     uint32_t CRC32;
     uint32_t Offset;
-    
+
     uint16_t Plane, BPP;
     uint32_t Compression, ImageSize;
     uint32_t XRes, YRes;
-} _PACKED;
+}_PACKED;
 
 // The Boot File generic header format.
 struct BootFileHeader
 {
-    uint8_t  Signature[4];
-    void     (*EntryPoint)(void);
+    uint8_t Signature[4];
+    void (*EntryPoint)(void);
     uint32_t FileStart;
     uint32_t FileEnd;
 
@@ -78,12 +78,12 @@ struct BootFileHeader
     uint32_t BSSEnd;
 
     uint32_t CRC32;
-} _PACKED;
+}_PACKED;
 
 // The Kernel generic header format.
 struct KernelHeader
 {
-    uint8_t  Signature[4];
+    uint8_t Signature[4];
     uint64_t EntryPoint;
     uint64_t FileStart;
     uint64_t FileEnd;
@@ -92,27 +92,26 @@ struct KernelHeader
     uint64_t BSSEnd;
 
     uint32_t CRC32;
-} _PACKED;
+}_PACKED;
 
 // The file structure, which is returned by opening files.
 typedef struct
 {
-	// The size of the file.
-	uint32_t Size;
+    // The size of the file.
+    uint32_t Size;
 
-	// The location of the file.
-    void     *Location;
+    // The location of the file.
+    void *Location;
 } FILE_t;
 
 // Some typedef's to make stuff easier.
-typedef struct SIFHeader      SIFHeader_t;
+typedef struct SIFHeader SIFHeader_t;
 typedef struct BootFileHeader BootFileHeader_t;
-typedef struct KernelHeader   KernelHeader_t;
+typedef struct KernelHeader KernelHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
- */
-_PROTOTYPE(void BootFilesInit, (void)) _COLD;
+ */_PROTOTYPE(void BootFilesInit, (void)) _COLD;
 
 /*
  * Clears up everything initialized in the Init().

@@ -45,7 +45,7 @@ _PROTOTYPE(void GotoKL, (void (*EntryPoint)(void)));
 /* 
  * The Main function for the DBAL sub-module.
  *     uint32_t *BITPointer -> the pointer to the BIT.
- */   
+ */
 void Main(uint32_t *BITPointer)
 {
     // Initialize the FPU, without which, we can't proceed.

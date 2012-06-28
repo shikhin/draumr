@@ -38,7 +38,7 @@
  */
 double sqrt(double x)
 {
-    double Result; 
+    double Result;
     __asm__ __volatile__("fsqrt" : "=&t"(Result) : "f"(x));
     return Result;
 }
@@ -53,7 +53,7 @@ double sqrt(double x)
  */
 double fyl2x(double x, double y)
 {
-    double Result; 
+    double Result;
     __asm__ __volatile__("fyl2x" : "=&t"(Result) : "f"(x), "u"(y));
     return Result;
 }

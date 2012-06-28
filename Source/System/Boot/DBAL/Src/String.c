@@ -45,10 +45,10 @@ void *memcpy(void *dest, _CONST void *src, uint32_t count)
     {
         return dest;
     }
-    
+
     // Just do a simple rep movsb - good enough for now.
     __asm__ __volatile__("rep movsb" :: "c"(count), "S"(src), "D"(dest));
-    return dest; 
+    return dest;
 }
 
 /*
@@ -68,16 +68,15 @@ void *memmove(void *dest, _CONST void *src, uint32_t count)
     }
 
     // See if src and destination are overlapping - and the src block lies previous to the destination block.
-    if((src < dest) && 
-      (((uint32_t)src + count) > (uint32_t)dest))
+    if( (src < dest) && ( ((uint32_t)src + count) > (uint32_t)dest))
     {
         // If yes, use a reverse copy.
-        __asm__ __volatile__("std\n\t"           // std sets the direction flag, performing the rep movsb in reverse.
-			     "rep movsb\n\t"
-			     "cld"               // Restore the direction flag.
-			     :: "c"(count), "S"((uint32_t)src + count), "D"((uint32_t)dest + count));
+        __asm__ __volatile__("std\n\t"    // std sets the direction flag, performing the rep movsb in reverse.
+                "rep movsb\n\t"
+                "cld"// Restore the direction flag.
+                :: "c"(count), "S"((uint32_t)src + count), "D"((uint32_t)dest + count));
     }
-    
+
     // Else, a standard memcpy (rep movsb in this specific case) should do the job well.
     else
     {
@@ -101,10 +100,10 @@ void *memset(void *dest, uint8_t value, uint32_t count)
 {
     if(!count)
         return dest;
-    
+
     // Just do a simple rep stosb - good enough for now.
     __asm__ __volatile__("rep stosb" :: "c"(count), "D"(dest), "a"((uint32_t)value));
-    return dest; 
+    return dest;
 }
 
 /*

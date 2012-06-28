@@ -34,7 +34,7 @@
 #include <PMM.h>
 #include <Math.h>
 #include <Abort.h>
-  
+
 /*
  * Switches to a video mode.
  *     uint32_t Mode          -> the identifier for the mode we are about to switch to.
@@ -45,41 +45,42 @@
  */
 static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
 {
-  	// The 8th bit specifies whether it's a VBE mode or not.
+    // The 8th bit specifies whether it's a VBE mode or not.
     if(Mode & (1 << 8))
     {
         // Switch to the mode, and save the status value.
-        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE, Mode);
-        
+        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE,
+                Mode);
+
         // If the mode is 256 colors, then set up the palette.
-        if((ModeInfo->BitsPerPixel == 8) && (Return == 0x4F))
-        { 
+        if( (ModeInfo->BitsPerPixel == 8) && (Return == 0x4F))
+        {
             // If the flag is zero, then it is VGA compatible.
             // Use the VGA function to setup the palette then.
             // Else the VBE one.
-            if(!(ModeInfo->ModeAttributes & VGA_COMPATIBLE))
+            if(! (ModeInfo->ModeAttributes & VGA_COMPATIBLE))
                 BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
 
-            else 
+            else
                 BIT.Video.VideoAPI(VIDEO_VBE_PALETTE);
         }
-           
+
         // Get rid of 0x4F - signifying function exists.
         Return &= ~0x4F;
         return Return;
     }
-    
-    else 
+
+    else
     {
         // Switch to the mode.
         BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, Mode);
-   
+
         // If the mode is 256 colors, then set up the palette.
         if(ModeInfo->BitsPerPixel == 8)
             // Setup the palette to a RGB thingy.
-	          BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
-	        
-	      return 0x0000;
+            BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
+
+        return 0x0000;
     }
 }
 
@@ -87,7 +88,7 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
  * Get the best mode from VBEModeInfo[] array using all factors neccessary.
  */
 static VBEModeInfo_t FindBestVBEMode()
-{ 
+{
     // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
     // Also, keep in mind the Monitor Preference.
     VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
@@ -99,13 +100,13 @@ static VBEModeInfo_t FindBestVBEMode()
     // NOTE: This is better than taking an average. For example, considering 400*600 as the resolution for one mode
     // and 500*500 for the other mode. For average, both are given same score. For "distance" the former is
     // preffered.
-    Best.Score = sqrt((Best.Score * Best.Score) + 
-                      (Best.XResolution * Best.XResolution) +
-                      (Best.YResolution * Best.YResolution));
+    Best.Score = sqrt(
+            (Best.Score * Best.Score) + (Best.XResolution * Best.XResolution)
+                    + (Best.YResolution * Best.YResolution));
 
     // Multiply the score by the MonitorPreference.
-    Best.Score = (int)((float)Best.Score * Best.MonitorPreference);
-    
+    Best.Score = (int) ((float)Best.Score * Best.MonitorPreference);
+
     // Calculate the score for each mode - while side by side, finding the best mode.
     for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
     {
@@ -116,20 +117,28 @@ static VBEModeInfo_t FindBestVBEMode()
         }
 
         // Find log 2 of Bits Per Pixel and multiply it with the scaling factor.
-        BIT.Video.VBEModeInfo[i].Score = fyl2x(BIT.Video.VBEModeInfo[i].BitsPerPixel, BPP_SCALING_FACTOR);
+        BIT.Video.VBEModeInfo[i].Score = fyl2x(
+                BIT.Video.VBEModeInfo[i].BitsPerPixel, BPP_SCALING_FACTOR);
 
         // Find the "shortest distance" (read note above) between the three scores.
-        BIT.Video.VBEModeInfo[i].Score = sqrt((BIT.Video.VBEModeInfo[i].Score * BIT.Video.VBEModeInfo[i].Score) + 
-                                              (BIT.Video.VBEModeInfo[i].XResolution * BIT.Video.VBEModeInfo[i].XResolution) +
-                                              (BIT.Video.VBEModeInfo[i].YResolution * BIT.Video.VBEModeInfo[i].YResolution));
+        BIT.Video.VBEModeInfo[i].Score =
+                sqrt(
+                        (BIT.Video.VBEModeInfo[i].Score
+                                * BIT.Video.VBEModeInfo[i].Score)
+                                + (BIT.Video.VBEModeInfo[i].XResolution
+                                        * BIT.Video.VBEModeInfo[i].XResolution)
+                                + (BIT.Video.VBEModeInfo[i].YResolution
+                                        * BIT.Video.VBEModeInfo[i].YResolution));
 
-        BIT.Video.VBEModeInfo[i].Score = (int)((float)BIT.Video.VBEModeInfo[i].Score * BIT.Video.VBEModeInfo[i].MonitorPreference);
-        
+        BIT.Video.VBEModeInfo[i].Score =
+                (int) ((float)BIT.Video.VBEModeInfo[i].Score
+                        * BIT.Video.VBEModeInfo[i].MonitorPreference);
+
         // If the score of this is greater than the best till now,
         // make it the best.                                     
         if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
         {
-              Best = BIT.Video.VBEModeInfo[i];
+            Best = BIT.Video.VBEModeInfo[i];
         }
     }
 
@@ -144,176 +153,175 @@ static uint32_t EDIDModeInfoN;
  */
 static void HandleEstablishedTimings()
 {
-for(uint32_t i = 0; i < 2; i++)
+    for(uint32_t i = 0; i < 2; i++)
     {
         for(uint32_t j = 0; j < 8; j++)
         {
-            if(BIT.Video.EDIDInfo.EstablishedTimings[i] &
-               (1 << j))
+            if(BIT.Video.EDIDInfo.EstablishedTimings[i] & (1 << j))
             {
-                switch(i)
+                switch (i)
                 {
-                  // Handle established timings in byte 0 in EDIDInfo.EstablishedTimings.
-                  case 0:
-                  {  
-                    switch(j)
+                    // Handle established timings in byte 0 in EDIDInfo.EstablishedTimings.
+                    case 0:
                     {
-                      // Bit 1.
-                      case 0:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
+                        switch (j)
+                        {
+                            // Bit 1.
+                            case 0:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
 
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 2.
-                      case 1:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 56;
+                                // Bit 2.
+                            case 1:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 56;
 
-                        EDIDModeInfoN++;
-                        break;
-                    
-                      // Bit 3.
-                      case 2:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+                                EDIDModeInfoN++;
+                                break;
 
-                        EDIDModeInfoN++;
-                        break;
+                                // Bit 3.
+                            case 2:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
 
-                      // Bit 4.
-                      case 3:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 5.
-                      case 4:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 67;
-                        
-                        EDIDModeInfoN++;
-                        break;
-                        
-                      // Bit 6.
-                      case 5:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 640;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 480;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                // Bit 4.
+                            case 3:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
 
-                      // Bit 7.
-                      case 6:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 720;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 400;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 88;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 8.
-                      case 7:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 720;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 400;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
-                        
-                        EDIDModeInfoN++;
+                                // Bit 5.
+                            case 4:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 67;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 6.
+                            case 5:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 640;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 480;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 7.
+                            case 6:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 720;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 400;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 88;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 8.
+                            case 7:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 720;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 400;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
+
+                                EDIDModeInfoN++;
+                                break;
+                        }
+
                         break;
                     }
 
-                    break;
-                  }
-
-                  // Handle established timings in byte 1 in EDIDInfo.EstablishedTimings.
-                  case 1:
-                  {
-                    switch(j)
+                        // Handle established timings in byte 1 in EDIDInfo.EstablishedTimings.
+                    case 1:
                     {
-                      // Bit 1.
-                      case 0:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 1280;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 1024;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+                        switch (j)
+                        {
+                            // Bit 1.
+                            case 0:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 1280;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 1024;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
 
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 2.
-                      case 1:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+                                // Bit 2.
+                            case 1:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
 
-                        EDIDModeInfoN++;
-                        break;
-                    
-                      // Bit 3.
-                      case 2:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 4.
-                      case 3:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                // Bit 3.
+                            case 2:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 70;
 
-                      // Bit 5.
-                      case 4:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 768;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 87;
-                        
-                        EDIDModeInfoN++;
-                        break;
-                        
-                      // Bit 6.
-                      case 5:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 832;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 624;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                EDIDModeInfoN++;
+                                break;
 
-                      // Bit 7.
-                      case 6:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
-                        
-                        EDIDModeInfoN++;
-                        break;
+                                // Bit 4.
+                            case 3:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 60;
 
-                      // Bit 8.
-                      case 7:
-                        EDIDModeInfo[EDIDModeInfoN].XRes = 800;
-                        EDIDModeInfo[EDIDModeInfoN].YRes = 600;
-                        EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
-                                               
-                        EDIDModeInfoN++;
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 5.
+                            case 4:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 1024;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 768;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 87;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 6.
+                            case 5:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 832;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 624;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 7.
+                            case 6:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 75;
+
+                                EDIDModeInfoN++;
+                                break;
+
+                                // Bit 8.
+                            case 7:
+                                EDIDModeInfo[EDIDModeInfoN].XRes = 800;
+                                EDIDModeInfo[EDIDModeInfoN].YRes = 600;
+                                EDIDModeInfo[EDIDModeInfoN].RefreshRate = 72;
+
+                                EDIDModeInfoN++;
+                                break;
+                        }
+
                         break;
                     }
-
-                    break;
-                  }
                 }
             }
         }
@@ -340,8 +348,7 @@ for(uint32_t i = 0; i < 2; i++)
 static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
 {
     // If both bytes are 0x01, then it is a unused standard timing descriptor.
-    if((Byte0 == 0x01) &&
-       (Byte1 == 0x01))
+    if( (Byte0 == 0x01) && (Byte1 == 0x01))
     {
         return;
     }
@@ -352,57 +359,58 @@ static void HandleStandardTimings(uint8_t Byte0, uint8_t Byte1)
 
     // Now, using the aspect ratio, calculate the vertical active pixels.
     uint32_t AspectRatio = Byte1 >> 6, VerticalRatio, HorizontalRatio;
-    switch(AspectRatio)
+    switch (AspectRatio)
     {
-      // Case 0.
-      case 0:
-        // If the version is 1.3 or above, then the aspect ratio is 16:10.
-        if((BIT.Video.EDIDInfo.Version >= 1) &&
-           (BIT.Video.EDIDInfo.Revision >= 3))
-        {
+        // Case 0.
+        case 0:
+            // If the version is 1.3 or above, then the aspect ratio is 16:10.
+            if( (BIT.Video.EDIDInfo.Version >= 1)
+                    && (BIT.Video.EDIDInfo.Revision >= 3))
+            {
+                HorizontalRatio = 16;
+                VerticalRatio = 10;
+            }
+
+            // Else, it is 1:1.
+            else
+            {
+                HorizontalRatio = 1;
+                VerticalRatio = 1;
+            }
+
+            break;
+
+            // Case 1.
+        case 1:
+            HorizontalRatio = 4;
+            VerticalRatio = 3;
+
+            break;
+
+            // Case 2.
+        case 2:
+            HorizontalRatio = 5;
+            VerticalRatio = 4;
+
+            break;
+
+            // Case 3.
+        case 3:
             HorizontalRatio = 16;
-            VerticalRatio = 10;
-        }
+            VerticalRatio = 9;
 
-        // Else, it is 1:1.
-        else
-        {
-            HorizontalRatio = 1;
-            VerticalRatio = 1;
-        }
+            break;
 
-        break;
+        default:
+            HorizontalRatio = 4;
+            VerticalRatio = 3;
 
-      // Case 1.
-      case 1:
-        HorizontalRatio = 4;
-        VerticalRatio = 3;
-
-        break;
-
-      // Case 2.
-      case 2:
-        HorizontalRatio = 5;
-        VerticalRatio = 4;
-
-        break;
-
-      // Case 3.
-      case 3:
-        HorizontalRatio = 16;
-        VerticalRatio = 9;
-
-        break;
-
-      default:
-        HorizontalRatio = 4;
-        VerticalRatio = 3;
-
-        break;
+            break;
     }
 
     // Calculate the Y resolution - using the ratio.
-    EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes * VerticalRatio) / HorizontalRatio;
+    EDIDModeInfo[EDIDModeInfoN].YRes = (EDIDModeInfo[EDIDModeInfoN].XRes
+            * VerticalRatio) / HorizontalRatio;
 
     // Calculate the Refresh Rate.
     // It is stored in the first 6 bits, with it being 60 lower than it's original value.
@@ -429,25 +437,25 @@ static uint32_t RoundOffRefreshRate(uint32_t RefreshRate)
     //     b) multiples of 2.
 
     // If it's already a multiple of 5, return.
-    if(!(RefreshRate % 5))
+    if(! (RefreshRate % 5))
     {
         return RefreshRate;
     }
-    
+
     // If refresh rate + 1 is a multiple of 5, then return it + 1.
-    else if(!((RefreshRate + 1) % 5))
+    else if(! ( (RefreshRate + 1) % 5))
     {
         return RefreshRate + 1;
     }
 
     // If refres rate - 1 is a multiple of 5, then return it - 1.
-    else if(!((RefreshRate - 1) % 5))
+    else if(! ( (RefreshRate - 1) % 5))
     {
         return RefreshRate - 1;
     }
 
     // Else, look if it's a multiple of 2. If it is, return.
-    else if(!(RefreshRate % 2))
+    else if(! (RefreshRate % 2))
     {
         return RefreshRate;
     }
@@ -466,7 +474,7 @@ static void ParseEDIDInfo()
     // specified in Established timings, Standard timings and Detailed timings
     // and put all the usable modes in a array consisting of the Horizontal resolution,
     // Vertical resolution and Refresh rate.
-    
+
     // Later, this could be used to find out how many timings are supported of the 
     // "standard" (no - not the EDID standard, the standard standard) timings of 
     // a mode, adding to the score.
@@ -480,8 +488,8 @@ static void ParseEDIDInfo()
     // Take care of the standard timings.
     for(uint32_t i = 0; i < 8; i++)
     {
-        HandleStandardTimings(BIT.Video.EDIDInfo.StandardTimings[i][0], 
-                              BIT.Video.EDIDInfo.StandardTimings[i][1]);
+        HandleStandardTimings(BIT.Video.EDIDInfo.StandardTimings[i][0],
+                BIT.Video.EDIDInfo.StandardTimings[i][1]);
     }
 
     // Set the flag indicating it's the monitor's native mode.
@@ -490,9 +498,8 @@ static void ParseEDIDInfo()
     // Take care of the modes described in Detailed Timings.
     for(uint32_t i = 0; i < 4; i++)
     {
-        if((i > 0)                                            &&
-           (BIT.Video.EDIDInfo.DetailedTimings[i][0] == 0x00) &&
-           (BIT.Video.EDIDInfo.DetailedTimings[i][1] == 0x00))
+        if( (i > 0) && (BIT.Video.EDIDInfo.DetailedTimings[i][0] == 0x00)
+                && (BIT.Video.EDIDInfo.DetailedTimings[i][1] == 0x00))
         {
             // It's a monitor descriptor.
 
@@ -505,7 +512,7 @@ static void ParseEDIDInfo()
             for(uint32_t j = 4; j < 16; j += 2)
             {
                 HandleStandardTimings(BIT.Video.EDIDInfo.DetailedTimings[i][j],
-                                      BIT.Video.EDIDInfo.DetailedTimings[i][j + 1]);
+                        BIT.Video.EDIDInfo.DetailedTimings[i][j + 1]);
             }
 
             continue;
@@ -513,28 +520,32 @@ static void ParseEDIDInfo()
 
         // Get horizontal and vertical active pixels.
         uint16_t HorizontalActive = BIT.Video.EDIDInfo.DetailedTimings[i][2];
-        HorizontalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0xF0) << 4;
+        HorizontalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0xF0)
+                << 4;
 
         uint16_t VerticalActive = BIT.Video.EDIDInfo.DetailedTimings[i][5];
-        VerticalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][7] & 0xF0) << 4;
+        VerticalActive |= (BIT.Video.EDIDInfo.DetailedTimings[i][7] & 0xF0)
+                << 4;
 
         // Get the pixel clock & the horizontal blanking in pixels to calculate the refresh rate.
         uint16_t HorizontalBlank = BIT.Video.EDIDInfo.DetailedTimings[i][3];
-        HorizontalBlank |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0x0F) << 8;
+        HorizontalBlank |= (BIT.Video.EDIDInfo.DetailedTimings[i][4] & 0x0F)
+                << 8;
 
         // Step 1. Get the pixel clock speed in hz.
-        float RefreshRate = ((BIT.Video.EDIDInfo.DetailedTimings[i][1] << 8) | (BIT.Video.EDIDInfo.DetailedTimings[i][0]))
-                            * 10000;
+        float RefreshRate = ( (BIT.Video.EDIDInfo.DetailedTimings[i][1] << 8)
+                | (BIT.Video.EDIDInfo.DetailedTimings[i][0])) * 10000;
 
         // Step 2. Divide it by the sum of (horizontal blanking in pixels and total horizontal active pixels) to get the horizontal frequency.
-        RefreshRate /= (double)(HorizontalActive + HorizontalBlank);
+        RefreshRate /= (double) (HorizontalActive + HorizontalBlank);
 
         // Step 3. Divide it by total vertical pixels * 1.05 (to account for time spent moving the electron beam back to the top)
         RefreshRate /= ((double)VerticalActive * 1.05f);
 
         EDIDModeInfo[EDIDModeInfoN].XRes = HorizontalActive;
         EDIDModeInfo[EDIDModeInfoN].YRes = VerticalActive;
-        EDIDModeInfo[EDIDModeInfoN].RefreshRate = RoundOffRefreshRate((uint32_t)RefreshRate);
+        EDIDModeInfo[EDIDModeInfoN].RefreshRate = RoundOffRefreshRate(
+                (uint32_t)RefreshRate);
 
         EDIDModeInfoN++;
     }
@@ -546,14 +557,16 @@ static void ParseEDIDInfo()
 static void MonitorPreferenceNoEDID()
 {
     // Safe resolutions which are supported on all modes.
-    uint32_t SafeResolutions[8][2] = {{720, 480},
-                                      {640, 480},
-                                      {360, 480},
-                                      {320, 480},
-                                      {720, 240},
-                                      {640, 240},
-                                      {360, 240},
-                                      {320, 240}};
+    uint32_t SafeResolutions[8][2] =
+    {
+    { 720, 480 },
+    { 640, 480 },
+    { 360, 480 },
+    { 320, 480 },
+    { 720, 240 },
+    { 640, 240 },
+    { 360, 240 },
+    { 320, 240 } };
 
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
@@ -562,11 +575,12 @@ static void MonitorPreferenceNoEDID()
         for(uint32_t j = 0; j < 8; j++)
         {
             // If the horizontal & vertical resolutions match to something in SafeResolution, then MonitorPreference = 1.
-            if((BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0]) &&
-               (BIT.Video.VBEModeInfo[i].YResolution == SafeResolutions[j][1]))
+            if( (BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0])
+                    && (BIT.Video.VBEModeInfo[i].YResolution
+                            == SafeResolutions[j][1]))
             {
                 BIT.Video.VBEModeInfo[i].MonitorPreference = 1;
- 
+
                 // No need to continue in the loop.
                 break;
             }
@@ -582,7 +596,8 @@ static void CalculateMonitorPreference()
     if(EDIDModeInfoN)
     {
         // Make a bitmap for all refresh rates from 0 - 256.
-        uint32_t RefreshRateBitmap[4] = {0, 0, 0, 0};
+        uint32_t RefreshRateBitmap[4] =
+        { 0, 0, 0, 0 };
         // Counter of total refresh rates encountered.
         uint32_t TotalRefreshRates = 0;
 
@@ -592,11 +607,12 @@ static void CalculateMonitorPreference()
             uint32_t RefreshRate = EDIDModeInfo[i].RefreshRate;
 
             // If the bit in the bitmap isn't already set, set it & increase the count.
-            if(!(RefreshRateBitmap[RefreshRate / 32] &
-               (1 << (RefreshRate % 32))))
+            if(! (RefreshRateBitmap[RefreshRate / 32]
+                    & (1 << (RefreshRate % 32))))
             {
                 TotalRefreshRates++;
-                RefreshRateBitmap[RefreshRate / 32] |= (1 << (RefreshRate % 32));
+                RefreshRateBitmap[RefreshRate / 32] |=
+                        (1 << (RefreshRate % 32));
             }
         }
 
@@ -604,25 +620,29 @@ static void CalculateMonitorPreference()
         for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
         {
             uint32_t SupportedModes = 0, TotalModes = TotalRefreshRates;
-            
+
             for(uint32_t j = 0; j < EDIDModeInfoN; j++)
             {
                 // If the horizontal & vertical resolution are same, then increase SupportedModes.
-                if((BIT.Video.VBEModeInfo[i].XResolution == EDIDModeInfo[j].XRes) &&
-                   (BIT.Video.VBEModeInfo[i].YResolution == EDIDModeInfo[j].YRes))
+                if( (BIT.Video.VBEModeInfo[i].XResolution
+                        == EDIDModeInfo[j].XRes)
+                        && (BIT.Video.VBEModeInfo[i].YResolution
+                                == EDIDModeInfo[j].YRes))
                 {
                     SupportedModes++;
 
                     // If this is the native mode, then +1.
                     if(EDIDModeInfo[j].Flags & EDID_MONITOR_NATIVE)
                     {
-                        SupportedModes++; TotalModes++;
+                        SupportedModes++;
+                        TotalModes++;
                     }
                 }
             }
 
             // The final score is supported/total.
-            BIT.Video.VBEModeInfo[i].MonitorPreference = (float)SupportedModes/(float)TotalModes;
+            BIT.Video.VBEModeInfo[i].MonitorPreference = (float)SupportedModes
+                    / (float)TotalModes;
         }
     }
 
@@ -644,63 +664,75 @@ static uint8_t CheckVBESanity(VBEModeInfo_t *VBEModeInfo)
 {
     // The VBE entry isn't sane if:
     if(
-        // The current hardware configuration doesn't support the mode.
-        !(VBEModeInfo->ModeAttributes & HARDWARE_INIT)                    ||
-        
-        // The mode is a text mode.
-        !(VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)                   ||
+    // The current hardware configuration doesn't support the mode.
+    ! (VBEModeInfo->ModeAttributes & HARDWARE_INIT)
+            ||
 
-        // If it takes more than a bank, and LFB isn't available.
-        ((((VBEModeInfo->XResolution * VBEModeInfo->YResolution * 
-            VBEModeInfo->BitsPerPixel) / 8) > 0x10000) && 
-        !(VBEModeInfo->ModeAttributes & LFB_AVAILABLE))                   ||
-           
-        // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp or 32-bpp.
-        ((VBEModeInfo->BitsPerPixel != 4)       &&
-         (VBEModeInfo->BitsPerPixel != 8)       &&
-         (VBEModeInfo->BitsPerPixel != 15)      &&
-         (VBEModeInfo->BitsPerPixel != 16)      &&
-         (VBEModeInfo->BitsPerPixel != 24)      &&
-         (VBEModeInfo->BitsPerPixel != 32))                               ||
-            
-        // The mode if 4-bpp, and isn't VGA compatible.
-        ((VBEModeInfo->BitsPerPixel == 4)       &&
-         !(VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))                 ||
+            // The mode is a text mode.
+            ! (VBEModeInfo->ModeAttributes & GRAPHICAL_MODE)
+            ||
 
-        // The mode is smaller than 320*200.
-        (((VBEModeInfo->XResolution < 320)     &&
-          (VBEModeInfo->YResolution < 200))    &&
-          (BIT.Video.VideoFlags & VGA_PRESENT))                           ||
+            // If it takes more than a bank, and LFB isn't available.
+            ( ( ( (VBEModeInfo->XResolution * VBEModeInfo->YResolution
+                    * VBEModeInfo->BitsPerPixel) / 8) > 0x10000)
+                    && ! (VBEModeInfo->ModeAttributes & LFB_AVAILABLE))
+            ||
 
-        // The size of each scan line isn't dword divisible.
-        (VBEModeInfo->BytesPerScanLine % 4)                               ||
+            // If the mode isn't 4-bpp, 8-bpp, 15-bpp, 16-bpp, 24-bpp or 32-bpp.
+            ( (VBEModeInfo->BitsPerPixel != 4)
+                    && (VBEModeInfo->BitsPerPixel != 8)
+                    && (VBEModeInfo->BitsPerPixel != 15)
+                    && (VBEModeInfo->BitsPerPixel != 16)
+                    && (VBEModeInfo->BitsPerPixel != 24)
+                    && (VBEModeInfo->BitsPerPixel != 32))
+            ||
 
-        // The X resolution isn't divisible by 4.
-        (VBEModeInfo->XResolution % 4)                                    ||
+            // The mode if 4-bpp, and isn't VGA compatible.
+            ( (VBEModeInfo->BitsPerPixel == 4)
+                    && ! (VBEModeInfo->ModeAttributes & VGA_COMPATIBLE))
+            ||
 
-        // The memory model isn't:
-        //     Packed Pixel.
-        //     Direct Color.
-        ((VBEModeInfo->MemoryModel != 4)        && 
-         (VBEModeInfo->MemoryModel != 6))                                 ||
-                  
-        // Number of planes isn't 1 or 4 (for 4-bpp)
-        ((VBEModeInfo->NumberOfPlanes  != 1)    ||
-         ((VBEModeInfo->BitsPerPixel   == 4)    &&
-          (VBEModeInfo->NumberOfPlanes != 4)))                            || 
-                  
-        ((VBEModeInfo->BitsPerPixel == 15) &&
-         VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))                       ||
-        
-        ((VBEModeInfo->BitsPerPixel == 16) &&
-         VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0))                        ||
-         
-        ((VBEModeInfo->BitsPerPixel == 24) &&                       
-         VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))                        ||
-         
-        ((VBEModeInfo->BitsPerPixel == 32) && 
-         ((VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)                      &&
-          (VERIFY_RGB_MODE(0,  0, 8, 16, 8, 8, 8, 0))))))
+            // The mode is smaller than 320*200.
+            ( ( (VBEModeInfo->XResolution < 320)
+                    && (VBEModeInfo->YResolution < 200))
+                    && (BIT.Video.VideoFlags & VGA_PRESENT))
+            ||
+
+            // The size of each scan line isn't dword divisible.
+            (VBEModeInfo->BytesPerScanLine % 4)
+            ||
+
+            // The X resolution isn't divisible by 4.
+            (VBEModeInfo->XResolution % 4)
+            ||
+
+            // The memory model isn't:
+            //     Packed Pixel.
+            //     Direct Color.
+            ( (VBEModeInfo->MemoryModel != 4) && (VBEModeInfo->MemoryModel != 6))
+            ||
+
+            // Number of planes isn't 1 or 4 (for 4-bpp)
+            ( (VBEModeInfo->NumberOfPlanes != 1)
+                    || ( (VBEModeInfo->BitsPerPixel == 4)
+                            && (VBEModeInfo->NumberOfPlanes != 4)))
+            ||
+
+            ( (VBEModeInfo->BitsPerPixel == 15)
+                    && VERIFY_RGB_MODE(1, 15, 5, 10, 5, 5, 5, 0))
+            ||
+
+            ( (VBEModeInfo->BitsPerPixel == 16)
+                    && VERIFY_RGB_MODE(0, 0, 5, 11, 6, 5, 5, 0))
+            ||
+
+            ( (VBEModeInfo->BitsPerPixel == 24)
+                    && VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))
+            ||
+
+            ( (VBEModeInfo->BitsPerPixel == 32)
+                    && ( (VERIFY_RGB_MODE(8, 24, 8, 16, 8, 8, 8, 0)
+                            && (VERIFY_RGB_MODE(0, 0, 8, 16, 8, 8, 8, 0))))))
     {
         return 1;
     }
@@ -714,54 +746,55 @@ static uint8_t CheckVBESanity(VBEModeInfo_t *VBEModeInfo)
  */
 static void ParseVBEInfo()
 {
-	  // For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
+    // For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
     VBEModeInfo_t *VBEModeInfo;
-    
+
     // Check through each entry, removing unneccessary ones.
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
         VBEModeInfo = &BIT.Video.VBEModeInfo[i];
-        
+
         // Default fill the PhysBasePtr entry, in case it's not filled.
         if(!VBEModeInfo->PhysBasePtr)
         {
-    	    VBEModeInfo->PhysBasePtr = 0xA0000;
-		}
-		
+            VBEModeInfo->PhysBasePtr = 0xA0000;
+        }
+
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
         if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
         {
             // Replace all * fields with Lin* fields.
             VBEModeInfo->BytesPerScanLine = VBEModeInfo->LinBytesPerScanLine;
-            memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize, sizeof(uint8_t) * 8);
+            memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize,
+                    sizeof(uint8_t) * 8);
         }
-        
+
         // Remove the entry if:
         if(CheckVBESanity(VBEModeInfo))
         {
-		    // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
-            memmove(VBEModeInfo, &VBEModeInfo[1], 
+            // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
+            memmove(VBEModeInfo, &VBEModeInfo[1],
                     sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
             BIT.Video.VBEModeInfoN--;
-            
+
             // Here, we don't know whether the next entry is usable or not. So, move to previous, and continue.
             i--;
             continue;
         }
-        
+
         // I've found out that certain video cards for 32-bpp modes set the 
         // Rsvd* fields to 0. I'm not too sure why - but we'll just set them to
         // the default value we want them to be.
-        switch(VBEModeInfo->BitsPerPixel)
+        switch (VBEModeInfo->BitsPerPixel)
         {
-          case 15:
-            VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
-            break;
+            case 15:
+                VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
+                break;
 
-          case 32:
-            VBEModeInfo->RsvdFieldPosition = 24;
-            VBEModeInfo->RsvdMaskSize = 8;
-            break;
+            case 32:
+                VBEModeInfo->RsvdFieldPosition = 24;
+                VBEModeInfo->RsvdMaskSize = 8;
+                break;
         }
 
         if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
@@ -770,8 +803,8 @@ static void ParseVBEInfo()
             VBEModeInfo->Mode |= (1 << 14);
         }
 
-        VBEModeInfo->BytesBetweenLines = (VBEModeInfo->BytesPerScanLine) - 
-                                          ((VBEModeInfo->XResolution * VBEModeInfo->BitsPerPixel) / 8);
+        VBEModeInfo->BytesBetweenLines = (VBEModeInfo->BytesPerScanLine)
+                - ( (VBEModeInfo->XResolution * VBEModeInfo->BitsPerPixel) / 8);
     }
 
     return;
@@ -800,28 +833,29 @@ static int CurrentLevel;
  */
 void OutputRevert()
 {
-    switch(CurrentLevel)
+    switch (CurrentLevel)
     {
-      case LEVEL_VBE:
-        // If we need to go down a level from VBE, and VGA is supported switch to it.
-        if(BIT.Video.VideoFlags & VGA_PRESENT)
-        {
-            CurrentLevel = LEVEL_VGA;
-            VGAInit();
+        case LEVEL_VBE:
+            // If we need to go down a level from VBE, and VGA is supported switch to it.
+            if(BIT.Video.VideoFlags & VGA_PRESENT)
+            {
+                CurrentLevel = LEVEL_VGA;
+                VGAInit();
 
-            // And return.
-            return;
-        }
+                // And return.
+                return;
+            }
 
-        break;
+            break;
 
-      case LEVEL_VGA:
-        // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        case LEVEL_VGA:
+            // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
+            BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        // If we need to go down a level from Serial, ABORT!
-        AbortBoot("Unable to find any suitable display system (VGA, VBE).\n");
-        break;
+            // If we need to go down a level from Serial, ABORT!
+            AbortBoot(
+                    "Unable to find any suitable display system (VGA, VBE).\n");
+            break;
     }
 }
 
@@ -829,7 +863,7 @@ void OutputRevert()
  * Initializes VGA for a graphical color mode.
  */
 static void VGAInit()
-{ 
+{
     // Fill in some general details of the video mode.
     BIT.Video.ModeInfo.Mode = MODE_640_480_16;
     BIT.Video.ModeInfo.PhysBasePtr = 0xA0000;
@@ -839,24 +873,25 @@ static void VGAInit()
     // Set the bits per pixel and the number of planes for the mode.
     BIT.Video.ModeInfo.BitsPerPixel = 4;
     BIT.Video.ModeInfo.NumberOfPlanes = 4;
-    
+
     // The bytes between lines and the bytes per scan line.
     BIT.Video.ModeInfo.BytesBetweenLines = 0;
     BIT.Video.ModeInfo.BytesPerScanLine = (640 * 4) / 8;
-    
+
     // And the mode is supported by hardware, is a graphical mode and is VGA compatible.
-    BIT.Video.ModeInfo.ModeAttributes = HARDWARE_INIT | GRAPHICAL_MODE | VGA_COMPATIBLE;  
-    
+    BIT.Video.ModeInfo.ModeAttributes = HARDWARE_INIT | GRAPHICAL_MODE
+            | VGA_COMPATIBLE;
+
     // Go to the 320*200*256 colors mode.
-    SwitchToMode(MODE_640_480_16, &BIT.Video.ModeInfo);    
+    SwitchToMode(MODE_640_480_16, &BIT.Video.ModeInfo);
 }
-      
+
 /*  
  * Initializes VBE for a graphical mode.
  * If something fails, automatically reverts to VGA.
  */
 static void VBEInit()
-{   
+{
     // If mode number is below 0x0102, then, revert. 
     if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
     {
@@ -866,13 +901,13 @@ static void VBEInit()
 
     // Get the segment and the offset of the list of the modes.
     uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
-    uint16_t Offset  = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
-        
+    uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
+
     // Make flat pointer, from segment and offset = (segment * 0x10) + offset;
-    uint16_t *VideoModesFlat = (uint16_t*)((Segment * 0x10) + Offset);
+    uint16_t *VideoModesFlat = (uint16_t*) ( (Segment * 0x10) + Offset);
     uint16_t Mode = *VideoModesFlat++;
     uint32_t Entries = 0;
-        
+
     // Keep looping till we reach the End of Entries.
     do
     {
@@ -881,24 +916,25 @@ static void VBEInit()
         // Get the mode into Mode, and move on to the next video mode.
         Mode = *VideoModesFlat++;
     } while(Mode != 0xFFFF);
-        
+
     // Allocate some memory from the Base Bitmap to hold all the mode information.
-    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_BITMAP, 
-                            ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
+    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_BITMAP,
+            ( (sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
 
     // If we failed to allocate enough space, simply revert back.
     if(!BIT.Video.VBEModeInfo)
     {
-        OutputRevert();      
+        OutputRevert();
         return;
     }
-    
+
     // Get mode information from VBE, and the number of entries in VBEModeInfoN.
-    BIT.Video.VBEModeInfoN = BIT.Video.VideoAPI(VIDEO_VBE_GET_MODES, BIT.Video.VBEModeInfo);
-    
+    BIT.Video.VBEModeInfoN = BIT.Video.VideoAPI(VIDEO_VBE_GET_MODES,
+            BIT.Video.VBEModeInfo);
+
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.
     ParseVBEInfo();
-    
+
     // If no mode was defined "usable", then revert.
     if(!BIT.Video.VBEModeInfoN)
     {
@@ -911,7 +947,7 @@ static void VBEInit()
     {
         ParseEDIDInfo();
     }
-    
+
     // Calculate the montior's preference for every mode.
     CalculateMonitorPreference();
 
@@ -944,7 +980,7 @@ void OutputInit()
         CurrentLevel = LEVEL_VBE;
         VBEInit();
     }
-        
+
     // Else, if VGA is present, initialize VGA for a graphical mode.
     else if(BIT.Video.VideoFlags & VGA_PRESENT)
     {

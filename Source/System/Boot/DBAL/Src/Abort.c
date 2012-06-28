@@ -30,7 +30,7 @@
 #include <Abort.h>
 #include <Log.h>
 #include <String.h>
- 
+
 /*
  * Aborts boot, by giving a endless beep, and trying to print a message on the screen.
  *     _CONST char *String -> the message to print
@@ -40,13 +40,13 @@
  */
 void AbortBoot(_CONST char *String)
 {
-	DebugPrintText("ERROR! ERROR! ERROR!\n\n");
-    DebugPrintText(String);           // Print the message using the text version. 
+    DebugPrintText("ERROR! ERROR! ERROR!\n\n");
+    DebugPrintText(String);        // Print the message using the text version. 
 
     outb(0x42, 0xB6);
-    outb(0x42, 0xD1);                 // Send lower 16-bits of count for frequency to play.            
-    outb(0x42, 0x11);                 // Send higher 16-bits of count for frequency to play.
-       
+    outb(0x42, 0xD1);    // Send lower 16-bits of count for frequency to play.            
+    outb(0x42, 0x11);     // Send higher 16-bits of count for frequency to play.
+
     outb(0x61, (inb(0x61) | 0x3));    // Set the Speaker enable and other required bit - SPEAK. 
 
     // And halt forever in the dark shadowy land of Motherboardy.
