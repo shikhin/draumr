@@ -65,17 +65,22 @@ void Main(BIT_t *BITPointer)
         BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernelx86File);
 
         // Load the needed PMM and VMM kernel modules.
-        //FILE_t KernelMPMM, KernelVPMM;
+        FILE_t KernelMPMM, KernelMVMM;
         // If PAE is present, then load those modules.
-        if(FeatureFlags & PAE_PRESENT)
+        // ALSO, NOTE: Memory *should* be present over 4GiB to take advantage of PAE, so we
+        // ensure there is. Else, we use x86.
+        if((FeatureFlags & PAE_PRESENT) &&
+           (BIT->HighestAddress > 0xFFFFFFFFLLU))
         {
-
+            BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
+            BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
         }
 
         // Else, load the x86 modules.
         else
         {
-
+            BIT->FileAPI(FILE_KERNEL_M, PMMX86, &KernelMPMM);
+            BIT->FileAPI(FILE_KERNEL_M, VMMX86, &KernelMVMM);
         }
     }
 

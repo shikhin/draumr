@@ -622,8 +622,8 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
             break;
 
         case ARCH_PAE:
-            if((KernelMHeader->Signature[2] != 'P') ||
-               (KernelMHeader->Signature[3] != 'A'))
+            if((KernelMHeader->Signature[2] != 'A') ||
+               (KernelMHeader->Signature[3] != 'E'))
             {
                 goto ErrorArch;
             }

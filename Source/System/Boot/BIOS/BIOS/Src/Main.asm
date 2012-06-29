@@ -59,6 +59,7 @@ BIT:
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
     .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
+    .HighestAddress  dq 0             ; The highest accessible address by the MMap.
 
     ; BIT Video stuff here.
     .VideoFlags      db 0             ; The "video" flags.

@@ -74,6 +74,7 @@ struct BIT
     uint32_t SMBIOS;                 // The 32-bit address of the SMBIOS tables.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
+    uint64_t HighestAddress;          // Highest accessible memory address.
 
     // Define the Video related things here.
     struct

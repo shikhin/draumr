@@ -345,7 +345,7 @@ static void InitializeBitmap()
         }
     }
 }
-
+#include <Log.h>
 /*
  * Initializes the physical memory manager for ourselves.
  */
@@ -359,11 +359,13 @@ void PMMInit()
     PMMFixMMap();
 
     // Find the highest address (last region) described by the pool bitmap.
-    uint64_t HighestAddress = (MMapEntries[MMapHeader->Entries - 1].Length
-            + MMapEntries[MMapHeader->Entries - 1].Start);
+    uint64_t HighestAddress;
+    BIT.HighestAddress = HighestAddress =
+             (MMapEntries[MMapHeader->Entries - 1].Length
+            + MMapEntries[MMapHeader->Entries - 1].Start) - 1LLU;
 
     // Calculate the size of the bitmap.
-    uint32_t BitmapSize = (((HighestAddress / 0x1000) + 31) & ~31) / 8;
+    uint32_t BitmapSize = ((((uint64_t)(HighestAddress + 1) / 0x1000LLU) + 31) & ~31) / 8;
     BitmapSize = (BitmapSize + 0xFFF) & ~0xFFF;
 
     // Try to find a region in the memory map to hold that much space. 
@@ -375,8 +377,8 @@ void PMMInit()
             continue;
         }
 
-        // If the starting address is over 0xFFFF0000, then simply break..
-        else if((MMapEntries[i].Start + MMapEntries[i].Length) > 0xFFFF0000)
+        // If the starting address is over 0xFFFFF000, then simply break..
+        else if((MMapEntries[i].Start + MMapEntries[i].Length) > 0xFFFFFFFFLLU)
         {
             break;
         }
@@ -391,7 +393,7 @@ void PMMInit()
             BaseBitmap.Size = (0x100000 / 0x1000);
 
             PoolBitmap.Data = BaseBitmap.Data + (BaseBitmap.Size / 32);
-            PoolBitmap.Size = (HighestAddress - 0x100000) / 0x1000;
+            PoolBitmap.Size = ((uint64_t)(HighestAddress + 1) - 0x100000LLU) / 0x1000LLU;
 
             // Decrease the length, accordingly.
             MMapEntries[i].Length -= BitmapSize;
