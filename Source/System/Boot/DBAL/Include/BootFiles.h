@@ -37,10 +37,17 @@
 #define KL             0x03
 #define KERNEL_X86     0x04
 #define KERNEL_AMD64   0x05
+#define PMMX86         0x06
+#define PMMX86PAE      0x07
+#define PMMAMD64       0x08
+#define VMMX86         0x09
+#define VMMX86PAE      0x0A
+#define VMMAMD64       0x0B
 
 // Architecture.
 #define ARCH_X86       0x00
-#define ARCH_AMD64     0x01
+#define ARCH_PAE       0x01
+#define ARCH_AMD64     0x02
 
 // The "standard" location of some files.
 #define KL_LOCATION    0x18000
@@ -94,6 +101,20 @@ struct KernelHeader
     uint32_t CRC32;
 }_PACKED;
 
+// The kernel modules generic header format.
+struct KernelMHeader
+{
+    uint8_t Signature[4];
+    uint64_t EntryPoint;
+    uint64_t FileStart;
+    uint64_t FileEnd;
+
+    uint64_t BSSStart;
+    uint64_t BSSEnd;
+
+    uint32_t CRC32;
+}_PACKED;
+
 // The file structure, which is returned by opening files.
 typedef struct
 {
@@ -108,6 +129,7 @@ typedef struct
 typedef struct SIFHeader SIFHeader_t;
 typedef struct BootFileHeader BootFileHeader_t;
 typedef struct KernelHeader KernelHeader_t;
+typedef struct KernelMHeader KernelMHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
@@ -136,17 +158,8 @@ _PROTOTYPE(FILE_t BootFilesBGImg, (void));
 _PROTOTYPE(FILE_t BootFilesKL, (void));
 
 /*
- * Gets the x86 kernel, verifying what we are getting too.
- *
- * Returns:
- *     FILE_t -> the file structure containing address and length of the file.
- *     Boot   -> aborts boot if we are unable to load the kernel.
- */
-_PROTOTYPE(FILE_t BootFilesKernelx86, (void));
-
-/*
- * Gets the x86 kernel, verifying what we are getting too.
- *     uint32-t Arch -> the arch of the kernel to load.
+ * Gets the kernel, verifying what we are getting too.
+ *     uint32_t Arch -> the arch of the kernel to load.
  *
  *                          0x01 -> x86
  *                          0x02 -> AMD64
@@ -156,5 +169,15 @@ _PROTOTYPE(FILE_t BootFilesKernelx86, (void));
  *     Boot          -> aborts boot if we are unable to load the kernel.
  */
 _PROTOTYPE(FILE_t BootFilesKernel, (uint32_t Arch));
+
+/*
+ * Gets the kernel modules, verifying what we are getting too.
+ *     uint32_t ModuleFileCode -> the file code of the module.
+ *
+ * Returns:
+ *     FILE_t                  -> the file structure containing address and length of the file.
+ *     Boot                    -> aborts boot if we are unable to load the kernel module.
+ */
+_PROTOTYPE(FILE_t BootFilesKernelM, (uint32_t ModuleFileCode));
 
 #endif /* _BOOT_FILES_H */

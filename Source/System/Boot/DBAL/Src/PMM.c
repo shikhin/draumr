@@ -363,7 +363,7 @@ void PMMInit()
             + MMapEntries[MMapHeader->Entries - 1].Start);
 
     // Calculate the size of the bitmap.
-    uint32_t BitmapSize = (( (HighestAddress / 0x1000) + 31) & ~31) / 8;
+    uint32_t BitmapSize = (((HighestAddress / 0x1000) + 31) & ~31) / 8;
     BitmapSize = (BitmapSize + 0xFFF) & ~0xFFF;
 
     // Try to find a region in the memory map to hold that much space. 

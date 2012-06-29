@@ -48,6 +48,7 @@
 #define FILE_CLOSE     2
 
 #define FILE_KERNEL    10
+#define FILE_KERNEL_M  11
 
 /*
  * Initializes the API, replacing old APIs with new one's.

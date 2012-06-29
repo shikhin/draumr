@@ -151,6 +151,21 @@ uint32_t FileAPI(uint32_t APICode, ...)
             FILEPointer->Size = FILEStruct.Size;
             FILEPointer->Location = FILEStruct.Location;
             return 0;
+
+        case FILE_KERNEL_M:
+            // Get the list of arguments, and close the va.
+            Arg[0] = va_arg(List, uint32_t);
+            Arg[1] = va_arg(List, uint32_t);
+
+            FILEPointer = (FILE_t*)Arg[1];
+
+            // Load the kernel module file (the module file code is passed as argument).
+            FILEStruct = BootFilesKernelM(Arg[0]);
+
+            // Fill up the pointer to the file structure that we have been given.
+            FILEPointer->Size = FILEStruct.Size;
+            FILEPointer->Location = FILEStruct.Location;
+            return 0;
     }
 
     return 0;

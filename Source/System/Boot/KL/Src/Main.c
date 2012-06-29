@@ -50,6 +50,11 @@ void Main(BIT_t *BITPointer)
         // Load the AMD64 kernel.
         FILE_t KernelAMD64File;
         BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &KernelAMD64File);
+
+        // Load the PMM and VMM AMD64 kernel module.
+        FILE_t KernelMPMM, KernelMVMM;
+        BIT->FileAPI(FILE_KERNEL_M, PMMAMD64, &KernelMPMM);
+        BIT->FileAPI(FILE_KERNEL_M, VMMAMD64, &KernelMVMM);
     }
 
     // Else, load the x86 files.
@@ -58,6 +63,20 @@ void Main(BIT_t *BITPointer)
         // Load the x86 kernel.
         FILE_t Kernelx86File;
         BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernelx86File);
+
+        // Load the needed PMM and VMM kernel modules.
+        //FILE_t KernelMPMM, KernelVPMM;
+        // If PAE is present, then load those modules.
+        if(FeatureFlags & PAE_PRESENT)
+        {
+
+        }
+
+        // Else, load the x86 modules.
+        else
+        {
+
+        }
     }
 
     // We shouldn't reach here.

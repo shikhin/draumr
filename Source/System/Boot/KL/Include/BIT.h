@@ -61,10 +61,24 @@
 #define FILE_CLOSE     2
 
 #define FILE_KERNEL    10
+#define FILE_KERNEL_M  11
+
+// Define the "file code" of every file, for easy usage.
+#define BACKGROUND_SIF 0x02
+#define KL             0x03
+#define KERNEL_X86     0x04
+#define KERNEL_AMD64   0x05
+#define PMMX86         0x06
+#define PMMX86PAE      0x07
+#define PMMAMD64       0x08
+#define VMMX86         0x09
+#define VMMX86PAE      0x0A
+#define VMMAMD64       0x0B
 
 // Architecture.
 #define ARCH_X86       0x00
-#define ARCH_AMD64     0x01
+#define ARCH_PAE       0x01
+#define ARCH_AMD64     0x02
 
 // The file structure, which is returned by opening files.
 typedef struct

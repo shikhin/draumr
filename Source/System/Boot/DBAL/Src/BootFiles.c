@@ -352,8 +352,8 @@ FILE_t BootFilesKL()
 }
 
 /*
- * Gets the x86 kernel, verifying what we are getting too.
- *     uint32-t Arch -> the arch of the kernel to load.
+ * Gets the kernel, verifying what we are getting too.
+ *     uint32_t Arch -> the arch of the kernel to load.
  *
  *                      0x00 -> x86
  *                      0x01 -> AMD64
@@ -389,8 +389,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
             // Switch to text mode.
             BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            AbortBoot(
-                    "Unrecognizable architecture passed to file API for kernel.");
+            AbortBoot("Unrecognizable architecture passed to file API for kernel.");
             break;
     }
 
@@ -482,7 +481,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
     // Copy the 2048 bytes we read.
     memcpy(OutputBuffer, Bouncer, 2048);
 
-    // Update the address of the SIF Header.
+    // Update the address of the kernel header.
     KernelHeader = (KernelHeader_t*)OutputBuffer;
 
     OutputBuffer += 2048;
@@ -520,4 +519,216 @@ FILE_t BootFilesKernel(uint32_t Arch)
 
     BIT.FileAPI(FILE_CLOSE);
     return File;
+}
+
+/*
+ * Gets the kernel modules, verifying what we are getting too.
+ *     uint32_t ModuleFileCode -> the file code of the module.
+ *
+ * Returns:
+ *     FILE_t                  -> the file structure containing address and length of the file.
+ *     Boot                    -> aborts boot if we are unable to load the kernel module.
+ */
+FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
+{
+    // The file structure in which we'd store data about the kernel module.
+    FILE_t File;
+
+    const uint8_t *String;
+    switch (ModuleFileCode)
+    {
+        case PMMX86:
+            // Initialize string for error messages.
+            String = (uint8_t*)"PMM x86";
+            break;
+
+        case PMMAMD64:
+            // Initialize string for error messages.
+            String = (uint8_t*)"PMM AMD64";
+            break;
+
+        case PMMX86PAE:
+            // Initialize string for error messages.
+            String = (uint8_t*)"PMM x86 (PAE)";
+            break;
+
+        case VMMX86:
+            // Initialize string for error messages.
+            String = (uint8_t*)"VMM x86";
+            break;
+
+        case VMMAMD64:
+            // Initialize string for error messages.
+            String = (uint8_t*)"VMM AMD64";
+            break;
+
+        case VMMX86PAE:
+            // Initialize string for error messages.
+            String = (uint8_t*)"VMM x86 (PAE)";
+            break;
+
+        default:
+            // Switch to text mode.
+            BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+            AbortBoot("Unrecognizable module file code passed to file API for kernel modules.");
+            break;
+    }
+
+    // Open the file, with code, FileCode.
+    File.Size = BIT.FileAPI(FILE_OPEN, ModuleFileCode);
+
+    // If we were unable to open it, abort.
+    if(!File.Size)
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Unable to open the kernel module file.\n");
+    }
+
+    // Read 2048 bytes at the bouncer.
+    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+
+    KernelMHeader_t *KernelMHeader = (KernelMHeader_t*)Bouncer;
+
+    // Check the file signature.
+    if(((ModuleFileCode >= 0x06 && ModuleFileCode <= 0x08) &&
+        (KernelMHeader->Signature[0] != 'P'
+         || KernelMHeader->Signature[1] != 'M')) ||
+
+       ((ModuleFileCode >= 0x09 && ModuleFileCode <= 0x0B) &&
+        (KernelMHeader->Signature[0] != 'V'
+         || KernelMHeader->Signature[1] != 'M')))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Corrupt Kernel module header. Module type doesn't match file name.\n");
+    }
+
+    // Check the file signature.
+    switch ((ModuleFileCode - 0x06) % 3)
+    {
+        case ARCH_X86:
+            if((KernelMHeader->Signature[2] != '3') ||
+               (KernelMHeader->Signature[3] != '2'))
+            {
+                goto ErrorArch;
+            }
+
+            break;
+
+        case ARCH_PAE:
+            if((KernelMHeader->Signature[2] != 'P') ||
+               (KernelMHeader->Signature[3] != 'A'))
+            {
+                goto ErrorArch;
+            }
+
+            break;
+
+        case ARCH_AMD64:
+            if((KernelMHeader->Signature[2] != '6') ||
+               (KernelMHeader->Signature[3] != '4'))
+            {
+                goto ErrorArch;
+            }
+
+            break;
+    }
+
+    if(((File.Size + 0xFFF) / 0x1000)
+        != (((KernelMHeader->FileEnd - KernelMHeader->FileStart) + 0xFFF)
+                    / 0x1000))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Corrupt Kernel module header.");
+    }
+
+    // Allocate enough space to hold the file.
+    File.Location = (void*)PMMAllocContigFrames(POOL_BITMAP,
+            (File.Size + 0xFFF) / 0x1000);
+
+    // So we can't allocate space for the image.
+    if(!File.Location)
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Cannot allocate enough space for the kernel module file.");
+    }
+
+    // Reduce the 2048 bytes we left and read the rest of the file.
+    uint32_t FileSize = File.Size;
+    if(FileSize < 2048)
+    {
+        FileSize = 0;
+    }
+
+    else
+    {
+        FileSize -= 2048;
+    }
+
+    uint8_t *OutputBuffer = (uint8_t*)File.Location;
+
+    // Copy the 2048 bytes we read.
+    memcpy(OutputBuffer, Bouncer, 2048);
+
+    // Update the address of the kernel module header.
+    KernelMHeader = (KernelMHeader_t*)OutputBuffer;
+
+    OutputBuffer += 2048;
+
+    // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
+    while(FileSize >= BouncerSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        memcpy(OutputBuffer, Bouncer, BouncerSize);
+
+        FileSize -= BouncerSize;
+        OutputBuffer += BouncerSize;
+    }
+
+    // If they are any left over bytes, read them.
+    if(FileSize)
+    {
+        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);
+        memcpy(OutputBuffer, Bouncer, FileSize);
+    }
+
+    // If CRC values are not equal.
+    if(KernelMHeader->CRC32
+       != ~CRC(0xFFFFFFFF,
+               ((KernelMHeader->FileEnd - KernelMHeader->FileStart)
+                                       - sizeof(KernelMHeader_t)),
+               (uint8_t*)File.Location + sizeof(KernelMHeader_t)))
+    {
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Incorrect CRC32 value of the kernel module file.");
+    }
+
+    BIT.FileAPI(FILE_CLOSE);
+    return File;
+
+    // Error for architecture.
+    ErrorArch:
+        // Switch to text mode.
+        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        DebugPrintText("%s kernel module!\n", String);
+        AbortBoot("Corrupt Kernel module header. Module architecture doesn't match file name.\n");
+
+        // To prevent compiler errors.
+        return File;
 }

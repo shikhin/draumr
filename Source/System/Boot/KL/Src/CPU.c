@@ -61,5 +61,15 @@ uint32_t CPUFeatureFlags()
         }
     }
 
+    // Set all registers to find out if PAE is supported or not.
+    EAX = 0x00000001; EBX = ECX = EDX = 0;
+    CPUID(EAX, EBX, ECX, EDX);
+
+    // Check whether PAE is supported or not.
+    if(EDX & PAE_CPUID)
+    {
+        FeatureFlags |= PAE_PRESENT;
+    }
+
     return FeatureFlags;
 }

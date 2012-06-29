@@ -33,8 +33,10 @@
 #include <Standard.h>
 
 #define LONG_MODE_PRESENT (1 << 0)
+#define PAE_PRESENT       (1 << 1)
 
 #define LONG_MODE_CPUID   (1 << 29)
+#define PAE_CPUID         (1 << 6)
 
 // Define a macro to simplify the CPUID inline assembly command.
 #define CPUID(EAX, EBX, ECX, EDX) __asm__ __volatile__("cpuid": "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
