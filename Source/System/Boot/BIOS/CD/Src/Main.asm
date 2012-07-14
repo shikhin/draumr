@@ -77,18 +77,15 @@ BootInfo:
 %include "Source/System/Boot/BIOS/CD/Src/Screen.asm"
 
 Main:
-    cli                               ; Stop maskable interrupts till a proper stack is set up.
-
     xor ax, ax                        ; Set all the segment registers to 0x0000.
+
+    mov ss, ax
+    mov sp, 0x7C00                    ; Set the stack to start from Startup (0x7C00) and continue below.
+
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
-
-    mov ss, ax
-    mov sp, 0x7C00                    ; Set the stack to start from Startup (0x7C00) and continue below.
-    
-    sti
     
     mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
     

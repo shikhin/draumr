@@ -30,6 +30,7 @@
 #include <Standard.h>
 #include <BIT.h>
 #include <CPU.h>
+#include <VMM.h>
 
 BIT_t *BIT;
 
@@ -84,6 +85,7 @@ void Main(BIT_t *BITPointer)
         }
     }
 
+    x86PagingInit();
     // We shouldn't reach here.
     for(;;)
         __asm__ __volatile__("hlt");

@@ -1,5 +1,5 @@
-/* 
- * General BIT related definitions and structures.
+/*
+ * Contains VMM (x86) related functions for KL.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,33 +27,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <BIT.h>
-#include <String.h>
-#include <Output.h>
-#include <PMM.h>
+// Define VMMX86 so that the related things are defined in VMM.h
+#define VMMX86_PAGING
 
-// The BIT structure here.
-BIT_t BIT;
+#include <VMM.h>
+#include <BIT.h>
+
+// Define pointers for the page directory.
+PageDirEntry_t *PageDir;
 
 /*
- * Initializes the BIT structure, copying it to somewhere appropriate.
- *     uint32_t *BITPointer -> the pointer to the BIT structure, as passed to us.
+ * Initializes x86 paging.
  */
-void BITInit(uint32_t *BITPointer)
+void x86PagingInit()
 {
-    memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
+    // Allocate a page for the page directory.
+    PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
 
-    // Clear out the rest of the BIT.
-    memset((void*)&BIT.Video.ModeInfo, 0,
-            ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
+    // Allocate a page table for identity mapping the 1st MiB.
+    PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PageDir[PD_INDEX(0x00000000)] = (PageTableEntry_t)BaseTable | PRESENT_BIT;
 
-    // Fix all the predefined functions to set.
-    BIT.Video.OutputRevert = &OutputRevert;
-
-    BIT.DBALPMM.AllocContigFrames = &PMMAllocContigFrames;
-    BIT.DBALPMM.AllocFrame = &PMMAllocFrame;
-    BIT.DBALPMM.FreeContigFrames = &PMMFreeContigFrames;
-    BIT.DBALPMM.FreeFrame = & PMMFreeFrame;
-
-    return;
+    for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
+    {
+        BaseTable[PT_INDEX(Index)] = Index | PRESENT_BIT;
+    }
 }
+
+// Un-define VMMX86_PAGING.
+#undef VMMX86_PAGING

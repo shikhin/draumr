@@ -32,6 +32,9 @@
 
 #include <Standard.h>
 
+#define BASE_BITMAP                    0
+#define POOL_BITMAP                    1
+
 // Hardware flags.
 #define A20_DISABLED    (1 << 0)
 
@@ -281,8 +284,21 @@ struct BIT
 
         FILE_t BackgroundImg;                      // Pointer to the boot image.
     }_PACKED Video;
+
+    // Define the DBAL PMM related things here.
+    struct
+    {
+        // AllocFrame, FreeFrame, AllocContigFrames, FreeContigFrames.
+        uint32_t (*AllocFrame)(uint32_t Type);
+        void     (*FreeFrame)(uint32_t Addr);
+        uint32_t (*AllocContigFrames)(uint32_t Type, uint32_t Number);
+        void     (*FreeContigFrames)(uint32_t Addr, uint32_t Number);
+    }_PACKED DBALPMM;
 }_PACKED;
 
 typedef struct BIT BIT_t;
+
+// Define the BIT structure.
+extern BIT_t *BIT;
 
 #endif /* _BIT_H */

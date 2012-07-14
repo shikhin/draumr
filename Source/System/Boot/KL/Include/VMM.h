@@ -1,5 +1,5 @@
-/* 
- * General BIT related definitions and structures.
+/*
+ * Contains VMM related definitions for KL.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,33 +27,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <BIT.h>
-#include <String.h>
-#include <Output.h>
-#include <PMM.h>
+#ifndef _VMM_H
+#define _VMM_H
 
-// The BIT structure here.
-BIT_t BIT;
+#include <Standard.h>
+#include <BIT.h>
+
+#ifdef VMMX86_PAGING
+
+// Typedef page directory and page table to uint32_t.
+typedef uint32_t PageDirEntry_t;
+typedef uint32_t PageTableEntry_t;
+
+// Define the mask for the index for the page directory, and the index for the page table.
+#define PD_INDEX(a) ((a & 0xFFC00000) >> 22)
+#define PT_INDEX(a) ((a & 0x003FF000) >> 12)
+
+#endif /* VMMX86_PAGING */
+
+#ifdef VMMPAE_PAGING
+
+// Typedef page directory and page table to uint32_t.
+typedef uint64_t PageDirPTEntry_t;
+typedef uint64_t PageDirEntry_t;
+typedef uint64_t PageTableEntry_t;
+
+// Define the mask for the index for the page directory pointer table, the page dir, the page table.
+#define PDPT_INDEX(a) ((a & 0xC0000000) >> 30)
+#define PD_INDEX(a)   ((a & 0x3FE00000) >> 21)
+#define PT_INDEX(a)   ((a & 0x001FF000) >> 12)
+
+#endif /* VMMPAE_PAGING */
+
+#define PRESENT_BIT (1 << 0)
+
+#define PAGE_MASK   (~0xFFF)
 
 /*
- * Initializes the BIT structure, copying it to somewhere appropriate.
- *     uint32_t *BITPointer -> the pointer to the BIT structure, as passed to us.
+ * Initializes x86 paging.
  */
-void BITInit(uint32_t *BITPointer)
-{
-    memcpy((void*)&BIT, BITPointer, sizeof(BIT_t));
+_PROTOTYPE(void x86PagingInit, (void)) _COLD;
 
-    // Clear out the rest of the BIT.
-    memset((void*)&BIT.Video.ModeInfo, 0,
-            ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
+/*
+ * Initializes PAE paging.
+ */
+_PROTOTYPE(void PAEPagingInit, (void)) _COLD;
 
-    // Fix all the predefined functions to set.
-    BIT.Video.OutputRevert = &OutputRevert;
-
-    BIT.DBALPMM.AllocContigFrames = &PMMAllocContigFrames;
-    BIT.DBALPMM.AllocFrame = &PMMAllocFrame;
-    BIT.DBALPMM.FreeContigFrames = &PMMFreeContigFrames;
-    BIT.DBALPMM.FreeFrame = & PMMFreeFrame;
-
-    return;
-}
+#endif /* _VMM_H */
