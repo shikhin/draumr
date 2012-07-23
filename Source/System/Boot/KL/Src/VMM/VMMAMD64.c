@@ -1,5 +1,5 @@
 /*
- * Contains VMM (x86) related functions for KL.
+ * Contains VMM (PAE) related functions for KL.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,26 +27,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Define VMMX86 so that the related things are defined in VMM.h
-#define VMMX86_PAGING
+// Define VMMAMD64 so that the related things are defined in VMM.h
+#define VMMAMD64_PAGING
 
 #include <VMM.h>
 #include <BIT.h>
 
-// Define pointers for the page directory.
-PageDirEntry_t *PageDir;
+// Define pointers for the PML4.
+PML4Entry_t *PML4;
 
 /*
- * Initializes x86 paging.
+ * Initializes AMD64 paging.
  */
-void x86PagingInit()
+void AMD64PagingInit()
 {
-    // Allocate a page for the page directory.
-    PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    // Allocate a page for the PML4.
+    PML4 = (PML4Entry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
 
-    // Allocate a page table for identity mapping the 1st MiB.
+    // Allocate a page directory pointer table for identity mapping the 1st MiB.
+    PageDirPTEntry_t *BaseDirPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PML4[PML4_INDEX(0x00000000)] = (PML4Entry_t)BaseDirPT | PRESENT_BIT;
+
+    // Allocate a page directory.
+    PageDirEntry_t *BaseDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    BaseDirPT[PDPT_INDEX(0x00000000)] = (PageDirPTEntry_t)BaseDir | PRESENT_BIT;
+
+    // Allocate a page table.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
-    PageDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
+    BaseDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
 
     for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
     {
@@ -55,13 +63,37 @@ void x86PagingInit()
 }
 
 /*
- * Maps a page (x86).
+ * Maps a page (AMD64).
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
-void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
+void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
 {
-    PageTableEntry_t *PageTable;
+    PageDirPTEntry_t *PDPT; PageDirEntry_t *PageDir; PageTableEntry_t *PageTable;
+    // If PDPT isn't present, make one.
+    if(!(PML4[PML4_INDEX(VirtAddr)] & PRESENT_BIT))
+    {
+        PDPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PML4[PML4_INDEX(VirtAddr)] = (PML4Entry_t)PDPT | PRESENT_BIT;
+    }
+
+    else
+    {
+        PDPT = (PageDirPTEntry_t*)(uint32_t)(PML4[PML4_INDEX(VirtAddr)] & PAGE_MASK);
+    }
+
+    // If page directory isn't present, make one.
+    if(!(PDPT[PDPT_INDEX(VirtAddr)] & PRESENT_BIT))
+    {
+        PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PDPT[PDPT_INDEX(VirtAddr)] = (PageDirPTEntry_t)PageDir | PRESENT_BIT;
+    }
+
+    else
+    {
+        PageDir = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(VirtAddr)] & PAGE_MASK);
+    }
+
     // If page table isn't present, make one.
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
@@ -71,11 +103,11 @@ void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
 
     else
     {
-        PageTable = (PageTableEntry_t*)(PageDir[PD_INDEX(VirtAddr)] & PAGE_MASK);
+        PageTable = (PageTableEntry_t*)(uint32_t)(PageDir[PD_INDEX(VirtAddr)] & PAGE_MASK);
     }
 
-    PageTable[PT_INDEX(VirtAddr)] = (PageTableEntry_t)PhysAddr | PRESENT_BIT;
+    PageTable[PT_INDEX(VirtAddr)] = PhysAddr | PRESENT_BIT;
 }
 
-// Un-define VMMX86_PAGING.
-#undef VMMX86_PAGING
+// Un-define VMMAMD64_PAGING.
+#undef VMMAMD64_PAGING

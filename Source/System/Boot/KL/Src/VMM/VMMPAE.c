@@ -48,12 +48,47 @@ void PAEPagingInit()
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
     PageDirEntry_t   *PageDir   = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(0x00000000)] & PAGE_MASK);
 
-    PageDir[PD_INDEX(0x00000000)] = (PageTableEntry_t)BaseTable | PRESENT_BIT;
+    PageDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
 
     for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
     {
         BaseTable[PT_INDEX(Index)] = Index | PRESENT_BIT;
     }
+}
+
+/*
+ * Maps a page (PAE).
+ *     uint64_t VirtAddr -> the virtual address where to map the frame to.
+ *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
+ */
+void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
+{
+    PageDirEntry_t *PageDir; PageTableEntry_t *PageTable;
+    // If page directory isn't present, make one.
+    if(!(PDPT[PDPT_INDEX(VirtAddr)] & PRESENT_BIT))
+    {
+        PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PDPT[PDPT_INDEX(VirtAddr)] = (PageDirPTEntry_t)PageDir | PRESENT_BIT;
+    }
+
+    else
+    {
+        PageDir = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(VirtAddr)] & PAGE_MASK);
+    }
+
+    // If page table isn't present, make one.
+    if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
+    {
+        PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;
+    }
+
+    else
+    {
+        PageTable = (PageTableEntry_t*)(uint32_t)(PageDir[PD_INDEX(VirtAddr)] & PAGE_MASK);
+    }
+
+    PageTable[PT_INDEX(VirtAddr)] = PhysAddr | PRESENT_BIT;
 }
 
 // Un-define VMMPAE_PAGING.

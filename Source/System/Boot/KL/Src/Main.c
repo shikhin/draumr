@@ -32,7 +32,34 @@
 #include <CPU.h>
 #include <VMM.h>
 
+// A pointer to the BIT structure.
 BIT_t *BIT;
+
+/*
+ * Maps a page (generic).
+ *     uint64_t VirtAddr -> the virtual address where to map the frame to.
+ *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
+ */
+_PROTOTYPE(void (*GenericPagingMap), (uint64_t VirtAddr, uint64_t PhysAddr));
+
+/*
+ * Maps a file (following the generic file header) to the virtual address.
+ *     FILE_t FILE -> the file structure.
+ */
+void ModuleMap(FILE_t FILE)
+{
+    uint64_t *Location, StartAddr, EndAddr;
+
+    // Calculate the location & start and ending virtual address.
+    Location = (uint64_t*)FILE.Location;
+    StartAddr = *(uint64_t*)((uint8_t*)Location + 12);
+    EndAddr = (*(uint64_t*)((uint8_t*)Location + 20) + 0xFFF) & PAGE_MASK;
+
+    for(; StartAddr < EndAddr; StartAddr += 0x1000, Location = (uint64_t*)((uint8_t*)Location + 0x1000))
+    {
+        GenericPageMap(StartAddr, (uint64_t)Location);
+    }
+}
 
 /* 
  * The Main function for the KL sub-module.
@@ -44,29 +71,33 @@ void Main(BIT_t *BITPointer)
     BIT = BITPointer;
 
     uint32_t FeatureFlags = CPUFeatureFlags();
+    FILE_t Kernel, KernelMPMM, KernelMVMM;
 
     // Long mode is present - load the related files.
     if(FeatureFlags & LONG_MODE_PRESENT)
     {
         // Load the AMD64 kernel.
-        FILE_t KernelAMD64File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &KernelAMD64File);
+        BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &Kernel);
 
         // Load the PMM and VMM AMD64 kernel module.
-        FILE_t KernelMPMM, KernelMVMM;
         BIT->FileAPI(FILE_KERNEL_M, PMMAMD64, &KernelMPMM);
         BIT->FileAPI(FILE_KERNEL_M, VMMAMD64, &KernelMVMM);
+
+        AMD64PagingInit();
+
+        // Point the paging map function to AMD64 one.
+        GenericPagingMap = &AMD64PagingMap;
+
+        // Set the architecture.
+        BIT->Arch = ARCH_AMD64;
     }
 
     // Else, load the x86 files.
     else
     {
         // Load the x86 kernel.
-        FILE_t Kernelx86File;
-        BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernelx86File);
+        BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernel);
 
-        // Load the needed PMM and VMM kernel modules.
-        FILE_t KernelMPMM, KernelMVMM;
         // If PAE is present, then load those modules.
         // ALSO, NOTE: Memory *should* be present over 4GiB to take advantage of PAE, so we
         // ensure there is. Else, we use x86.
@@ -75,6 +106,14 @@ void Main(BIT_t *BITPointer)
         {
             BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
             BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
+
+            PAEPagingInit();
+
+            // Point the paging map function to PAE one.
+            GenericPagingMap = &PAEPagingMap;
+
+            // Set the architecture.
+            BIT->Arch = ARCH_PAE;
         }
 
         // Else, load the x86 modules.
@@ -82,10 +121,25 @@ void Main(BIT_t *BITPointer)
         {
             BIT->FileAPI(FILE_KERNEL_M, PMMX86, &KernelMPMM);
             BIT->FileAPI(FILE_KERNEL_M, VMMX86, &KernelMVMM);
+
+            x86PagingInit();
+
+            // Point the paging map function to x86 one.
+            GenericPagingMap = &x86PagingMap;
+
+            // Set the architecture.
+            BIT->Arch = ARCH_X86;
         }
     }
 
-    x86PagingInit();
+    // Define some variables for mapping the kernel, pmm module and vmm module.
+    uint64_t *Location, StartAddr, EndAddr;
+
+    // Map the kernel (& modules).
+    ModuleMap(Kernel);
+    ModuleMap(KernelMPMM);
+    ModuleMap(KernelMVMM);
+
     // We shouldn't reach here.
     for(;;)
         __asm__ __volatile__("hlt");

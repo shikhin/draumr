@@ -47,7 +47,7 @@ typedef uint32_t PageTableEntry_t;
 
 #ifdef VMMPAE_PAGING
 
-// Typedef page directory and page table to uint32_t.
+// Typedef page directory and page table to uint64_t.
 typedef uint64_t PageDirPTEntry_t;
 typedef uint64_t PageDirEntry_t;
 typedef uint64_t PageTableEntry_t;
@@ -59,6 +59,22 @@ typedef uint64_t PageTableEntry_t;
 
 #endif /* VMMPAE_PAGING */
 
+#ifdef VMMAMD64_PAGING
+
+// Typedef page directory and page table to uint64_t.
+typedef uint64_t PML4Entry_t;
+typedef uint64_t PageDirPTEntry_t;
+typedef uint64_t PageDirEntry_t;
+typedef uint64_t PageTableEntry_t;
+
+// Define the mask for the index for the relative indexes.
+#define PML4_INDEX(a) ((a & 0xFF8000000000) >> 39)
+#define PDPT_INDEX(a) ((a & 0x7FC0000000) >> 30)
+#define PD_INDEX(a)   ((a & 0x3FE00000) >> 21)
+#define PT_INDEX(a)   ((a & 0x001FF000) >> 12)
+
+#endif /* VMMAMD64_PAGING */
+
 #define PRESENT_BIT (1 << 0)
 
 #define PAGE_MASK   (~0xFFF)
@@ -69,8 +85,34 @@ typedef uint64_t PageTableEntry_t;
 _PROTOTYPE(void x86PagingInit, (void)) _COLD;
 
 /*
+ * Maps a page (x86).
+ *     uint64_t VirtAddr -> the virtual address where to map the frame to.
+ *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
+ */
+_PROTOTYPE(void x86PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+
+/*
  * Initializes PAE paging.
  */
 _PROTOTYPE(void PAEPagingInit, (void)) _COLD;
+
+/*
+ * Maps a page (PAE).
+ *     uint64_t VirtAddr -> the virtual address where to map the frame to.
+ *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
+ */
+_PROTOTYPE(void PAEPagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+
+/*
+ * Initializes AMD64 paging.
+ */
+_PROTOTYPE(void AMD64PagingInit, (void)) _COLD;
+
+/*
+ * Maps a page (AMD64).
+ *     uint64_t VirtAddr -> the virtual address where to map the frame to.
+ *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
+ */
+_PROTOTYPE(void AMD64PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
 
 #endif /* _VMM_H */

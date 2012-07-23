@@ -290,10 +290,13 @@ struct BIT
     {
         // AllocFrame, FreeFrame, AllocContigFrames, FreeContigFrames.
         uint32_t (*AllocFrame)(uint32_t Type);
-        void     (*FreeFrame)(uint32_t Addr);
+        void     (*FreeFrame) (uint32_t Addr);
         uint32_t (*AllocContigFrames)(uint32_t Type, uint32_t Number);
-        void     (*FreeContigFrames)(uint32_t Addr, uint32_t Number);
+        void     (*FreeContigFrames) (uint32_t Addr, uint32_t Number);
     }_PACKED DBALPMM;
+
+    // The architecture of the kernel.
+    uint32_t Arch;
 }_PACKED;
 
 typedef struct BIT BIT_t;

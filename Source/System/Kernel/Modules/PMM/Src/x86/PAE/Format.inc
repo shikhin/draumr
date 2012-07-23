@@ -62,7 +62,7 @@
 
 ; Defines the start of the file.
 %macro FILE_START 0
-    dq 0xC0000000
+    dq 0xC3000000
 %endmacro
 
 ; The CRC32 remainder.
