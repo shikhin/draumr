@@ -77,7 +77,8 @@ typedef uint64_t PageTableEntry_t;
 
 #define PRESENT_BIT (1 << 0)
 
-#define PAGE_MASK   (~0xFFF)
+#define PAGE_SIZE   0x1000
+#define PAGE_MASK   (~(PAGE_SIZE - 1))
 
 /*
  * Initializes x86 paging.
@@ -92,6 +93,11 @@ _PROTOTYPE(void x86PagingInit, (void)) _COLD;
 _PROTOTYPE(void x86PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
 
 /*
+ * Enables x86 paging, and jumps to kernel.
+ */
+_PROTOTYPE(void x86PagingEnable, (void)) _COLD _NORETURN;
+
+/*
  * Initializes PAE paging.
  */
 _PROTOTYPE(void PAEPagingInit, (void)) _COLD;
@@ -102,6 +108,11 @@ _PROTOTYPE(void PAEPagingInit, (void)) _COLD;
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
 _PROTOTYPE(void PAEPagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+
+/*
+ * Enables PAE paging, and jumps to kernel.
+ */
+_PROTOTYPE(void PAEPagingEnable, (void)) _COLD _NORETURN;
 
 /*
  * Initializes AMD64 paging.

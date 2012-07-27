@@ -57,7 +57,7 @@ void ModuleMap(FILE_t FILE)
 
     for(; StartAddr < EndAddr; StartAddr += 0x1000, Location = (uint64_t*)((uint8_t*)Location + 0x1000))
     {
-        GenericPageMap(StartAddr, (uint64_t)Location);
+        GenericPagingMap(StartAddr, (uint64_t)Location);
     }
 }
 
@@ -70,11 +70,11 @@ void Main(BIT_t *BITPointer)
     // Save BITPointer into a global variable.
     BIT = BITPointer;
 
-    uint32_t FeatureFlags = CPUFeatureFlags();
+    //uint32_t FeatureFlags = CPUFeatureFlags();
     FILE_t Kernel, KernelMPMM, KernelMVMM;
 
     // Long mode is present - load the related files.
-    if(FeatureFlags & LONG_MODE_PRESENT)
+    /*if(FeatureFlags & LONG_MODE_PRESENT)
     {
         // Load the AMD64 kernel.
         BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &Kernel);
@@ -90,10 +90,10 @@ void Main(BIT_t *BITPointer)
 
         // Set the architecture.
         BIT->Arch = ARCH_AMD64;
-    }
+    }*/
 
     // Else, load the x86 files.
-    else
+    //else
     {
         // Load the x86 kernel.
         BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernel);
@@ -101,11 +101,11 @@ void Main(BIT_t *BITPointer)
         // If PAE is present, then load those modules.
         // ALSO, NOTE: Memory *should* be present over 4GiB to take advantage of PAE, so we
         // ensure there is. Else, we use x86.
-        if((FeatureFlags & PAE_PRESENT) &&
-           (BIT->HighestAddress > 0xFFFFFFFFLLU))
+        //if((FeatureFlags & PAE_PRESENT) &&
+        //     (BIT->HighestAddress > 0xFFFFFFFFLLU))
         {
-            BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
-            BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
+            //BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
+            //BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
 
             PAEPagingInit();
 
@@ -117,7 +117,7 @@ void Main(BIT_t *BITPointer)
         }
 
         // Else, load the x86 modules.
-        else
+        /*else
         {
             BIT->FileAPI(FILE_KERNEL_M, PMMX86, &KernelMPMM);
             BIT->FileAPI(FILE_KERNEL_M, VMMX86, &KernelMVMM);
@@ -129,18 +129,28 @@ void Main(BIT_t *BITPointer)
 
             // Set the architecture.
             BIT->Arch = ARCH_X86;
-        }
+        }*/
     }
-
-    // Define some variables for mapping the kernel, pmm module and vmm module.
-    uint64_t *Location, StartAddr, EndAddr;
 
     // Map the kernel (& modules).
     ModuleMap(Kernel);
     ModuleMap(KernelMPMM);
     ModuleMap(KernelMVMM);
 
+    switch(BIT->Arch)
+    {
+        case ARCH_X86:
+            x86PagingEnable();
+            break;
+
+        case ARCH_PAE:
+            PAEPagingEnable();
+            break;
+    }
+
     // We shouldn't reach here.
     for(;;)
+    {
         __asm__ __volatile__("hlt");
+    }
 }

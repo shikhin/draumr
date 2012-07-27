@@ -34,7 +34,8 @@ Src = ["Src/Header.asm",
        "Src/CPU.c",
        "Src/VMM/VMMx86.c",
        "Src/VMM/VMMPAE.c",
-       "Src/VMM/VMMAMD64.c"]
+       "Src/VMM/VMMAMD64.c",
+       "Src/String.c"]
 
 # A target for building the KL binary.
 KL = SysEnv.Program("KL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/System/Boot/KL/Link.ld", CCFLAGS = ["-march=i586", "-m32"])

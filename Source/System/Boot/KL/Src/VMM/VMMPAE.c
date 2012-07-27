@@ -32,9 +32,10 @@
 
 #include <VMM.h>
 #include <BIT.h>
+#include <String.h>
 
 // Define pointers for the page directory pointer table - aligned by 32.
-PageDirPTEntry_t PDPT[4] _ALIGNED(0x20);
+PageDirPTEntry_t PDPT[4] _ALIGNED(0x20) = {0, 0, 0, 0};
 
 /*
  * Initializes PAE paging.
@@ -42,18 +43,34 @@ PageDirPTEntry_t PDPT[4] _ALIGNED(0x20);
 void PAEPagingInit()
 {
     // Allocate a page for the page directory.
-    PDPT[PDPT_INDEX(0x00000000)] = (PageDirPTEntry_t)(BIT->DBALPMM.AllocFrame(POOL_BITMAP) | PRESENT_BIT);
+    PageDirEntry_t *PageDir[4];
+    for(uint32_t i = 0; i < 4; i++)
+    {
+        // Allocate a page for the page directory.
+        PageDir[i] = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PageDir[i], 0x00000000, PAGE_SIZE);
 
-    // Allocate a page for the page table for identity mapping the 1st MiB.
+        // Mark it in the PDPT.
+        PDPT[i] = (PageDirPTEntry_t)PageDir[i] | PRESENT_BIT;
+    }
+
+    // Allocate page for the page table.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
-    PageDirEntry_t   *PageDir   = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(0x00000000)] & PAGE_MASK);
+    memset(BaseTable, 0x00000000, PAGE_SIZE);
 
-    PageDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
+    // Mark the page table in the page directory.
+    (PageDir[0])[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
 
     for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
     {
         BaseTable[PT_INDEX(Index)] = Index | PRESENT_BIT;
     }
+
+    // Self-recursive trick, ftw!
+    (PageDir[3])[508] = (PageDirEntry_t)PageDir[0] | PRESENT_BIT;
+    (PageDir[3])[509] = (PageDirEntry_t)PageDir[1] | PRESENT_BIT;
+    (PageDir[3])[510] = (PageDirEntry_t)PageDir[2] | PRESENT_BIT;
+    (PageDir[3])[511] = (PageDirEntry_t)PageDir[3] | PRESENT_BIT;
 }
 
 /*
@@ -64,22 +81,15 @@ void PAEPagingInit()
 void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
 {
     PageDirEntry_t *PageDir; PageTableEntry_t *PageTable;
-    // If page directory isn't present, make one.
-    if(!(PDPT[PDPT_INDEX(VirtAddr)] & PRESENT_BIT))
-    {
-        PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
-        PDPT[PDPT_INDEX(VirtAddr)] = (PageDirPTEntry_t)PageDir | PRESENT_BIT;
-    }
 
-    else
-    {
-        PageDir = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(VirtAddr)] & PAGE_MASK);
-    }
+    PageDir = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(VirtAddr)] & PAGE_MASK);
 
     // If page table isn't present, make one.
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PageTable, 0x00000000, PAGE_SIZE);
+
         PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;
     }
 
@@ -89,6 +99,34 @@ void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     }
 
     PageTable[PT_INDEX(VirtAddr)] = PhysAddr | PRESENT_BIT;
+}
+
+/*
+ * Enables PAE paging, and jumps to kernel.
+ */
+void PAEPagingEnable()
+{
+    // Put the address of page directory pointer table in CR3.
+    __asm__ __volatile__("mov %0, %%cr3" :: "r"(PDPT));
+
+    // Enable PAE bit.
+    __asm__ __volatile__("mov %%cr4, %%eax;"
+                         "or  $0x00000020, %%eax;"
+                         "mov %%eax, %%cr4" ::: "eax");
+
+    // Enable paging (PG bit).
+    __asm__ __volatile__("mov %%cr0, %%eax;"
+                         "or  $0x80000000, %%eax;"
+                         "mov %%eax, %%cr0" ::: "eax");
+
+    // Jump to the kernel.
+    __asm__ __volatile__("jmp *0xC0000004");
+
+    // We shouldn't reach here.
+    for(;;)
+    {
+        __asm__ __volatile__("hlt");
+    }
 }
 
 // Un-define VMMPAE_PAGING.

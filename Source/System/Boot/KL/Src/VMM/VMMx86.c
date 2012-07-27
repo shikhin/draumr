@@ -32,6 +32,7 @@
 
 #include <VMM.h>
 #include <BIT.h>
+#include <String.h>
 
 // Define pointers for the page directory.
 PageDirEntry_t *PageDir;
@@ -41,17 +42,23 @@ PageDirEntry_t *PageDir;
  */
 void x86PagingInit()
 {
-    // Allocate a page for the page directory.
+    // Allocate a page for the page directory, and clear it..
     PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(PageDir, 0x00000000, PAGE_SIZE);
 
-    // Allocate a page table for identity mapping the 1st MiB.
+    // Allocate a page table for identity mapping the 1st MiB, and clear it.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(BaseTable, 0x00000000, PAGE_SIZE);
+
     PageDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
 
     for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
     {
         BaseTable[PT_INDEX(Index)] = Index | PRESENT_BIT;
     }
+
+    // Self-recursive trick, ftw!
+    PageDir[1023] = (PageDirEntry_t)PageDir | PRESENT_BIT;
 }
 
 /*
@@ -66,6 +73,8 @@ void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PageTable, 0x00000000, PAGE_SIZE);
+
         PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;
     }
 
@@ -75,6 +84,29 @@ void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     }
 
     PageTable[PT_INDEX(VirtAddr)] = (PageTableEntry_t)PhysAddr | PRESENT_BIT;
+}
+
+/*
+ * Enables x86 paging, and jumps to kernel.
+ */
+void x86PagingEnable()
+{
+    // Put the address of page directory in CR3.
+    __asm__ __volatile__("mov %0, %%cr3" :: "r"(PageDir));
+
+    // Enable paging (PG bit).
+    __asm__ __volatile__("mov %%cr0, %%eax;"
+                         "or  $0x80000000, %%eax;"
+                         "mov %%eax, %%cr0" ::: "eax");
+
+    // Jump to the kernel.
+    __asm__ __volatile__("jmp *0xC0000004");
+
+    // We shouldn't reach here.
+    for(;;)
+    {
+        __asm__ __volatile__("hlt");
+    }
 }
 
 // Un-define VMMX86_PAGING.
