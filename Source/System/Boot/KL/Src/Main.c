@@ -70,11 +70,11 @@ void Main(BIT_t *BITPointer)
     // Save BITPointer into a global variable.
     BIT = BITPointer;
 
-    //uint32_t FeatureFlags = CPUFeatureFlags();
+    uint32_t FeatureFlags = CPUFeatureFlags();
     FILE_t Kernel, KernelMPMM, KernelMVMM;
 
     // Long mode is present - load the related files.
-    /*if(FeatureFlags & LONG_MODE_PRESENT)
+    if(FeatureFlags & LONG_MODE_PRESENT)
     {
         // Load the AMD64 kernel.
         BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &Kernel);
@@ -90,10 +90,10 @@ void Main(BIT_t *BITPointer)
 
         // Set the architecture.
         BIT->Arch = ARCH_AMD64;
-    }*/
+    }
 
     // Else, load the x86 files.
-    //else
+    else
     {
         // Load the x86 kernel.
         BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernel);
@@ -101,8 +101,8 @@ void Main(BIT_t *BITPointer)
         // If PAE is present, then load those modules.
         // ALSO, NOTE: Memory *should* be present over 4GiB to take advantage of PAE, so we
         // ensure there is. Else, we use x86.
-        //if((FeatureFlags & PAE_PRESENT) &&
-        //     (BIT->HighestAddress > 0xFFFFFFFFLLU))
+        if((FeatureFlags & PAE_PRESENT) &&
+             (BIT->HighestAddress > 0xFFFFFFFFLLU))
         {
             //BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
             //BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
@@ -117,7 +117,7 @@ void Main(BIT_t *BITPointer)
         }
 
         // Else, load the x86 modules.
-        /*else
+        else
         {
             BIT->FileAPI(FILE_KERNEL_M, PMMX86, &KernelMPMM);
             BIT->FileAPI(FILE_KERNEL_M, VMMX86, &KernelMVMM);
@@ -129,7 +129,7 @@ void Main(BIT_t *BITPointer)
 
             // Set the architecture.
             BIT->Arch = ARCH_X86;
-        }*/
+        }
     }
 
     // Map the kernel (& modules).
@@ -145,6 +145,10 @@ void Main(BIT_t *BITPointer)
 
         case ARCH_PAE:
             PAEPagingEnable();
+            break;
+
+        case ARCH_AMD64:
+            AMD64PagingEnable();
             break;
     }
 

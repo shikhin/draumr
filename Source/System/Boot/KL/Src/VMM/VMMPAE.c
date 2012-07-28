@@ -101,33 +101,5 @@ void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     PageTable[PT_INDEX(VirtAddr)] = PhysAddr | PRESENT_BIT;
 }
 
-/*
- * Enables PAE paging, and jumps to kernel.
- */
-void PAEPagingEnable()
-{
-    // Put the address of page directory pointer table in CR3.
-    __asm__ __volatile__("mov %0, %%cr3" :: "r"(PDPT));
-
-    // Enable PAE bit.
-    __asm__ __volatile__("mov %%cr4, %%eax;"
-                         "or  $0x00000020, %%eax;"
-                         "mov %%eax, %%cr4" ::: "eax");
-
-    // Enable paging (PG bit).
-    __asm__ __volatile__("mov %%cr0, %%eax;"
-                         "or  $0x80000000, %%eax;"
-                         "mov %%eax, %%cr0" ::: "eax");
-
-    // Jump to the kernel.
-    __asm__ __volatile__("jmp *0xC0000004");
-
-    // We shouldn't reach here.
-    for(;;)
-    {
-        __asm__ __volatile__("hlt");
-    }
-}
-
 // Un-define VMMPAE_PAGING.
 #undef VMMPAE_PAGING

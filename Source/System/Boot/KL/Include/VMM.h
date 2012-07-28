@@ -126,4 +126,9 @@ _PROTOTYPE(void AMD64PagingInit, (void)) _COLD;
  */
 _PROTOTYPE(void AMD64PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
 
+/*
+ * Enables AMD64 paging, and jumps to kernel.
+ */
+_PROTOTYPE(void AMD64PagingEnable, (void)) _COLD _NORETURN;
+
 #endif /* _VMM_H */

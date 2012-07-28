@@ -32,6 +32,7 @@
 
 #include <VMM.h>
 #include <BIT.h>
+#include <String.h>
 
 // Define pointers for the PML4.
 PML4Entry_t *PML4;
@@ -43,23 +44,33 @@ void AMD64PagingInit()
 {
     // Allocate a page for the PML4.
     PML4 = (PML4Entry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(PML4, 0x00000000, PAGE_SIZE);
 
     // Allocate a page directory pointer table for identity mapping the 1st MiB.
     PageDirPTEntry_t *BaseDirPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(BaseDirPT, 0x00000000, PAGE_SIZE);
+
     PML4[PML4_INDEX(0x00000000)] = (PML4Entry_t)BaseDirPT | PRESENT_BIT;
 
     // Allocate a page directory.
     PageDirEntry_t *BaseDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(BaseDir, 0x00000000, PAGE_SIZE);
+
     BaseDirPT[PDPT_INDEX(0x00000000)] = (PageDirPTEntry_t)BaseDir | PRESENT_BIT;
 
     // Allocate a page table.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    memset(BaseTable, 0x00000000, PAGE_SIZE);
+
     BaseDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
 
     for(uint32_t Index = 0x0000; Index < 0x100000; Index += 0x1000)
     {
         BaseTable[PT_INDEX(Index)] = Index | PRESENT_BIT;
     }
+
+    // Self-recursive trick, ftw!
+    PML4[511] = (PML4Entry_t)PML4 | PRESENT_BIT;
 }
 
 /*
@@ -74,6 +85,8 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     if(!(PML4[PML4_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PDPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PDPT, 0x00000000, PAGE_SIZE);
+
         PML4[PML4_INDEX(VirtAddr)] = (PML4Entry_t)PDPT | PRESENT_BIT;
     }
 
@@ -86,6 +99,8 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     if(!(PDPT[PDPT_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PageDir, 0x00000000, PAGE_SIZE);
+
         PDPT[PDPT_INDEX(VirtAddr)] = (PageDirPTEntry_t)PageDir | PRESENT_BIT;
     }
 
@@ -98,6 +113,8 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        memset(PageTable, 0x00000000, PAGE_SIZE);
+
         PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;
     }
 

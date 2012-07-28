@@ -86,28 +86,5 @@ void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     PageTable[PT_INDEX(VirtAddr)] = (PageTableEntry_t)PhysAddr | PRESENT_BIT;
 }
 
-/*
- * Enables x86 paging, and jumps to kernel.
- */
-void x86PagingEnable()
-{
-    // Put the address of page directory in CR3.
-    __asm__ __volatile__("mov %0, %%cr3" :: "r"(PageDir));
-
-    // Enable paging (PG bit).
-    __asm__ __volatile__("mov %%cr0, %%eax;"
-                         "or  $0x80000000, %%eax;"
-                         "mov %%eax, %%cr0" ::: "eax");
-
-    // Jump to the kernel.
-    __asm__ __volatile__("jmp *0xC0000004");
-
-    // We shouldn't reach here.
-    for(;;)
-    {
-        __asm__ __volatile__("hlt");
-    }
-}
-
 // Un-define VMMX86_PAGING.
 #undef VMMX86_PAGING
