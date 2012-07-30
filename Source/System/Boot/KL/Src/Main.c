@@ -31,6 +31,7 @@
 #include <BIT.h>
 #include <CPU.h>
 #include <VMM.h>
+#include <String.h>
 
 // A pointer to the BIT structure.
 BIT_t *BIT;
@@ -42,6 +43,11 @@ BIT_t *BIT;
 #define X86_STACK   0xF0000000
 #define PAE_STACK   0xF0000000
 #define AMD64_STACK 0xFFFF802000000000
+
+// The address of the BIT.
+#define X86_BIT   0xC2000000
+#define PAE_BIT   0xC2000000
+#define AMD64_BIT 0xFFFF800020000000
 
 /*
  * Maps a page (generic).
@@ -170,9 +176,24 @@ void Main(BIT_t *BITPointer)
     ModuleMap(KernelMPMM);
     ModuleMap(KernelMVMM);
 
+    uint32_t BITFrame = BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    if(!BITFrame)
+    {
+        // Switch to text mode.
+        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        BIT->Video.AbortBoot("ERROR: Unable to allocate pages for the BIT.");
+    }
+
+    // Copy the BIT to the frame.
+    memcpy((void*)BITFrame, BIT, sizeof(BIT_t));
+
     switch(BIT->Arch)
     {
         case ARCH_X86:
+            // Map the BIT frame.
+            GenericPagingMap(X86_BIT, BITFrame);
+
             // Map the stack for x86.
             RegionMap(X86_STACK - STACK_SIZE, X86_STACK);
 
@@ -182,6 +203,9 @@ void Main(BIT_t *BITPointer)
             break;
 
         case ARCH_PAE:
+            // Map the BIT frame.
+            GenericPagingMap(PAE_BIT, BITFrame);
+
             // Map the stack for PAE.
             RegionMap(PAE_STACK - STACK_SIZE, PAE_STACK);
 
@@ -191,6 +215,9 @@ void Main(BIT_t *BITPointer)
             break;
 
         case ARCH_AMD64:
+            // Map the BIT frame.
+            GenericPagingMap(AMD64_BIT, BITFrame);
+
             // Map the stack for AMD64.
             RegionMap(AMD64_STACK - STACK_SIZE, AMD64_STACK);
 

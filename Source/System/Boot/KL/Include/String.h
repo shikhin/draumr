@@ -33,6 +33,17 @@
 #include <Standard.h>
 
 /*
+ * Memcpy - copy count bytes from source to destination.
+ *     void *dest   -> the destination to where to copy to.
+ *     void *src    -> the source from where to copy to.
+ *     size_t count -> the number of bytes to copy.
+ *
+ * Returns:
+ *     void *       -> the destination.
+ */
+_PROTOTYPE(void *memcpy, (void *dest, _CONST void *src, uint32_t count)) _HOT;
+
+/*
  * Memset - sets the destination to a specified value - count many times.
  *     void *dest     -> the destination to which we set.
  *     uint8_t value  -> the value by which we clear.
