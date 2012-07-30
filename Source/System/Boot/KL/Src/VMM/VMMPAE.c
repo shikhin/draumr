@@ -42,12 +42,22 @@ PageDirPTEntry_t PDPT[4] _ALIGNED(0x20) = {0, 0, 0, 0};
  */
 void PAEPagingInit()
 {
+    char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
+
     // Allocate a page for the page directory.
     PageDirEntry_t *PageDir[4];
     for(uint32_t i = 0; i < 4; i++)
     {
         // Allocate a page for the page directory.
         PageDir[i] = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        if(!PageDir[i])
+        {
+            // Switch to text mode.
+            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+            BIT->Video.AbortBoot(ErrorFrameAlloc);
+        }
+
         memset(PageDir[i], 0x00000000, PAGE_SIZE);
 
         // Mark it in the PDPT.
@@ -56,6 +66,14 @@ void PAEPagingInit()
 
     // Allocate page for the page table.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    if(!BaseTable)
+    {
+        // Switch to text mode.
+        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        BIT->Video.AbortBoot(ErrorFrameAlloc);
+    }
+
     memset(BaseTable, 0x00000000, PAGE_SIZE);
 
     // Mark the page table in the page directory.
@@ -80,6 +98,8 @@ void PAEPagingInit()
  */
 void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
 {
+    char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
+
     PageDirEntry_t *PageDir; PageTableEntry_t *PageTable;
 
     PageDir = (PageDirEntry_t*)(uint32_t)(PDPT[PDPT_INDEX(VirtAddr)] & PAGE_MASK);
@@ -88,6 +108,14 @@ void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        if(!PageTable)
+        {
+            // Switch to text mode.
+            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+            BIT->Video.AbortBoot(ErrorFrameAlloc);
+        }
+
         memset(PageTable, 0x00000000, PAGE_SIZE);
 
         PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;

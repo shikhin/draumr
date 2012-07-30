@@ -345,7 +345,7 @@ static void InitializeBitmap()
         }
     }
 }
-#include <Log.h>
+
 /*
  * Initializes the physical memory manager for ourselves.
  */

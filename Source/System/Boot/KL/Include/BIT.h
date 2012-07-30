@@ -83,6 +83,11 @@
 #define ARCH_PAE       0x01
 #define ARCH_AMD64     0x02
 
+// The "video mode numbers" for the video modes we support in VGA.
+#define MODE_80_25_TEXT     0x03
+#define MODE_640_480_16     0x12
+#define MODE_320_200_256    0x13
+
 // The file structure, which is returned by opening files.
 typedef struct
 {
@@ -283,6 +288,7 @@ struct BIT
         VBEModeInfo_t ModeInfo;        // The mode we switched to's information.
 
         FILE_t BackgroundImg;                      // Pointer to the boot image.
+        void (*AbortBoot)(_CONST char *String);    // The abort boot function - provided by the DBAL.
     }_PACKED Video;
 
     // Define the DBAL PMM related things here.

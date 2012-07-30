@@ -35,12 +35,45 @@
 // A pointer to the BIT structure.
 BIT_t *BIT;
 
+// A 32-KiB stack.
+#define STACK_SIZE 0x8000
+
+// The end address of the stacks.
+#define X86_STACK   0xF0000000
+#define PAE_STACK   0xF0000000
+#define AMD64_STACK 0xFFFF802000000000
+
 /*
  * Maps a page (generic).
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
 _PROTOTYPE(void (*GenericPagingMap), (uint64_t VirtAddr, uint64_t PhysAddr));
+
+/*
+ * Maps allocated pages to a specified region in the Virtual Address space.
+ *     uint64_t Start -> the start address of the region.
+ *     uint64_t Size  -> the end address of the region.
+ */
+void RegionMap(uint64_t Start, uint64_t End)
+{
+    // Map pages to the entire region.
+    for(; Start < End; Start += 0x1000)
+    {
+        // Allocate page for the current 'Start' address.
+        uint64_t PhysAddr = BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        if(!PhysAddr)
+        {
+            // Switch to text mode.
+            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+            BIT->Video.AbortBoot("ERROR: Unable to allocate pages for the stack.");
+        }
+
+        // Map the physical frame.
+        GenericPagingMap(Start, PhysAddr);
+    }
+}
 
 /*
  * Maps a file (following the generic file header) to the virtual address.
@@ -104,8 +137,8 @@ void Main(BIT_t *BITPointer)
         if((FeatureFlags & PAE_PRESENT) &&
              (BIT->HighestAddress > 0xFFFFFFFFLLU))
         {
-            //BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
-            //BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
+            BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
+            BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
 
             PAEPagingInit();
 
@@ -140,15 +173,30 @@ void Main(BIT_t *BITPointer)
     switch(BIT->Arch)
     {
         case ARCH_X86:
+            // Map the stack for x86.
+            RegionMap(X86_STACK - STACK_SIZE, X86_STACK);
+
+            // Enable paging completely.
             x86PagingEnable();
+
             break;
 
         case ARCH_PAE:
+            // Map the stack for PAE.
+            RegionMap(PAE_STACK - STACK_SIZE, PAE_STACK);
+
+            // Enable paging completely.
             PAEPagingEnable();
+
             break;
 
         case ARCH_AMD64:
+            // Map the stack for AMD64.
+            RegionMap(AMD64_STACK - STACK_SIZE, AMD64_STACK);
+
+            // Enable paging completely.
             AMD64PagingEnable();
+
             break;
     }
 

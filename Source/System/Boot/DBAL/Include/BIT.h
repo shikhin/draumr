@@ -92,6 +92,7 @@ struct BIT
         VBEModeInfo_t ModeInfo;        // The mode we switched to's information.
 
         FILE_t BackgroundImg;                      // Pointer to the boot image.
+        void (*AbortBoot)(_CONST char *String);    // The abort boot function - provided by the DBAL.
     }_PACKED Video;
 
     // Define the DBAL PMM related things here.

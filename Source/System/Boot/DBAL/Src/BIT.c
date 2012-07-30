@@ -31,6 +31,7 @@
 #include <String.h>
 #include <Output.h>
 #include <PMM.h>
+#include <Abort.h>
 
 // The BIT structure here.
 BIT_t BIT;
@@ -49,6 +50,7 @@ void BITInit(uint32_t *BITPointer)
 
     // Fix all the predefined functions to set.
     BIT.Video.OutputRevert = &OutputRevert;
+    BIT.Video.AbortBoot = &AbortBoot;
 
     BIT.DBALPMM.AllocContigFrames = &PMMAllocContigFrames;
     BIT.DBALPMM.AllocFrame = &PMMAllocFrame;

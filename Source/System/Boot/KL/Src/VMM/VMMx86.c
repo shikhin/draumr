@@ -42,12 +42,30 @@ PageDirEntry_t *PageDir;
  */
 void x86PagingInit()
 {
+    char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
+
     // Allocate a page for the page directory, and clear it..
     PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    if(!PageDir)
+    {
+        // Switch to text mode.
+        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        BIT->Video.AbortBoot(ErrorFrameAlloc);
+    }
+
     memset(PageDir, 0x00000000, PAGE_SIZE);
 
     // Allocate a page table for identity mapping the 1st MiB, and clear it.
     PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    if(!BaseTable)
+    {
+        // Switch to text mode.
+        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+        BIT->Video.AbortBoot(ErrorFrameAlloc);
+    }
+
     memset(BaseTable, 0x00000000, PAGE_SIZE);
 
     PageDir[PD_INDEX(0x00000000)] = (PageDirEntry_t)BaseTable | PRESENT_BIT;
@@ -68,11 +86,21 @@ void x86PagingInit()
  */
 void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
 {
+    char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
+
     PageTableEntry_t *PageTable;
     // If page table isn't present, make one.
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
         PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        if(!PageTable)
+        {
+            // Switch to text mode.
+            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+
+            BIT->Video.AbortBoot(ErrorFrameAlloc);
+        }
+
         memset(PageTable, 0x00000000, PAGE_SIZE);
 
         PageDir[PD_INDEX(VirtAddr)] = (PageDirEntry_t)PageTable | PRESENT_BIT;

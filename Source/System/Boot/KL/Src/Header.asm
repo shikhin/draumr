@@ -80,6 +80,9 @@ x86PagingEnable:
     or eax, (1 << 31)
     mov cr0, eax
 
+    ; Set the stack.
+    mov esp, 0xF0000000
+
     jmp [0xC0000004]
 
  ; Enables PAE paging, and jumps to kernel.
@@ -97,6 +100,9 @@ PAEPagingEnable:
     mov eax, cr0
     or eax, (1 << 31)
     mov cr0, eax
+
+    ; Set the stack.
+    mov esp, 0xF0000000
 
     jmp [0xC0000004]
 
@@ -126,9 +132,10 @@ AMD64PagingEnable:
     jmp 0x08:.AMD64
 
 .AMD64:
+    ; mov rsp, 0xFFFF802000000000
     ; mov rax, 0xFFFF800000000004
     ; jmp [rax]
-    dw 0xB848, 0x0004, 0x0000, 0x8000, 0xFFFF, 0x20FF
+    dw 0xBC48, 0x0000, 0x0000, 0x8020, 0xFFFF, 0xB848, 0x0004, 0x0000, 0x8000, 0xFFFF, 0x20FF
 
 GDT64:
     .Null: dd 0x00000000, 0x00000000
