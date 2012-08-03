@@ -105,6 +105,8 @@ struct BIT
         void     (*FreeContigFrames)(uint32_t Addr, uint32_t Number);
     }_PACKED DBALPMM;
 
+    void (*AbortBootServices)(void);               // Avoid all boot services given by DBAL + firmware.
+
     // The architecture of the kernel.
     uint32_t Arch;
 }_PACKED;

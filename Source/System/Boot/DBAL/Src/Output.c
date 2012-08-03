@@ -942,7 +942,16 @@ static void VBEInit()
     // Parse EDID Information.
     if(BIT.Video.VideoFlags & EDID_PRESENT)
     {
-        ParseEDIDInfo();
+        // Do a checksum on the EDID structure.
+        uint8_t *EDID = (uint8_t*)&BIT.Video.EDIDInfo, Checksum = 0;
+        for(uint32_t i = 0; i < sizeof(EDIDInfo_t); i++)
+        {
+            Checksum += EDID[i];
+        }
+
+        // Only if checksum passes, use EDID information.
+        if(!Checksum)
+            ParseEDIDInfo();
     }
 
     // Calculate the montior's preference for every mode.

@@ -57,8 +57,11 @@ SECTION .text
 
 GLOBAL Start
 
+EXTERN Main
+
  ; The entry point for the Kernel.
- ;     R/EAX -> the 32-bit address of the BIT.
+ ;     CRx   -> properly set up paging and state.
  ;     R/ESP -> the properly defined stack.
 Start:
-    jmp $
+    ; Call main.
+    call Main

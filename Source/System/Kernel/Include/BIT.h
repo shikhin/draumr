@@ -309,7 +309,7 @@ struct BIT
 
 typedef struct BIT BIT_t;
 
-// Define the BIT structure.
+// Define BIT structure.
 extern BIT_t *BIT;
 
 #endif /* _BIT_H */

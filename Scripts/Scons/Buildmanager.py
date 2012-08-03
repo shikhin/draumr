@@ -70,6 +70,7 @@ class BuildManager :
                            "-Wswitch", "-Wsystem-headers", "-Wundef",
                            "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable", "-Wno-unused-result",
                            "-Wwrite-strings", "-Wdisabled-optimization", "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+        Env["ASFLAGS"] = ["-Ox"]
         Env["LINK"] = "ld" 
         Env["BUILDERS"]["ISO"] = ISOBuilder
         Env["BUILDERS"]["PXE"] = PXEBuilder

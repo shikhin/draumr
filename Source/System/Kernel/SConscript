@@ -29,7 +29,9 @@
 
 Import("Env", "SysEnv")
 
-GenSrc = ["Header.asm"]
+GenSrc = ["Header.asm",
+          "Main.c",
+          "API.c"]
 
 # A target for building the KL binary.
 x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Src/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])

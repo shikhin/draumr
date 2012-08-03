@@ -32,7 +32,8 @@
 #include <CPU.h>
 #include <VMM.h>
 #include <String.h>
-
+#include <API.h>
+ 
 // A pointer to the BIT structure.
 BIT_t *BIT;
 
@@ -108,6 +109,9 @@ void Main(BIT_t *BITPointer)
 {
     // Save BITPointer into a global variable.
     BIT = BITPointer;
+
+    // Initialize the API.
+    APIInit();
 
     uint32_t FeatureFlags = CPUFeatureFlags();
     FILE_t Kernel, KernelMPMM, KernelMVMM;
