@@ -75,4 +75,9 @@ _PROTOTYPE(uint32_t VideoAPI, (uint32_t APICode, ...));
  */
 _PROTOTYPE(uint32_t FileAPI, (uint32_t APICode, ...));
 
+/*
+ * The abort boot services function.
+ */
+_PROTOTYPE(void AbortBootServices, (void));
+
 #endif /* _BIT_H */

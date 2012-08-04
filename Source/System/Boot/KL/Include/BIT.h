@@ -269,6 +269,8 @@ struct BIT
     uint32_t MPS;                     // The 32-bit address of the MPS tables.
     uint32_t SMBIOS;                  // The 32-bit address of the SMBIOS tables.
 
+    void (*AbortBootServices)(void);  // Abort all boot services given by DBAL + firmware.
+
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
     uint64_t HighestAddress;          // Highest accessible address as given by the Memory Map.
 
@@ -300,8 +302,6 @@ struct BIT
         uint32_t (*AllocContigFrames)(uint32_t Type, uint32_t Number);
         void     (*FreeContigFrames) (uint32_t Addr, uint32_t Number);
     }_PACKED DBALPMM;
-
-    void (*AbortBootServices)(void);               // Avoid all boot services given by DBAL + firmware.
 
     // The architecture of the kernel.
     uint32_t Arch;

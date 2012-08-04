@@ -198,6 +198,7 @@ Main:
     mov ebx, FileRead
     mov ecx, FileClose
     mov edx, BD_PXE
+    mov esi, PXECleanup
        
     mov esp, 0x7C00
     xor ebp, ebp

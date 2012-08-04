@@ -38,7 +38,8 @@ Src = ["Link.ld",
        "Src/A20.asm",
        "Src/Memory.asm",
        "Src/Video/Video.asm",
-       "Src/Tables/Tables.asm"]
+       "Src/Tables/Tables.asm",
+       "Src/BootServices.asm"]
 
 # A target for building the Stage 1 binary.
 BIOSObject = SysEnv.Object("BIOS.o", "Src/Main.asm")

@@ -37,6 +37,9 @@
 uint32_t (*OldVideoAPI)(uint32_t APICode, ...);
 uint32_t (*OldFileAPI)(uint32_t APICode, ...);
 
+// The old AbortBootServices.
+void     (*OldAbortBootServices)(void);
+
 /*
  * Initializes the API, replacing old APIs with new one's.
  */
@@ -45,10 +48,12 @@ void APIInit()
     // Save the old APIs.
     OldVideoAPI = BIT.Video.VideoAPI;
     OldFileAPI = BIT.FileAPI;
+    OldAbortBootServices = BIT.AbortBootServices;
 
     // Restore them by the new ones.
     BIT.Video.VideoAPI = &VideoAPI;
     BIT.FileAPI = &FileAPI;
+    BIT.AbortBootServices = &AbortBootServices;
 }
 
 /*
@@ -170,3 +175,16 @@ uint32_t FileAPI(uint32_t APICode, ...)
 
     return 0;
 }
+
+/*
+ * The abort boot services function.
+ */
+void AbortBootServices()
+{
+    // Clear up all the memory used by the boot files loader.
+    BootFilesClear();
+
+    // Abort boot services used by previous stage.
+    OldAbortBootServices();
+}
+

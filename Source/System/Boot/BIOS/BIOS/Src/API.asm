@@ -242,4 +242,25 @@ BITS 32
     pop ebx
     ret
 
+ ; Aborts the boot services provided by earlier stages and firmware.
+AbortBootServicesAPI:
+    push ebx
+
+    mov ebx, .RMMode
+    jmp RMSwitch
+
+BITS 16
+.RMMode:
+    call AbortBootServices
+
+.ReturnToPM:
+    mov ebx, .Return
+    jmp PMSwitch                     ; And switch back to protected mode for the return.
+
+BITS 32
+.Return:
+    ; Pop 'ebx', which we use for the continuing address by *Switch functions.
+    pop ebx
+    ret
+
 BITS 16

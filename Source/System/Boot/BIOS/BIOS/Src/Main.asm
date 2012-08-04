@@ -58,6 +58,8 @@ BIT:
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
+    .AbortBootServices dd AbortBootServicesAPI   ; Aborts all boot services provided by DBAL + firmware.
+
     .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
     .HighestAddress  dq 0             ; The highest accessible address by the MMap.
 
@@ -75,6 +77,14 @@ BIT:
 FileOpen:          dd 0
 FileRead:          dd 0
 FileClose:         dd 0
+
+; The PXE cleanup function.
+PXECleanup:        dd 0
+
+; Boot device flags (possible values, rather).
+%define BD_CD           0
+%define BD_FLOPPY       1
+%define BD_PXE          2
 
 ; Hardware flags.
 %define A20_DISABLED    (1 << 0)
@@ -111,6 +121,7 @@ SECTION .text
 %include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
+%include "Source/System/Boot/BIOS/BIOS/Src/BootServices.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
 %include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
 
@@ -128,12 +139,14 @@ GLOBAL Startup
  ;     EBX   -> the FileRead function.
  ;     ECX   -> the FileClose function.
  ;     EDX   -> the BD flags.
+ ;     ESI   -> the PXE cleanup function (only in case of PXE).
 Startup:
     mov [FileOpen], eax
     mov [FileRead], ebx
     mov [FileClose], ecx
-    mov [BIT.BDFlags], edx
-    
+    mov [PXECleanup], esi
+    mov [BIT.BDFlags], dl
+
     ; Enable A20, then try to generate memory map.
     call A20Enable
     call MMapBuild

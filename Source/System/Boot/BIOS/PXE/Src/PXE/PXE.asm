@@ -33,6 +33,9 @@ ErrorPXENotPresentMsg:
 ErrorPXEAPIMsg:
     db "Unable to access the PXE API.", EL, 0
 
+ErrorPXECleanupMsg:
+    db "Unable to cleanup PXE leftovers.", EL, 0
+
 SIP         dd 0
 GIP         dd 0
 
@@ -41,6 +44,19 @@ PXEAPI:
     .Offset    dw 0                   ; Offset of PXE API.
     .Segment   dw 0                   ; Segment of PXE API.
 
+%define PXE_NEW_PRESENT (1 << 0)
+
+PXEFlags       db 0                   ; Some flags.
+
+PXENV_CLEANUP:
+    .Status    dw 0                   ; The status.
+    .Reserved  times 10 db 0 
+
+%define UNDI_SHUTDOWN   0x05
+%define UNLOAD_STACK    0x70
+%define STOP_UNDI       0x15
+%define UNDI_CLEANUP    0x02
+
 %define GET_CACHED_INFO 0x71
 %define TFTP_OPEN       0x20
 %define TFTP_CLOSE      0x21
@@ -48,6 +64,66 @@ PXEAPI:
 %define TFTP_GET_FSIZE  0x25
 
 SECTION .text
+
+ ; The PXE cleanup function, which aborts all PXE services.
+PXECleanup:
+    pushad
+
+    ; Reset the network adapter and leave it in a safe state.
+    mov bx, UNDI_SHUTDOWN
+    mov di, PXENV_CLEANUP
+    call PXEAPICall
+
+    ; Abort boot if error.
+    or ax, [PXENV_CLEANUP]
+    jnz .Error
+
+    ; Unload the stack.
+    mov bx, UNLOAD_STACK
+    mov di, PXENV_CLEANUP
+    call PXEAPICall
+
+    ; Abort boot if error.
+    or ax, [PXENV_CLEANUP]
+    jnz .Error
+
+    cmp [PXEFlags], PXE_NEW_PRESENT
+    jne .Cont
+
+; PXE! -> use STOP_UNDI.
+    mov bx, STOP_UNDI
+    mov di, PXENV_CLEANUP
+    call PXEAPICall
+
+    ; Abort boot if error.
+    or ax, [PXENV_CLEANUP]
+    jnz .Error
+
+    jmp .Return
+
+; Use UNDI_CLEANUP instead.
+.Cont:
+    mov bx, UNDI_CLEANUP
+    mov di, PXENV_CLEANUP
+    call PXEAPICall
+
+    ; Abort boot if error.
+    or ax, [PXENV_CLEANUP]
+    jnz .Error
+
+.Return:
+    popad
+    ret
+
+.Error:
+    ; Set to mode 0x03, or 80*25 text mode.
+    mov ax, 0x03
+   
+    ; SWITCH!
+    int 0x10
+
+    mov si, ErrorPXECleanupMsg
+    jmp AbortBoot
 
  ; Calls the PXE API, and abstracts things such that it works on both old and new APIs.
  ;     DS:DI -> the address of the input buffer.
@@ -146,6 +222,9 @@ PXEInit:
     xor ax, ax
     mov ds, ax
     mov [ds:PXEAPI], ecx              ; Save the API for future use.
+
+    ; So we're using the PXE! structure instead of PXENV+ structure.
+    or byte [PXEFlags], PXE_NEW_PRESENT
 
     pop ds
     ; Restore ES and BX.
