@@ -55,6 +55,9 @@ void Main()
     // Initialize the API.
     APIInit();
 
+    // Abort boot services.
+    BIT->AbortBootServices();
+
     // We shouldn't reach here.
     for(;;)
     {

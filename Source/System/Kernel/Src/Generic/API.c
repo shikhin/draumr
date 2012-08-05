@@ -30,7 +30,7 @@
 #include <API.h>
 
 // Define old AbortBootServices.
-void (*AbortBootServices)(void);
+void (*OldAbortBootServices)(void);
 
 /*
  * Initializes the API.
@@ -38,5 +38,8 @@ void (*AbortBootServices)(void);
 void APIInit()
 {
 	// Save the old AbortBootServices - which we'd call via our own function.
-    AbortBootServices = BIT->AbortBootServices;
+    OldAbortBootServices = BIT->AbortBootServices;
+
+    // Redirect the AbortBootServices function to the interface.
+    BIT->AbortBootServices = &AbortBootServicesInt;
 }

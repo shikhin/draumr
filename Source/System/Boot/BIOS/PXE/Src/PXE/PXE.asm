@@ -87,7 +87,7 @@ PXECleanup:
     or ax, [PXENV_CLEANUP]
     jnz .Error
 
-    cmp [PXEFlags], PXE_NEW_PRESENT
+    cmp byte [PXEFlags], PXE_NEW_PRESENT
     jne .Cont
 
 ; PXE! -> use STOP_UNDI.

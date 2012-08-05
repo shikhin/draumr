@@ -187,4 +187,3 @@ void AbortBootServices()
     // Abort boot services used by previous stage.
     OldAbortBootServices();
 }
-

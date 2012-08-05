@@ -33,17 +33,25 @@ GenSrc = ["Header.asm",
           "Main.c",
           "API.c"]
 
+x86Src = ["APIInterface.asm"]
+
+AMD64Src = ["APIInterface.asm"]
+
 # A target for building the KL binary.
-x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Src/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])
+x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Src/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86", "-Ox"])
 x86SysEnv.VariantDir('Src/x86', 'Src/Generic', duplicate=0)
-Kernelx86 = x86SysEnv.Program("KEx86", ['Src/x86/' + File for File in GenSrc])
+Kernelx86 = x86SysEnv.Program("KEx86", ['Src/x86/' + File for File in GenSrc]
+                                        + ['Src/x86/' + File for File in x86Src])
 
-AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Src/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64"])
+AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Src/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64", "-Ox"])
 AMD64SysEnv.VariantDir('Src/AMD64', 'Src/Generic', duplicate=0)
-KernelAMD64 = AMD64SysEnv.Program("KEAMD64", ['Src/AMD64/' + File for File in GenSrc])
+KernelAMD64 = AMD64SysEnv.Program("KEAMD64", ['Src/AMD64/' + File for File in GenSrc]
+	                                          + ['Src/AMD64/' + File for File in AMD64Src])
 
-Depends(Kernelx86, ['Src/Generic/' + File for File in GenSrc])
-Depends(KernelAMD64, ['Src/Generic/' + File for File in GenSrc])
+Depends(Kernelx86, ['Src/Generic/' + File for File in GenSrc]
+	                + ['Src/x86/' + File for File in x86Src])
+Depends(KernelAMD64, ['Src/Generic/' + File for File in GenSrc]
+	                  + ['Src/AMD64/' + File for File in AMD64Src])
 
 Env["Kernelx86"] = Kernelx86
 Env["KernelAMD64"] = KernelAMD64

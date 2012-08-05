@@ -38,4 +38,9 @@
  */
 _PROTOTYPE(void APIInit, (void)) _COLD;
 
+/*
+ * Provides interface to AbortBootServices.
+ */
+_PROTOTYPE(extern void AbortBootServicesInt, (void));
+
 #endif /* _API_H */
