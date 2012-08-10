@@ -46,14 +46,14 @@ void     (*OldAbortBootServices)(void);
 void APIInit()
 {
     // Save the old APIs.
-    OldVideoAPI = BIT.Video.VideoAPI;
-    OldFileAPI = BIT.FileAPI;
-    OldAbortBootServices = BIT.AbortBootServices;
+    OldVideoAPI = (VideoAPIFunc_t)BIT.Video.VideoAPI;
+    OldFileAPI = (FileAPIFunc_t)BIT.FileAPI;
+    OldAbortBootServices = (EmptyFunc_t)BIT.AbortBootServices;
 
     // Restore them by the new ones.
-    BIT.Video.VideoAPI = &VideoAPI;
-    BIT.FileAPI = &FileAPI;
-    BIT.AbortBootServices = &AbortBootServices;
+    BIT.Video.VideoAPI = (uint32_t)&VideoAPI;
+    BIT.FileAPI = (uint32_t)&FileAPI;
+    BIT.AbortBootServices = (uint32_t)&AbortBootServices;
 }
 
 /*

@@ -49,7 +49,7 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
     if(Mode & (1 << 8))
     {
         // Switch to the mode, and save the status value.
-        uint16_t Return = (uint16_t)BIT.Video.VideoAPI(VIDEO_VBE_SWITCH_MODE,
+        uint16_t Return = (uint16_t)VideoAPIFunc(VIDEO_VBE_SWITCH_MODE,
                 Mode);
 
         // If the mode is 256 colors, then set up the palette.
@@ -59,10 +59,10 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
             // Use the VGA function to setup the palette then.
             // Else the VBE one.
             if(! (ModeInfo->ModeAttributes & VGA_COMPATIBLE))
-                BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
+                VideoAPIFunc(VIDEO_VGA_PALETTE);
 
             else
-                BIT.Video.VideoAPI(VIDEO_VBE_PALETTE);
+                VideoAPIFunc(VIDEO_VBE_PALETTE);
         }
 
         // Get rid of 0x4F - signifying function exists.
@@ -73,12 +73,12 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
     else
     {
         // Switch to the mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, Mode);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, Mode);
 
         // If the mode is 256 colors, then set up the palette.
         if(ModeInfo->BitsPerPixel == 8)
             // Setup the palette to a RGB thingy.
-            BIT.Video.VideoAPI(VIDEO_VGA_PALETTE);
+            VideoAPIFunc(VIDEO_VGA_PALETTE);
 
         return 0x0000;
     }
@@ -89,9 +89,10 @@ static uint16_t SwitchToMode(uint32_t Mode, VBEModeInfo_t *ModeInfo)
  */
 static VBEModeInfo_t FindBestVBEMode()
 {
+    VBEModeInfo_t *VBEModeInfo = (VBEModeInfo_t *)BIT.Video.VBEModeInfo;
     // Simply find the best mode on the basis of the XRes, Yres and the BitsPerPixel.
     // Also, keep in mind the Monitor Preference.
-    VBEModeInfo_t Best = BIT.Video.VBEModeInfo[0];
+    VBEModeInfo_t Best = VBEModeInfo[0];
 
     // Find log 2 of Bits Per Pixel, and multiply it with the scaling factor.
     Best.Score = fyl2x(Best.BitsPerPixel, BPP_SCALING_FACTOR);
@@ -111,33 +112,33 @@ static VBEModeInfo_t FindBestVBEMode()
     for(uint32_t i = 1; i < BIT.Video.VBEModeInfoN; i++)
     {
         // If the monitor preference is 0, then continue.
-        if((int)BIT.Video.VBEModeInfo[i].MonitorPreference == 0)
+        if((int)VBEModeInfo[i].MonitorPreference == 0)
         {
             continue;
         }
 
         // Find log 2 of Bits Per Pixel and multiply it with the scaling factor.
-        BIT.Video.VBEModeInfo[i].Score = fyl2x(
-                BIT.Video.VBEModeInfo[i].BitsPerPixel, BPP_SCALING_FACTOR);
+        VBEModeInfo[i].Score = fyl2x(
+                VBEModeInfo[i].BitsPerPixel, BPP_SCALING_FACTOR);
 
         // Find the "shortest distance" (read note above) between the three scores.
-        BIT.Video.VBEModeInfo[i].Score =
-                sqrt((BIT.Video.VBEModeInfo[i].Score
-                        * BIT.Video.VBEModeInfo[i].Score)
-                     + (BIT.Video.VBEModeInfo[i].XResolution
-                        * BIT.Video.VBEModeInfo[i].XResolution)
-                     + (BIT.Video.VBEModeInfo[i].YResolution
-                        * BIT.Video.VBEModeInfo[i].YResolution));
+        VBEModeInfo[i].Score =
+                sqrt((VBEModeInfo[i].Score
+                        * VBEModeInfo[i].Score)
+                     + (VBEModeInfo[i].XResolution
+                        * VBEModeInfo[i].XResolution)
+                     + (VBEModeInfo[i].YResolution
+                        * VBEModeInfo[i].YResolution));
 
-        BIT.Video.VBEModeInfo[i].Score =
-                 (int)((float)BIT.Video.VBEModeInfo[i].Score
-                        * BIT.Video.VBEModeInfo[i].MonitorPreference);
+        VBEModeInfo[i].Score =
+                 (int)((float)VBEModeInfo[i].Score
+                        * VBEModeInfo[i].MonitorPreference);
 
         // If the score of this is greater than the best till now,
         // make it the best.                                     
-        if(BIT.Video.VBEModeInfo[i].Score > Best.Score)
+        if(VBEModeInfo[i].Score > Best.Score)
         {
-            Best = BIT.Video.VBEModeInfo[i];
+            Best = VBEModeInfo[i];
         }
     }
 
@@ -555,6 +556,7 @@ static void ParseEDIDInfo()
  */
 static void MonitorPreferenceNoEDID()
 {
+    VBEModeInfo_t *VBEModeInfo = (VBEModeInfo_t*)BIT.Video.VBEModeInfo;
     // Safe resolutions which are supported on all modes.
     uint32_t SafeResolutions[8][2] =
     { { 720, 480 },
@@ -568,16 +570,16 @@ static void MonitorPreferenceNoEDID()
 
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
-        BIT.Video.VBEModeInfo[i].MonitorPreference = 0;
+        VBEModeInfo[i].MonitorPreference = 0;
 
         for(uint32_t j = 0; j < 8; j++)
         {
             // If the horizontal & vertical resolutions match to something in SafeResolution, then MonitorPreference = 1.
-            if((BIT.Video.VBEModeInfo[i].XResolution == SafeResolutions[j][0])
-                && (BIT.Video.VBEModeInfo[i].YResolution
+            if((VBEModeInfo[i].XResolution == SafeResolutions[j][0])
+                && (VBEModeInfo[i].YResolution
                     == SafeResolutions[j][1]))
             {
-                BIT.Video.VBEModeInfo[i].MonitorPreference = 1;
+                VBEModeInfo[i].MonitorPreference = 1;
 
                 // No need to continue in the loop.
                 break;
@@ -591,6 +593,7 @@ static void MonitorPreferenceNoEDID()
  */
 static void CalculateMonitorPreference()
 {
+    VBEModeInfo_t *VBEModeInfo = (VBEModeInfo_t*)BIT.Video.VBEModeInfo;
     if(EDIDModeInfoN)
     {
         // Make a bitmap for all refresh rates from 0 - 256.
@@ -622,9 +625,9 @@ static void CalculateMonitorPreference()
             for(uint32_t j = 0; j < EDIDModeInfoN; j++)
             {
                 // If the horizontal & vertical resolution are same, then increase SupportedModes.
-                if((BIT.Video.VBEModeInfo[i].XResolution
+                if((VBEModeInfo[i].XResolution
                     == EDIDModeInfo[j].XRes)
-                    && (BIT.Video.VBEModeInfo[i].YResolution
+                    && (VBEModeInfo[i].YResolution
                         == EDIDModeInfo[j].YRes))
                 {
                     SupportedModes++;
@@ -639,7 +642,7 @@ static void CalculateMonitorPreference()
             }
 
             // The final score is supported/total.
-            BIT.Video.VBEModeInfo[i].MonitorPreference = (float)SupportedModes
+            VBEModeInfo[i].MonitorPreference = (float)SupportedModes
                     / (float)TotalModes;
         }
     }
@@ -744,33 +747,32 @@ static uint8_t CheckVBESanity(VBEModeInfo_t *VBEModeInfo)
 static void ParseVBEInfo()
 {
     // For easier, accesses (rather than calculating [i] again and again). (though I think the compiler would optimize the previous one out anyway).
-    VBEModeInfo_t *VBEModeInfo;
+    VBEModeInfo_t *VBEModeInfo = (VBEModeInfo_t*)BIT.Video.VBEModeInfo;
+    VBECntrlrInfo_t *VBECntrlrInfo = (VBECntrlrInfo_t*)BIT.Video.VBECntrlrInfo;
 
     // Check through each entry, removing unneccessary ones.
     for(uint32_t i = 0; i < BIT.Video.VBEModeInfoN; i++)
     {
-        VBEModeInfo = &BIT.Video.VBEModeInfo[i];
-
         // Default fill the PhysBasePtr entry, in case it's not filled.
-        if(!VBEModeInfo->PhysBasePtr)
+        if(!VBEModeInfo[i].PhysBasePtr)
         {
-            VBEModeInfo->PhysBasePtr = 0xA0000;
+            VBEModeInfo[i].PhysBasePtr = 0xA0000;
         }
 
         // If version is greater than equal to 0x0300, then replace all banked fields with linear fields.
-        if(BIT.Video.VBECntrlrInfo->Version >= 0x0300)
+        if(VBECntrlrInfo->Version >= 0x0300)
         {
             // Replace all * fields with Lin* fields.
-            VBEModeInfo->BytesPerScanLine = VBEModeInfo->LinBytesPerScanLine;
-            memcpy(&VBEModeInfo->RedMaskSize, &VBEModeInfo->LinRedMaskSize,
+            VBEModeInfo[i].BytesPerScanLine = VBEModeInfo[i].LinBytesPerScanLine;
+            memcpy(&VBEModeInfo[i].RedMaskSize, &VBEModeInfo[i].LinRedMaskSize,
                     sizeof(uint8_t) * 8);
         }
 
         // Remove the entry if:
-        if(CheckVBESanity(VBEModeInfo))
+        if(CheckVBESanity(&VBEModeInfo[i]))
         {
             // Move the required number of entries from i + 1 to i - effectively deleting the current entry.
-            memmove(VBEModeInfo, &VBEModeInfo[1],
+            memmove(&VBEModeInfo[i], &VBEModeInfo[i + 1],
                     sizeof(VBEModeInfo_t) * (BIT.Video.VBEModeInfoN - (i + 1)));
             BIT.Video.VBEModeInfoN--;
 
@@ -782,26 +784,26 @@ static void ParseVBEInfo()
         // I've found out that certain video cards for 32-bpp modes set the 
         // Rsvd* fields to 0. I'm not too sure why - but we'll just set them to
         // the default value we want them to be.
-        switch (VBEModeInfo->BitsPerPixel)
+        switch (VBEModeInfo[i].BitsPerPixel)
         {
             case 15:
-                VBEModeInfo->BytesBetweenLines -= VBEModeInfo->XResolution / 8;
+                VBEModeInfo[i].BytesBetweenLines -= VBEModeInfo->XResolution / 8;
                 break;
 
             case 32:
-                VBEModeInfo->RsvdFieldPosition = 24;
-                VBEModeInfo->RsvdMaskSize = 8;
+                VBEModeInfo[i].RsvdFieldPosition = 24;
+                VBEModeInfo[i].RsvdMaskSize = 8;
                 break;
         }
 
-        if(VBEModeInfo->ModeAttributes & LFB_AVAILABLE)
+        if(VBEModeInfo[i].ModeAttributes & LFB_AVAILABLE)
         {
             // Set the use LFB bit.
-            VBEModeInfo->Mode |= (1 << 14);
+            VBEModeInfo[i].Mode |= (1 << 14);
         }
 
-        VBEModeInfo->BytesBetweenLines = (VBEModeInfo->BytesPerScanLine)
-                - ((VBEModeInfo->XResolution * VBEModeInfo->BitsPerPixel) / 8);
+        VBEModeInfo[i].BytesBetweenLines = (VBEModeInfo[i].BytesPerScanLine)
+                - ((VBEModeInfo[i].XResolution * VBEModeInfo[i].BitsPerPixel) / 8);
     }
 
     return;
@@ -847,7 +849,7 @@ void OutputRevert()
 
         case LEVEL_VGA:
             // Switch to mode 80*25 text, so that we can safely print something out (if it does print, but it causes no harm).
-            BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
             // If we need to go down a level from Serial, ABORT!
             AbortBoot(
@@ -889,16 +891,17 @@ static void VGAInit()
  */
 static void VBEInit()
 {
+    VBECntrlrInfo_t *VBECntrlrInfo = (VBECntrlrInfo_t*)BIT.Video.VBECntrlrInfo;
     // If mode number is below 0x0102, then, revert. 
-    if(BIT.Video.VBECntrlrInfo->Version < 0x0102)
+    if(VBECntrlrInfo->Version < 0x0102)
     {
         OutputRevert();
         return;
     }
 
     // Get the segment and the offset of the list of the modes.
-    uint16_t Segment = BIT.Video.VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
-    uint16_t Offset = BIT.Video.VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
+    uint16_t Segment = VBECntrlrInfo->VideoModesFar & 0xFFFF0000;
+    uint16_t Offset = VBECntrlrInfo->VideoModesFar & 0x0000FFFF;
 
     // Make flat pointer, from segment and offset = (segment * 0x10) + offset;
     uint16_t *VideoModesFlat = (uint16_t*) ((Segment * 0x10) + Offset);
@@ -915,7 +918,7 @@ static void VBEInit()
     } while(Mode != 0xFFFF);
 
     // Allocate some memory from the Base Bitmap to hold all the mode information.
-    BIT.Video.VBEModeInfo = (VBEModeInfo_t*)PMMAllocContigFrames(BASE_BITMAP,
+    BIT.Video.VBEModeInfo = (uint32_t)PMMAllocContigFrames(BASE_BITMAP,
             ((sizeof(VBEModeInfo_t) * Entries) + 0xFFF) / 0x1000);
 
     // If we failed to allocate enough space, simply revert back.
@@ -925,8 +928,8 @@ static void VBEInit()
         return;
     }
 
-    // Get mode information from VBE, and the number of entries in VBEModeInfoN.
-    BIT.Video.VBEModeInfoN = BIT.Video.VideoAPI(VIDEO_VBE_GET_MODES,
+    // Get mode information from VBE, and the number of entries in BIT.Video.VBEModeInfoN.
+    BIT.Video.VBEModeInfoN = VideoAPIFunc(VIDEO_VBE_GET_MODES,
             BIT.Video.VBEModeInfo);
 
     // Parse the VBEModeInfo[] array, and clean it out for usable modes.

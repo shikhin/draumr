@@ -63,4 +63,10 @@ typedef int intptr_t;
 typedef unsigned int uintptr_t;
 #endif
 
+#if _WORDSIZE == 64
+typedef uint64_t size_t;
+#else
+typedef uint32_t size_t;
+#endif
+
 #endif /* _STDINT_H */

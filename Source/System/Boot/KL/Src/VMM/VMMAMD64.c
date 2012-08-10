@@ -45,25 +45,25 @@ void AMD64PagingInit()
     char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
 
     // Allocate a page for the PML4.
-    PML4 = (PML4Entry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PML4 = (PML4Entry_t*)AllocFrameFunc(POOL_BITMAP);
     if(!PML4)
     {
         // Switch to text mode.
-        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        BIT->Video.AbortBoot(ErrorFrameAlloc);
+        AbortBootFunc(ErrorFrameAlloc);
     }
 
     memset(PML4, 0x00000000, PAGE_SIZE);
 
     // Allocate a page directory pointer table for identity mapping the 1st MiB.
-    PageDirPTEntry_t *BaseDirPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PageDirPTEntry_t *BaseDirPT = (PageDirPTEntry_t*)AllocFrameFunc(POOL_BITMAP);
     if(!BaseDirPT)
     {
         // Switch to text mode.
-        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        BIT->Video.AbortBoot(ErrorFrameAlloc);
+        AbortBootFunc(ErrorFrameAlloc);
     }
 
     memset(BaseDirPT, 0x00000000, PAGE_SIZE);
@@ -71,13 +71,13 @@ void AMD64PagingInit()
     PML4[PML4_INDEX(0x00000000)] = (PML4Entry_t)BaseDirPT | PRESENT_BIT;
 
     // Allocate a page directory.
-    PageDirEntry_t *BaseDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PageDirEntry_t *BaseDir = (PageDirEntry_t*)AllocFrameFunc(POOL_BITMAP);
     if(!BaseDir)
     {
         // Switch to text mode.
-        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        BIT->Video.AbortBoot(ErrorFrameAlloc);
+        AbortBootFunc(ErrorFrameAlloc);
     }
 
     memset(BaseDir, 0x00000000, PAGE_SIZE);
@@ -85,13 +85,13 @@ void AMD64PagingInit()
     BaseDirPT[PDPT_INDEX(0x00000000)] = (PageDirPTEntry_t)BaseDir | PRESENT_BIT;
 
     // Allocate a page table.
-    PageTableEntry_t *BaseTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    PageTableEntry_t *BaseTable = (PageTableEntry_t*)AllocFrameFunc(POOL_BITMAP);
     if(!BaseTable)
     {
         // Switch to text mode.
-        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        BIT->Video.AbortBoot(ErrorFrameAlloc);
+        AbortBootFunc(ErrorFrameAlloc);
     }
 
     memset(BaseTable, 0x00000000, PAGE_SIZE);
@@ -120,13 +120,13 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     // If PDPT isn't present, make one.
     if(!(PML4[PML4_INDEX(VirtAddr)] & PRESENT_BIT))
     {
-        PDPT = (PageDirPTEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PDPT = (PageDirPTEntry_t*)AllocFrameFunc(POOL_BITMAP);
         if(!PDPT)
         {
             // Switch to text mode.
-            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            BIT->Video.AbortBoot(ErrorFrameAlloc);
+            AbortBootFunc(ErrorFrameAlloc);
         }
 
         memset(PDPT, 0x00000000, PAGE_SIZE);
@@ -142,13 +142,13 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     // If page directory isn't present, make one.
     if(!(PDPT[PDPT_INDEX(VirtAddr)] & PRESENT_BIT))
     {
-        PageDir = (PageDirEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PageDir = (PageDirEntry_t*)AllocFrameFunc(POOL_BITMAP);
         if(!PageDir)
         {
             // Switch to text mode.
-            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            BIT->Video.AbortBoot(ErrorFrameAlloc);
+            AbortBootFunc(ErrorFrameAlloc);
         }
 
         memset(PageDir, 0x00000000, PAGE_SIZE);
@@ -164,13 +164,13 @@ void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr)
     // If page table isn't present, make one.
     if(!(PageDir[PD_INDEX(VirtAddr)] & PRESENT_BIT))
     {
-        PageTable = (PageTableEntry_t*)BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        PageTable = (PageTableEntry_t*)AllocFrameFunc(POOL_BITMAP);
         if(!PageTable)
         {
             // Switch to text mode.
-            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            BIT->Video.AbortBoot(ErrorFrameAlloc);
+            AbortBootFunc(ErrorFrameAlloc);
         }
 
         memset(PageTable, 0x00000000, PAGE_SIZE);

@@ -49,13 +49,16 @@ void BITInit(uint32_t *BITPointer)
             ((uint8_t*)&BIT + sizeof(BIT_t)) - (uint8_t*)&BIT.Video.ModeInfo);
 
     // Fix all the predefined functions to set.
-    BIT.Video.OutputRevert = &OutputRevert;
-    BIT.Video.AbortBoot = &AbortBoot;
+    BIT.Video.OutputRevert = (uint32_t)&OutputRevert;
+    BIT.Video.AbortBoot = (uint32_t)&AbortBoot;
 
-    BIT.DBALPMM.AllocContigFrames = &PMMAllocContigFrames;
-    BIT.DBALPMM.AllocFrame = &PMMAllocFrame;
-    BIT.DBALPMM.FreeContigFrames = &PMMFreeContigFrames;
-    BIT.DBALPMM.FreeFrame = & PMMFreeFrame;
+    BIT.DBALPMM.AllocContigFrames = (uint32_t)&PMMAllocContigFrames;
+    BIT.DBALPMM.AllocFrame = (uint32_t)&PMMAllocFrame;
+    BIT.DBALPMM.FreeContigFrames = (uint32_t)&PMMFreeContigFrames;
+    BIT.DBALPMM.FreeFrame = (uint32_t)&PMMFreeFrame;
+
+    FileAPIFunc = (FileAPIFunc_t)BIT.FileAPI;
+    VideoAPIFunc = (VideoAPIFunc_t)BIT.Video.VideoAPI;
 
     return;
 }

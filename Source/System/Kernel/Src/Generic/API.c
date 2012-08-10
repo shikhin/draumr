@@ -28,9 +28,13 @@
  */
 
 #include <API.h>
+#include <BIT.h>
 
 // Define old AbortBootServices.
 void (*OldAbortBootServices)(void);
+
+// AbortBootServicesFunc.
+extern EmptyFunc_t AbortBootServicesFunc;
 
 /*
  * Initializes the API.
@@ -38,8 +42,8 @@ void (*OldAbortBootServices)(void);
 void APIInit()
 {
 	// Save the old AbortBootServices - which we'd call via our own function.
-    OldAbortBootServices = BIT->AbortBootServices;
-
+    OldAbortBootServices = (EmptyFunc_t)(size_t)BIT->AbortBootServices;
+	
     // Redirect the AbortBootServices function to the interface.
-    BIT->AbortBootServices = &AbortBootServicesInt;
+    AbortBootServicesFunc = &AbortBootServicesInt;
 }

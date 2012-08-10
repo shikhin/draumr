@@ -64,16 +64,16 @@
 struct BIT
 {
     // The open, read and close file functions.
-    uint32_t (*FileAPI)(uint32_t APICode, ...);
+    uint32_t FileAPI;
 
     uint8_t HrdwreFlags;             // The "hardware" flags.
     uint8_t BDFlags;                 // The boot device flags.
 
-    uint32_t ACPI;                    // The 32-bit address of the RSDP.
-    uint32_t MPS;                     // The 32-bit address of the MPS tables.
+    uint32_t ACPI;                   // The 32-bit address of the RSDP.
+    uint32_t MPS;                    // The 32-bit address of the MPS tables.
     uint32_t SMBIOS;                 // The 32-bit address of the SMBIOS tables.
 
-    void (*AbortBootServices)(void);  // Abort all boot services given by DBAL + firmware.
+    uint32_t AbortBootServices;      // Abort all boot services given by DBAL + firmware.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
     uint64_t HighestAddress;          // Highest accessible memory address.
@@ -82,36 +82,44 @@ struct BIT
     struct
     {
         uint8_t VideoFlags;                      // The video flags.
-        VBECntrlrInfo_t *VBECntrlrInfo;          // The 32-bit adddress of the VBE Controller Mode Info block.
-        VBEModeInfo_t *VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
+        uint32_t VBECntrlrInfo;            // The 32-bit adddress of the VBE Controller Mode Info block.
+        uint32_t VBEModeInfo;              // The 32-bit address of the (allocated) VBE mode info block.
         uint32_t VBEModeInfoN;                   // The number of entries.
 
         EDIDInfo_t EDIDInfo;                            // The EDID information.
 
-        uint32_t (*VideoAPI)(uint32_t APICode, ...);    // The video API function.
-        void (*OutputRevert)(void);    // The function to revert back from the current level.
+        uint32_t VideoAPI;                              // The video API function.
+        uint32_t OutputRevert;                          // The function to revert back from the current level.
 
         VBEModeInfo_t ModeInfo;        // The mode we switched to's information.
 
         FILE_t BackgroundImg;                      // Pointer to the boot image.
-        void (*AbortBoot)(_CONST char *String);    // The abort boot function - provided by the DBAL.
+        uint32_t AbortBoot;                        // The abort boot function - provided by the DBAL.
     }_PACKED Video;
 
     // Define the DBAL PMM related things here.
     struct
     {
         // AllocFrame, FreeFrame, AllocContigFrames, FreeContigFrames.
-        uint32_t (*AllocFrame)(uint32_t Type);
-        void     (*FreeFrame)(uint32_t Addr);
-        uint32_t (*AllocContigFrames)(uint32_t Type, uint32_t Number);
-        void     (*FreeContigFrames)(uint32_t Addr, uint32_t Number);
+        uint32_t AllocFrame;
+        uint32_t FreeFrame;
+        uint32_t AllocContigFrames;
+        uint32_t FreeContigFrames;
     }_PACKED DBALPMM;
 
     // The architecture of the kernel.
     uint32_t Arch;
 }_PACKED;
 
+typedef uint32_t (*FileAPIFunc_t)(uint32_t, ...);
+typedef uint32_t (*VideoAPIFunc_t)(uint32_t, ...);
+typedef void     (*EmptyFunc_t)(void);
+
 typedef struct BIT BIT_t;
+
+// Declare all the functions.
+FileAPIFunc_t FileAPIFunc;
+VideoAPIFunc_t VideoAPIFunc;
 
 // The BIT structure defined in BIT.c - where we back this up.
 extern BIT_t BIT;

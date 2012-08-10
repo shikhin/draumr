@@ -45,6 +45,8 @@ BIT_t *BIT;
 
 #endif
 
+EmptyFunc_t AbortBootServicesFunc;
+
 /* 
  * The Main function for the Kernel.
  */
@@ -56,7 +58,7 @@ void Main()
     APIInit();
 
     // Abort boot services.
-    BIT->AbortBootServices();
+    AbortBootServicesFunc();
 
     // We shouldn't reach here.
     for(;;)

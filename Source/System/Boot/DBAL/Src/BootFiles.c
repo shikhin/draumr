@@ -153,20 +153,20 @@ FILE_t BootFilesBGImg()
     SIFHeader_t *SIFHeader;
 
     // Open the file, with code, BACKGROUND_SIF.
-    File.Size = BIT.FileAPI(FILE_OPEN, (uint32_t)BACKGROUND_SIF);
+    File.Size = FileAPIFunc(FILE_OPEN, (uint32_t)BACKGROUND_SIF);
 
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
     {
         // Close the file, anyway.
-        BIT.FileAPI(FILE_CLOSE);
+        FileAPIFunc(FILE_CLOSE);
 
         // And return with the File structure.
         return File;
     }
 
     // Read 2048 bytes at the bouncer.
-    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+    FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, 2048);
 
     SIFHeader = (SIFHeader_t*)Bouncer;
     // Check the file signature.
@@ -177,7 +177,7 @@ FILE_t BootFilesBGImg()
         File.Size = 0;
 
         // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
+        FileAPIFunc(FILE_CLOSE);
 
         // And return the file structure.
         return File;
@@ -190,7 +190,7 @@ FILE_t BootFilesBGImg()
         File.Size = 0;
 
         // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
+        FileAPIFunc(FILE_CLOSE);
 
         return File;
     }
@@ -206,7 +206,7 @@ FILE_t BootFilesBGImg()
         File.Size = 0;
 
         // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
+        FileAPIFunc(FILE_CLOSE);
 
         // Return with the file structure.
         return File;
@@ -228,7 +228,7 @@ FILE_t BootFilesBGImg()
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
     while(Size >= BouncerSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
 
         Size -= BouncerSize;
@@ -238,7 +238,7 @@ FILE_t BootFilesBGImg()
     // If they are any left over bytes, read them.
     if(Size)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, Size);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, Size);
         memcpy(OutputBuffer, Bouncer, Size);
     }
 
@@ -255,12 +255,12 @@ FILE_t BootFilesBGImg()
         File.Size = 0;
 
         // Close the file.
-        BIT.FileAPI(FILE_CLOSE);
+        FileAPIFunc(FILE_CLOSE);
 
         return File;
     }
 
-    BIT.FileAPI(FILE_CLOSE);
+    FileAPIFunc(FILE_CLOSE);
     return File;
 }
 
@@ -277,7 +277,7 @@ FILE_t BootFilesKL()
     FILE_t File;
 
     // Open the file, with code, KL.
-    File.Size = BIT.FileAPI(FILE_OPEN, KL);
+    File.Size = FileAPIFunc(FILE_OPEN, KL);
 
     // If we were unable to open it, return blank file structure.
     if(!File.Size)
@@ -286,7 +286,7 @@ FILE_t BootFilesKL()
     }
 
     // Read 2048 bytes at KL_LOCATION.
-    BIT.FileAPI(FILE_READ, (uint32_t*)KL_LOCATION, 2048);
+    FileAPIFunc(FILE_READ, (uint32_t*)KL_LOCATION, 2048);
 
     BootFileHeader_t *Header = (BootFileHeader_t*)KL_LOCATION;
 
@@ -324,7 +324,7 @@ FILE_t BootFilesKL()
     // Keep reading "BouncerSize" bytes.
     while(FileSize >= BouncerSize)
     {
-        BIT.FileAPI(FILE_READ, OutputBuffer, BouncerSize);
+        FileAPIFunc(FILE_READ, OutputBuffer, BouncerSize);
 
         FileSize -= BouncerSize;
         OutputBuffer += BouncerSize;
@@ -333,7 +333,7 @@ FILE_t BootFilesKL()
     // If they are any left over bytes, read them.
     if(FileSize)
     {
-        BIT.FileAPI(FILE_READ, OutputBuffer, FileSize);
+        FileAPIFunc(FILE_READ, OutputBuffer, FileSize);
     }
 
     // If CRC values are not equal. 
@@ -347,7 +347,7 @@ FILE_t BootFilesKL()
         AbortBoot("Incorrect CRC32 value of the KL file.\n");
     }
 
-    BIT.FileAPI(FILE_CLOSE);
+    FileAPIFunc(FILE_CLOSE);
     return File;
 }
 
@@ -387,27 +387,27 @@ FILE_t BootFilesKernel(uint32_t Arch)
 
         default:
             // Switch to text mode.
-            BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
             AbortBoot("Unrecognizable architecture passed to file API for kernel.");
             break;
     }
 
     // Open the file, with code, FileCode.
-    File.Size = BIT.FileAPI(FILE_OPEN, FileCode);
+    File.Size = FileAPIFunc(FILE_OPEN, FileCode);
 
     // If we were unable to open it, abort.
     if(!File.Size)
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Unable to open the kernel file.\n");
     }
 
     // Read 2048 bytes at the bouncer.
-    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+    FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, 2048);
 
     KernelHeader_t *KernelHeader = (KernelHeader_t*)Bouncer;
 
@@ -416,7 +416,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
         || (KernelHeader->Signature[1] != 'E'))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Corrupt Kernel header.");
@@ -433,7 +433,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
       || KernelHeader->Signature[3] != '4')))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Kernel header's architecture does not match file name.");
@@ -444,7 +444,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
                     / 0x1000))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Corrupt Kernel header.");
@@ -458,7 +458,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
     if(!File.Location)
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Cannot allocate enough space for Kernel file.");
@@ -489,7 +489,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
     while(FileSize >= BouncerSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
 
         FileSize -= BouncerSize;
@@ -499,7 +499,7 @@ FILE_t BootFilesKernel(uint32_t Arch)
     // If they are any left over bytes, read them.
     if(FileSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, FileSize);
         memcpy(OutputBuffer, Bouncer, FileSize);
     }
 
@@ -511,13 +511,13 @@ FILE_t BootFilesKernel(uint32_t Arch)
                (uint8_t*)File.Location + sizeof(KernelHeader_t)))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Incorrect CRC32 value of the Kernel file.");
     }
 
-    BIT.FileAPI(FILE_CLOSE);
+    FileAPIFunc(FILE_CLOSE);
     return File;
 }
 
@@ -569,27 +569,27 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
 
         default:
             // Switch to text mode.
-            BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
             AbortBoot("Unrecognizable module file code passed to file API for kernel modules.");
             break;
     }
 
     // Open the file, with code, FileCode.
-    File.Size = BIT.FileAPI(FILE_OPEN, ModuleFileCode);
+    File.Size = FileAPIFunc(FILE_OPEN, ModuleFileCode);
 
     // If we were unable to open it, abort.
     if(!File.Size)
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Unable to open the kernel module file.\n");
     }
 
     // Read 2048 bytes at the bouncer.
-    BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, 2048);
+    FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, 2048);
 
     KernelMHeader_t *KernelMHeader = (KernelMHeader_t*)Bouncer;
 
@@ -603,7 +603,7 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
          || KernelMHeader->Signature[1] != 'M')))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Corrupt Kernel module header. Module type doesn't match file name.\n");
@@ -645,7 +645,7 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
                     / 0x1000))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Corrupt Kernel module header.");
@@ -659,7 +659,7 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
     if(!File.Location)
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Cannot allocate enough space for the kernel module file.");
@@ -690,7 +690,7 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
     // Keep reading "BouncerSize" bytes in the bouncer, and copy them to the output buffer.
     while(FileSize >= BouncerSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, BouncerSize);
         memcpy(OutputBuffer, Bouncer, BouncerSize);
 
         FileSize -= BouncerSize;
@@ -700,7 +700,7 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
     // If they are any left over bytes, read them.
     if(FileSize)
     {
-        BIT.FileAPI(FILE_READ, (uint32_t*)Bouncer, FileSize);
+        FileAPIFunc(FILE_READ, (uint32_t*)Bouncer, FileSize);
         memcpy(OutputBuffer, Bouncer, FileSize);
     }
 
@@ -712,19 +712,19 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
                (uint8_t*)File.Location + sizeof(KernelMHeader_t)))
     {
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Incorrect CRC32 value of the kernel module file.");
     }
 
-    BIT.FileAPI(FILE_CLOSE);
+    FileAPIFunc(FILE_CLOSE);
     return File;
 
     // Error for architecture.
     ErrorArch:
         // Switch to text mode.
-        BIT.Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Corrupt Kernel module header. Module architecture doesn't match file name.\n");

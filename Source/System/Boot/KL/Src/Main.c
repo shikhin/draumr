@@ -68,13 +68,13 @@ void RegionMap(uint64_t Start, uint64_t End)
     for(; Start < End; Start += 0x1000)
     {
         // Allocate page for the current 'Start' address.
-        uint64_t PhysAddr = BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+        uint64_t PhysAddr = AllocFrameFunc(POOL_BITMAP);
         if(!PhysAddr)
         {
             // Switch to text mode.
-            BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+            VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            BIT->Video.AbortBoot("ERROR: Unable to allocate pages for the stack.");
+            AbortBootFunc("ERROR: Unable to allocate pages for the stack.");
         }
 
         // Map the physical frame.
@@ -110,8 +110,15 @@ void Main(BIT_t *BITPointer)
     // Save BITPointer into a global variable.
     BIT = BITPointer;
 
-    // Initialize the API.
-    APIInit();
+    FileAPIFunc = (FileAPIFunc_t)BIT->FileAPI;
+    VideoAPIFunc = (VideoAPIFunc_t)BIT->Video.VideoAPI;
+
+    AllocFrameFunc = (AllocFrameFunc_t)BIT->DBALPMM.AllocFrame;
+    FreeFrameFunc = (FreeFrameFunc_t)BIT->DBALPMM.FreeFrame;
+    AllocContigFramesFunc = (AllocContigFramesFunc_t)BIT->DBALPMM.AllocContigFrames;
+    FreeContigFramesFunc = (FreeContigFramesFunc_t)BIT->DBALPMM.FreeContigFrames;
+
+    AbortBootFunc = (AbortBootFunc_t)BIT->Video.AbortBoot;
 
     uint32_t FeatureFlags = CPUFeatureFlags();
     FILE_t Kernel, KernelMPMM, KernelMVMM;
@@ -120,11 +127,11 @@ void Main(BIT_t *BITPointer)
     if(FeatureFlags & LONG_MODE_PRESENT)
     {
         // Load the AMD64 kernel.
-        BIT->FileAPI(FILE_KERNEL, ARCH_AMD64, &Kernel);
+        FileAPIFunc(FILE_KERNEL, ARCH_AMD64, &Kernel);
 
         // Load the PMM and VMM AMD64 kernel module.
-        BIT->FileAPI(FILE_KERNEL_M, PMMAMD64, &KernelMPMM);
-        BIT->FileAPI(FILE_KERNEL_M, VMMAMD64, &KernelMVMM);
+        FileAPIFunc(FILE_KERNEL_M, PMMAMD64, &KernelMPMM);
+        FileAPIFunc(FILE_KERNEL_M, VMMAMD64, &KernelMVMM);
 
         AMD64PagingInit();
 
@@ -139,7 +146,7 @@ void Main(BIT_t *BITPointer)
     else
     {
         // Load the x86 kernel.
-        BIT->FileAPI(FILE_KERNEL, ARCH_X86, &Kernel);
+        FileAPIFunc(FILE_KERNEL, ARCH_X86, &Kernel);
 
         // If PAE is present, then load those modules.
         // ALSO, NOTE: Memory *should* be present over 4GiB to take advantage of PAE, so we
@@ -147,8 +154,8 @@ void Main(BIT_t *BITPointer)
         if((FeatureFlags & PAE_PRESENT) &&
              (BIT->HighestAddress > 0xFFFFFFFFLLU))
         {
-            BIT->FileAPI(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
-            BIT->FileAPI(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
+            FileAPIFunc(FILE_KERNEL_M, PMMX86PAE, &KernelMPMM);
+            FileAPIFunc(FILE_KERNEL_M, VMMX86PAE, &KernelMVMM);
 
             PAEPagingInit();
 
@@ -162,8 +169,8 @@ void Main(BIT_t *BITPointer)
         // Else, load the x86 modules.
         else
         {
-            BIT->FileAPI(FILE_KERNEL_M, PMMX86, &KernelMPMM);
-            BIT->FileAPI(FILE_KERNEL_M, VMMX86, &KernelMVMM);
+            FileAPIFunc(FILE_KERNEL_M, PMMX86, &KernelMPMM);
+            FileAPIFunc(FILE_KERNEL_M, VMMX86, &KernelMVMM);
 
             x86PagingInit();
 
@@ -175,23 +182,26 @@ void Main(BIT_t *BITPointer)
         }
     }
 
+    // Initialize the API.
+    APIInit();
+
     // Map the kernel (& modules).
     ModuleMap(Kernel);
     ModuleMap(KernelMPMM);
     ModuleMap(KernelMVMM);
 
-    uint32_t BITFrame = BIT->DBALPMM.AllocFrame(POOL_BITMAP);
+    uint32_t BITFrame = AllocFrameFunc(POOL_BITMAP);
     if(!BITFrame)
     {
         // Switch to text mode.
-        BIT->Video.VideoAPI(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
+        VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-        BIT->Video.AbortBoot("ERROR: Unable to allocate pages for the BIT.");
+        AbortBootFunc("ERROR: Unable to allocate pages for the BIT.");
     }
 
     // Copy the BIT to the frame.
     memcpy((void*)BITFrame, BIT, sizeof(BIT_t));
-
+    
     switch(BIT->Arch)
     {
         case ARCH_X86:

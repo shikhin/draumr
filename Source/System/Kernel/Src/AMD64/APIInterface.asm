@@ -43,7 +43,7 @@ AbortBootServicesInt:
     mov rax, Stack
     mov [rax], rsp
     mov esp, 0x7C00
-
+    
     mov eax, [QWORD OldAbortBootServices]
     call rax
 

@@ -28,10 +28,13 @@
 BITS 32
 
 EXTERN OldAbortBootServices
-GLOBAL AbortBootServicesInt
+EXTERN GDT64.Pointer
 
- ; Provides interface to AbortBootServices by switching from Paging to no-Paging mode.
-AbortBootServicesInt:
+GLOBAL AbortBootServicesIntx86
+GLOBAL AbortBootServicesIntAMD64
+
+ ; Provides interface to AbortBootServices by switching from Paging (32-bit) to no-Paging mode.
+AbortBootServicesIntx86:
     ; Clear the PG bit.
     mov eax, cr0
     and eax, ~(1 << 31) & 0xFFFFFFFF
@@ -40,9 +43,57 @@ AbortBootServicesInt:
     call [OldAbortBootServices]
 
     ; Enable paging again.
-    mov eax, cr0
     or eax, 0x80000000
     mov cr0, eax
 
     ; And return.
     ret
+
+ ; Provides interface to AbortBootServices by switching from Paging (64-bit) to no-Paging mode.
+AbortBootServicesIntAMD64:
+    ; lea rax, [rel $]
+    ; push qword 0x18
+    ; push qword [rax + Address]
+    ; retq
+
+    dw 0x8d48, 0xf905, 0xffff, 0x6aff, 0xff18, 0x11b0, 0x0000, 0x4800
+    db 0xcb 
+
+; The address of where to jump to (Bits32) for the far jump.
+Address:
+    dd .Bits32
+    dd 0x00
+
+.Bits32:
+    ; Reset all segment registers.
+    mov ax, 0x20
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; Clear the PG bit.
+    mov eax, cr0
+    and eax, ~(1 << 31) & 0xFFFFFFFF
+    mov cr0, eax
+
+    call [OldAbortBootServices]
+
+    ; Enable long mode bit in EFER MSR.
+    mov ecx, 0xC0000080
+    rdmsr
+    or eax, (1 << 8)
+    wrmsr
+
+    ; Enable paging again.
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+    
+    lgdt [GDT64.Pointer]
+    jmp 0x08:.Bits64
+
+; Switched to 64 bit here.
+.Bits64:
+    dw 0xB866, 0x0010, 0xD88E, 0xC08E, 0xE08E, 0xE88E
+    db 0xC3
