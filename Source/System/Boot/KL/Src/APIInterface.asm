@@ -95,5 +95,12 @@ Address:
 
 ; Switched to 64 bit here.
 .Bits64:
+    ; mov ax, 0x10
+    ; mov ds, ax
+    ; mov es, ax
+    ; mov fs, ax
+    ; mov gs, ax
+
+    ; ret
     dw 0xB866, 0x0010, 0xD88E, 0xC08E, 0xE08E, 0xE88E
     db 0xC3
