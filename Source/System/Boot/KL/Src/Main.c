@@ -55,7 +55,7 @@ BIT_t *BIT;
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
-_PROTOTYPE(void (*GenericPagingMap), (uint64_t VirtAddr, uint64_t PhysAddr));
+void (*GenericPagingMap)(uint64_t VirtAddr, uint64_t PhysAddr);
 
 /*
  * Maps allocated pages to a specified region in the Virtual Address space.

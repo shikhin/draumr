@@ -84,7 +84,7 @@ extern MMapEntry_t *MMapEntries;
 /*
  * Initializes the physical memory manager for ourselves.
  */
-_PROTOTYPE(void PMMInit, (void)) _COLD;
+void PMMInit(void) _COLD;
 
 /*
  * Allocates a frame in the PMM, and returns it's address.
@@ -93,13 +93,13 @@ _PROTOTYPE(void PMMInit, (void)) _COLD;
  * Returns:
  *     uint32_t      -> the address of the frame allocated. 0 indicates error.
  */
-_PROTOTYPE(uint32_t PMMAllocFrame, (uint32_t Type));
+uint32_t PMMAllocFrame(uint32_t Type);
 
 /*
  * Frees a frame in the PMM.
  *     uint32_t Addr -> the address of the frame to free.
  */
-_PROTOTYPE(void PMMFreeFrame, (uint32_t Addr));
+void PMMFreeFrame(uint32_t Addr);
 
 /*
  * Allocates contiguous number of 'Number' frames.
@@ -109,13 +109,13 @@ _PROTOTYPE(void PMMFreeFrame, (uint32_t Addr));
  * Returns:
  *     uint32_t        -> the address of the contiguous frames allocated.
  */
-_PROTOTYPE(uint32_t PMMAllocContigFrames, (uint32_t Type, uint32_t Number));
+uint32_t PMMAllocContigFrames(uint32_t Type, uint32_t Number);
 
 /*
  * Frees contiguous number of 'Number' frames.
  *     uint32_t Addr   -> the starting address from where to free.
  *     uint32_t Number -> the number of frames to free.
  */
-_PROTOTYPE(void PMMFreeContigFrames, (uint32_t Addr, uint32_t Number));
+void PMMFreeContigFrames(uint32_t Addr, uint32_t Number);
 
 #endif                                /* PMM.h */

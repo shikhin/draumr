@@ -53,7 +53,7 @@
 /*
  * Initializes the API, replacing old APIs with new one's.
  */
-_PROTOTYPE(void APIInit, (void)) _COLD;
+void APIInit(void) _COLD;
 
 /*
  * The video API, to access VGA/VBE* functions.
@@ -63,7 +63,7 @@ _PROTOTYPE(void APIInit, (void)) _COLD;
  * Returns:
  *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
  */
-_PROTOTYPE(uint32_t VideoAPI, (uint32_t APICode, ...));
+uint32_t VideoAPI(uint32_t APICode, ...);
 
 /*
  * The file API, contains both raw accesses and file reads.
@@ -73,11 +73,11 @@ _PROTOTYPE(uint32_t VideoAPI, (uint32_t APICode, ...));
  * Returns:
  *     uint32_t -> the value returned by the function. UNDEFINED if no value needs to be returned.
  */
-_PROTOTYPE(uint32_t FileAPI, (uint32_t APICode, ...));
+uint32_t FileAPI(uint32_t APICode, ...);
 
 /*
  * The abort boot services function.
  */
-_PROTOTYPE(void AbortBootServices, (void));
+void AbortBootServices(void);
 
 #endif /* _BIT_H */

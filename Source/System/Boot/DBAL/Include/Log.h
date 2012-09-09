@@ -37,6 +37,6 @@
  *     char *Fmt -> the string containing the format parameters, and the original string.
  *     ...       -> and the rest of the arguments.
  */
-_PROTOTYPE(void DebugPrintText, (_CONST char *Fmt, ...));
+void DebugPrintText(_CONST char *Fmt, ...);
 
 #endif /* _LOG_H */

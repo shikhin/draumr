@@ -235,11 +235,11 @@ typedef struct EDIDModeInfo EDIDModeInfo_t;
 /*
  * Intializes a proper video mode, which is supported by the OS, the video card and the monitor (and is beautiful).
  */
-_PROTOTYPE(void OutputInit, (void)) _COLD;
+void OutputInit(void) _COLD;
 
 /*
  * Reverts back from whatever we are currently using to the below level.
  */
-_PROTOTYPE(void OutputRevert, (void));
+void OutputRevert(void);
 
 #endif /* _VIDEO_H */

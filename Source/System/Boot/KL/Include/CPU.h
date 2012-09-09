@@ -48,6 +48,6 @@
  * Returns:
  *     uint32_t -> the 32-bits containing all the feature flags (required).
  */
-_PROTOTYPE(uint32_t CPUFeatureFlags, (void));
+uint32_t CPUFeatureFlags(void);
 
 #endif /* _CPU_H */

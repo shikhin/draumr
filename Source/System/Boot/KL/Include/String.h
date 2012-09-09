@@ -41,17 +41,17 @@
  * Returns:
  *     void *       -> the destination.
  */
-_PROTOTYPE(void *memcpy, (void *dest, _CONST void *src, uint32_t count)) _HOT;
+void *memcpy(void *dest, _CONST void *src, size_t count) _HOT;
 
 /*
  * Memset - sets the destination to a specified value - count many times.
  *     void *dest     -> the destination to which we set.
  *     uint8_t value  -> the value by which we clear.
- *     uint32_t count -> the count we clear.
+ *     size_t count   -> the count we clear.
  *
  * Returns:
  *     void *         -> the destination.
  */
-_PROTOTYPE(void *memset, (void *dest, uint8_t value, uint32_t count)) _HOT;
+void *memset(void *dest, uint8_t value, size_t count) _HOT;
 
 #endif /* _STRING_H */

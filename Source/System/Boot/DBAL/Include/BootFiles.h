@@ -133,12 +133,12 @@ typedef struct KernelMHeader KernelMHeader_t;
 
 /*
  * Initializes the bouncer in which we would be reading the required boot files.
- */_PROTOTYPE(void BootFilesInit, (void)) _COLD;
+ */void BootFilesInit(void) _COLD;
 
 /*
  * Clears up everything initialized in the Init().
  */
-_PROTOTYPE(void BootFilesClear, (void));
+void BootFilesClear(void);
 
 /*
  * Gets the background image, verifying what we are getting too.
@@ -146,7 +146,7 @@ _PROTOTYPE(void BootFilesClear, (void));
  * Returns:
  *     FILE_t -> the file structure containing address and length of the file.
  */
-_PROTOTYPE(FILE_t BootFilesBGImg, (void));
+FILE_t BootFilesBGImg(void);
 
 /*
  * Gets the Kernel Loader file, verifying what we are getting too.
@@ -155,7 +155,7 @@ _PROTOTYPE(FILE_t BootFilesBGImg, (void));
  *     FILE_t -> the file structure containing address and length of the file.
  *     Boot   -> aborts boot if unable to load the KL.
  */
-_PROTOTYPE(FILE_t BootFilesKL, (void));
+FILE_t BootFilesKL(void);
 
 /*
  * Gets the kernel, verifying what we are getting too.
@@ -168,7 +168,7 @@ _PROTOTYPE(FILE_t BootFilesKL, (void));
  *     FILE_t        -> the file structure containing address and length of the file.
  *     Boot          -> aborts boot if we are unable to load the kernel.
  */
-_PROTOTYPE(FILE_t BootFilesKernel, (uint32_t Arch));
+FILE_t BootFilesKernel(uint32_t Arch);
 
 /*
  * Gets the kernel modules, verifying what we are getting too.
@@ -178,6 +178,6 @@ _PROTOTYPE(FILE_t BootFilesKernel, (uint32_t Arch));
  *     FILE_t                  -> the file structure containing address and length of the file.
  *     Boot                    -> aborts boot if we are unable to load the kernel module.
  */
-_PROTOTYPE(FILE_t BootFilesKernelM, (uint32_t ModuleFileCode));
+FILE_t BootFilesKernelM(uint32_t ModuleFileCode);
 
 #endif /* _BOOT_FILES_H */

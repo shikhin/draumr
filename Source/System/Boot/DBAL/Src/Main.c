@@ -41,7 +41,7 @@
  * Function to "jump" to the kernel loader.
  *     void (*EntryPoint)(void) -> the function pointer of the entry point.
  */
-_PROTOTYPE(void GotoKL, (void (*EntryPoint)(void)));
+void GotoKL(void (*EntryPoint)(void));
 
 /* 
  * The Main function for the DBAL sub-module.

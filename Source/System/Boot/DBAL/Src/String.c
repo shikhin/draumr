@@ -90,13 +90,13 @@ void *memmove(void *dest, _CONST void *src, uint32_t count)
 /*
  * Memset - sets the destination to a specified value - count many times.
  *     void *dest     -> the destination to which we set.
- *     uint8_t value  -> the value by which we clear.
+ *     int value      -> the value by which we clear.
  *     uint32_t count -> the count we clear.
  *
  * Returns:
  *     void *         -> the destination.
  */
-void *memset(void *dest, uint8_t value, uint32_t count)
+void *memset(void *dest, int value, uint32_t count)
 {
     if(!count)
         return dest;

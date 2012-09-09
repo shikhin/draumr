@@ -36,16 +36,16 @@
 /*
  * Initializes the API.
  */
-_PROTOTYPE(void APIInit, (void)) _COLD;
+void APIInit(void) _COLD;
 
 /*
  * Provides interface to AbortBootServices for x86 by switching from Paging to no-Paging mode.
  */
-_PROTOTYPE(extern void AbortBootServicesIntx86, (void));
+extern void AbortBootServicesIntx86(void);
 
 /*
  * Provides interface to AbortBootServices for AMD64 by switching from Paging to no-Paging mode.
  */
-_PROTOTYPE(extern void AbortBootServicesIntAMD64, (void));
+extern void AbortBootServicesIntAMD64(void);
 
 #endif /* _API_H */

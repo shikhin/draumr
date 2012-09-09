@@ -83,52 +83,52 @@ typedef uint64_t PageTableEntry_t;
 /*
  * Initializes x86 paging.
  */
-_PROTOTYPE(void x86PagingInit, (void)) _COLD;
+void x86PagingInit(void) _COLD;
 
 /*
  * Maps a page (x86).
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
-_PROTOTYPE(void x86PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+void x86PagingMap(uint64_t VirtAddr, uint64_t PhysAddr);
 
 /*
  * Enables x86 paging, and jumps to kernel.
  */
-_PROTOTYPE(void x86PagingEnable, (void)) _COLD _NORETURN;
+void x86PagingEnable(void) _COLD _NORETURN;
 
 /*
  * Initializes PAE paging.
  */
-_PROTOTYPE(void PAEPagingInit, (void)) _COLD;
+void PAEPagingInit(void) _COLD;
 
 /*
  * Maps a page (PAE).
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
-_PROTOTYPE(void PAEPagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+void PAEPagingMap(uint64_t VirtAddr, uint64_t PhysAddr);
 
 /*
  * Enables PAE paging, and jumps to kernel.
  */
-_PROTOTYPE(void PAEPagingEnable, (void)) _COLD _NORETURN;
+void PAEPagingEnable(void) _COLD _NORETURN;
 
 /*
  * Initializes AMD64 paging.
  */
-_PROTOTYPE(void AMD64PagingInit, (void)) _COLD;
+void AMD64PagingInit(void) _COLD;
 
 /*
  * Maps a page (AMD64).
  *     uint64_t VirtAddr -> the virtual address where to map the frame to.
  *     uint64_t PhysAddr -> the physical address of the frame to map to the page.
  */
-_PROTOTYPE(void AMD64PagingMap, (uint64_t VirtAddr, uint64_t PhysAddr));
+void AMD64PagingMap(uint64_t VirtAddr, uint64_t PhysAddr);
 
 /*
  * Enables AMD64 paging, and jumps to kernel.
  */
-_PROTOTYPE(void AMD64PagingEnable, (void)) _COLD _NORETURN;
+void AMD64PagingEnable(void) _COLD _NORETURN;
 
 #endif /* _VMM_H */

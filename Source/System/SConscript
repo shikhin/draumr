@@ -31,8 +31,8 @@ Import("Env")
 
 # Setup system specific environment
 SysEnv = Env.Clone()
-SysEnv["CPPPATH"] = ["#Source/Include", "#Source/System/Include", "Include"]
-SysEnv["LIBPATH"] = ["#Source/Lib", "#Source/System/Lib"]
+SysEnv["CPPPATH"] = ["#Source/Include", "Include"]
+SysEnv["LIBPATH"] = ["#Source/Lib"]
 SysEnv["ASFLAGS"] += ["-felf"]
 
 SConscript(dirs=["Boot/BIOS/Floppy", "Boot/BIOS/CD", "Boot/BIOS/PXE", "Boot/BIOS/BIOS", "Boot/DBAL", "Boot/KL", "Kernel", "#Source/Lib"], exports=["Env", "SysEnv"])

@@ -35,9 +35,6 @@
 #include <stdint.h>
 #include <Macros.h>
 
-// Some macros to define function prototypes.
-#define _PROTOTYPE(Function, Args)        Function Args
-
 #define _CONST                            const
 #define _VOLATILE                         volatile 
 

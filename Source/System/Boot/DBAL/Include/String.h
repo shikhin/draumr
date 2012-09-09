@@ -41,7 +41,7 @@
  * Returns:
  *     void *       -> the destination.
  */
-_PROTOTYPE(void *memcpy, (void *dest, _CONST void *src, uint32_t count)) _HOT;
+void *memcpy(void *dest, _CONST void *src, size_t count) _HOT;
 
 /*
  * Memmove - moves count bytes from source to destination - as if it is using a buffer to do so.
@@ -52,32 +52,32 @@ _PROTOTYPE(void *memcpy, (void *dest, _CONST void *src, uint32_t count)) _HOT;
  * Returns:
  *     void *       -> the destination.
  */
-_PROTOTYPE(void *memmove, (void *dest, _CONST void *src, uint32_t count)) _HOT;
+void *memmove(void *dest, _CONST void *src, size_t count) _HOT;
 
 /*
  * Memset - sets the destination to a specified value - count many times.
  *     void *dest     -> the destination to which we set.
- *     uint8_t value  -> the value by which we clear.
+ *     int value      -> the value by which we clear.
  *     uint32_t count -> the count we clear.
  *
  * Returns:
  *     void *         -> the destination.
  */
-_PROTOTYPE(void *memset, (void *dest, uint8_t value, uint32_t count)) _HOT;
+void *memset(void *dest, int value, size_t count) _HOT;
 
 /*
  * Write a specified byte to the specified port.
  *     uint16_t Port  -> the port at which to write the value.
  *     uint8_t  Value -> the byte which is to be written at the port.
  */
-_PROTOTYPE(void outb, (uint16_t Port, uint8_t Value)) _HOT;
+void outb(uint16_t Port, uint8_t Value) _HOT;
 
 /*
  * Write a specified wordto the specified port.
  *     uint16_t Port  -> the port at which to write the value.
  *     uint16_t Value -> the word which is to be written at the port.
  */
-_PROTOTYPE(void outw, (uint16_t Port, uint16_t Value)) _HOT;
+void outw(uint16_t Port, uint16_t Value) _HOT;
 
 /*
  * Reads a byte from a specified port.
@@ -86,6 +86,6 @@ _PROTOTYPE(void outw, (uint16_t Port, uint16_t Value)) _HOT;
  * Returns:
  *     uint8_t       -> the byte read from the IO port.
  */
-_PROTOTYPE(uint8_t inb, (uint16_t Port)) _HOT;
+uint8_t inb(uint16_t Port) _HOT;
 
 #endif /* _STRING_H */

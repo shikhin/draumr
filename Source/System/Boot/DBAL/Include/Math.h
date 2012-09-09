@@ -39,7 +39,7 @@
  * Returns:
  *     double   -> the square root of the number.
  */
-_PROTOTYPE(double sqrt, (double x));
+double sqrt(double x);
 
 /*
  * Finds out the log (base 2) of a floating-point value, and multiplies it with another number.
@@ -49,6 +49,6 @@ _PROTOTYPE(double sqrt, (double x));
  * Returns:
  *     double   -> the result.
  */
-_PROTOTYPE(double fyl2x, (double x, double y));
+double fyl2x(double x, double y);
 
 #endif /* _MATH_H */

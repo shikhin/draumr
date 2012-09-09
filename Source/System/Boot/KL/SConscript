@@ -32,9 +32,9 @@ Import("Env", "SysEnv")
 Src = ["Src/Header.asm",
        "Src/Main.c",
        "Src/CPU.c",
-       "Src/VMM/VMMx86.c",
-       "Src/VMM/VMMPAE.c",
-       "Src/VMM/VMMAMD64.c",
+       "Src/VMMx86.c",
+       "Src/VMMPAE.c",
+       "Src/VMMAMD64.c",
        "Src/String.c",
        "Src/API.c",
        "Src/APIInterface.asm"]
