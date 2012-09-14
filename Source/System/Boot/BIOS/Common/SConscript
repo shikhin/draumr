@@ -44,7 +44,7 @@ Src = ["Link.ld",
 # A target for building the Stage 1 binary.
 BIOSObject = SysEnv.Object("BIOS.o", "Src/Main.asm")
 
-BIOS = SysEnv.Program("BIOS", "BIOS.o", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/BIOS/Link.ld")
+BIOS = SysEnv.Program("BIOS", "BIOS.o", LINKFLAGS = "-m elf_i386 -TSource/System/Boot/BIOS/Common/Link.ld")
 
 Depends(BIOSObject, Src)
 Depends(BIOS, BIOSObject)

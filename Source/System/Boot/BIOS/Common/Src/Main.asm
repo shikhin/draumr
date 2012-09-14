@@ -28,7 +28,7 @@
 BITS 16
 CPU 486
 
-%include "Source/System/Boot/BIOS/BIOS/Format/Format.inc"
+%include "Source/System/Boot/BIOS/Common/Format/Format.inc"
 
 SECTION .header
 ; Define the Common BIOS File Header
@@ -115,15 +115,15 @@ ErrorDBALCRCMsg:
 
 SECTION .text
 
-%include "Source/System/Boot/BIOS/BIOS/Src/Memory.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Screen.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Abort.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/A20.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/PM.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/API.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/BootServices.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Video/Video.asm"
-%include "Source/System/Boot/BIOS/BIOS/Src/Tables/Tables.asm"
+%include "Source/System/Boot/BIOS/Common/Src/Memory.asm"
+%include "Source/System/Boot/BIOS/Common/Src/Screen.asm"
+%include "Source/System/Boot/BIOS/Common/Src/Abort.asm"
+%include "Source/System/Boot/BIOS/Common/Src/A20.asm"
+%include "Source/System/Boot/BIOS/Common/Src/PM.asm"
+%include "Source/System/Boot/BIOS/Common/Src/API.asm"
+%include "Source/System/Boot/BIOS/Common/Src/BootServices.asm"
+%include "Source/System/Boot/BIOS/Common/Src/Video/Video.asm"
+%include "Source/System/Boot/BIOS/Common/Src/Tables/Tables.asm"
 
 BITS 32
 
