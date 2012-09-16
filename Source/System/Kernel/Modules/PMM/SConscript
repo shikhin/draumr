@@ -32,21 +32,21 @@ Import("Env", "SysEnv")
 GenSrc = ["Header.asm"]
 
 # A target for building the PMM binary.
-x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Modules/PMM/Src/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])
-x86SysEnv.VariantDir('Src/x86', 'Src/Generic', duplicate=0)
-PMMx86 = x86SysEnv.Program("PMMx86", ['Src/x86/' + File for File in GenSrc])
+x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Modules/PMM/Arch/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])
+x86SysEnv.VariantDir('Arch/x86', 'Arch/Generic', duplicate=0)
+PMMx86 = x86SysEnv.Program("PMMx86", ['Arch/x86/' + File for File in GenSrc])
 
-x86PAESysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Modules/PMM/Src/x86/PAE/Link.ld", CCFLAGS = ["-march=pentiumpro", "-m32", "-D _x86PAE"], ASFLAGS=["-felf", "-D _x86PAE"])
-x86PAESysEnv.VariantDir('Src/x86/PAE', 'Src/Generic', duplicate=0)
-PMMx86PAE = x86PAESysEnv.Program("PMMPAE", ['Src/x86/PAE/' + File for File in GenSrc])
+x86PAESysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Modules/PMM/Arch/PAE/Link.ld", CCFLAGS = ["-march=pentiumpro", "-m32", "-D _x86PAE"], ASFLAGS=["-felf", "-D _x86PAE"])
+x86PAESysEnv.VariantDir('Arch/PAE', 'Arch/Generic', duplicate=0)
+PMMx86PAE = x86PAESysEnv.Program("PMMPAE", ['Arch/PAE/' + File for File in GenSrc])
 
-AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Modules/PMM/Src/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64"])
-AMD64SysEnv.VariantDir('Src/AMD64', 'Src/Generic', duplicate=0)
-PMMAMD64 = AMD64SysEnv.Program("PMMAMD64", ['Src/AMD64/' + File for File in GenSrc])
+AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Modules/PMM/Arch/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64"])
+AMD64SysEnv.VariantDir('Arch/AMD64', 'Arch/Generic', duplicate=0)
+PMMAMD64 = AMD64SysEnv.Program("PMMAMD64", ['Arch/AMD64/' + File for File in GenSrc])
 
-Depends(PMMx86, ['Src/Generic/' + File for File in GenSrc])
-Depends(PMMx86PAE, ['Src/Generic/' + File for File in GenSrc])
-Depends(PMMAMD64, ['Src/Generic/' + File for File in GenSrc])
+Depends(PMMx86, ['Arch/Generic/' + File for File in GenSrc])
+Depends(PMMx86PAE, ['Arch/Generic/' + File for File in GenSrc])
+Depends(PMMAMD64, ['Arch/Generic/' + File for File in GenSrc])
 
 Env["PMMx86"] = PMMx86
 Env["PMMx86PAE"] = PMMx86PAE

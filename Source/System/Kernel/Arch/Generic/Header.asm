@@ -25,24 +25,16 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-%ifdef _x86PAE
-
-BITS 32
-
-%include "Source/System/Kernel/Modules/VMM/Src/x86/PAE/Format.inc"
-
-%elifdef _x86
+%ifdef _x86
 
 BITS 32
 CPU 586
-
-%include "Source/System/Kernel/Modules/VMM/Src/x86/Format.inc"
+%include "Source/System/Kernel/Arch/x86/Format.inc"
 
 %elifdef _AMD64
 
 BITS 64
-
-%include "Source/System/Kernel/Modules/VMM/Src/AMD64/Format.inc"
+%include "Source/System/Kernel/Arch/AMD64/Format.inc"
 
 %endif
 
@@ -52,8 +44,8 @@ EXTERN bss
 EXTERN end
 EXTERN file_end
 
-; Define the VMM Header
-VMM_DEF
+; Define the kernel header.
+KERN_DEF
 ENTRY_POINT       Start
 FILE_START
 FILE_END          file_end
@@ -65,6 +57,11 @@ SECTION .text
 
 GLOBAL Start
 
- ; The entry point for the VMM kmodule.
+EXTERN Main
+
+ ; The entry point for the Kernel.
+ ;     CRx   -> properly set up paging and state.
+ ;     R/ESP -> the properly defined stack.
 Start:
-    jmp $
+    ; Call main.
+    call Main

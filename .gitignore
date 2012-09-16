@@ -17,8 +17,8 @@ Source/System/Boot/BIOS/Common/BIOS
 Source/System/Boot/BIOS/Floppy/Stage1
 Source/System/Boot/DBAL/DBAL
 Source/System/Boot/KL/KL
-Source/System/Kernel/KEx86
-Source/System/Kernel/KEAMD64
+Source/System/Kernel/Arch/KEx86
+Source/System/Kernel/Arch/KEAMD64
 Source/System/Kernel/Modules/PMM/PMMx86
 Source/System/Kernel/Modules/PMM/PMMPAE
 Source/System/Kernel/Modules/PMM/PMMAMD64

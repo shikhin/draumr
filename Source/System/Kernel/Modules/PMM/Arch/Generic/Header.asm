@@ -29,20 +29,20 @@
 
 BITS 32
 
-%include "Source/System/Kernel/Modules/PMM/Src/x86/PAE/Format.inc"
+%include "Source/System/Kernel/Modules/PMM/Arch/PAE/Format.inc"
 
 %elifdef _x86
 
 BITS 32
 CPU 586
 
-%include "Source/System/Kernel/Modules/PMM/Src/x86/Format.inc"
+%include "Source/System/Kernel/Modules/PMM/Arch/x86/Format.inc"
 
 %elifdef _AMD64
 
 BITS 64
 
-%include "Source/System/Kernel/Modules/PMM/Src/AMD64/Format.inc"
+%include "Source/System/Kernel/Modules/PMM/Arch/AMD64/Format.inc"
 
 %endif
 
