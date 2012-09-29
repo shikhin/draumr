@@ -29,20 +29,20 @@
 
 BITS 32
 
-%include "Source/System/Kernel/Modules/VMM/Arch/PAE/Format.inc"
+%include "Source/System/Kernel/Modules/VMM/PAE/Format.inc"
 
 %elifdef _x86
 
 BITS 32
 CPU 586
 
-%include "Source/System/Kernel/Modules/VMM/Arch/x86/Format.inc"
+%include "Source/System/Kernel/Modules/VMM/x86/Format.inc"
 
 %elifdef _AMD64
 
 BITS 64
 
-%include "Source/System/Kernel/Modules/VMM/Arch/AMD64/Format.inc"
+%include "Source/System/Kernel/Modules/VMM/AMD64/Format.inc"
 
 %endif
 

@@ -1,5 +1,5 @@
 /*
- * Entry point for Kernel.
+ * Generic init point for PMM kmodule.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,41 +27,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _INIT_H
+#define _INIT_H
+
 #include <Standard.h>
-#include <BIT.h>
-#include <API.h>
- 
-// A pointer to the BIT structure.
-BIT_t *BIT;
 
-#ifdef _x86
+// Define a macro to simplify the CPUID inline assembly command.
+#define CPUID(EAX, EBX, ECX, EDX) do { __asm__ __volatile__("cpuid": "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
+                                                        : "a"(EAX), "b"(EBX), "c"(ECX), "d"(EDX)); } while (0) 
 
-#define BIT_ADDR   0xC2000000
+// A cache structure (for calculating page colors).
+typedef struct 
+{ 
+	uint32_t Size;
+	uint32_t Associativity;
+} Cache_t;
 
-#elif defined(_AMD64)
-
-#define BIT_ADDR   0xFFFF800020000000
-
-#endif
-
-EmptyFunc_t AbortBootServicesFunc;
-
-/* 
- * The Main function for the Kernel.
+/*
+ * The generic init function for the PMM kmodule.
  */
-void Main()
-{
-    BIT = (BIT_t*)BIT_ADDR;
-    
-    // Initialize the API.
-    APIInit();
+void GenericInit(void);
 
-    // Abort boot services.
-    AbortBootServicesFunc();
-
-    // We shouldn't reach here.
-    for(;;)
-    {
-        __asm__ __volatile__("hlt");
-    }
-}
+#endif /* _INIT_H */

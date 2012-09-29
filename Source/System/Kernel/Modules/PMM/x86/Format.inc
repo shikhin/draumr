@@ -67,3 +67,6 @@
 
 ; The CRC32 remainder.
 %define CRC32_DEFINE dd 0
+
+; For defining addresses.
+%define DEF dd

@@ -96,6 +96,19 @@ CPU 586
     cmp eax, 0x00000001
     jb .ErrorFPUNotPresent
 
+    ; If standard level 3 is the maximum supported, "Limit CPUID MaxVal" might be set.
+    cmp eax, 0x00000003
+    jne .Cont
+
+    ; Clear bit 22 in MSR 0x1A0 - the "Limit CPUID MaxVal" bit in "IA32_MISC_ENABLE".
+    mov ecx, 0x1A0
+    rdmsr
+
+    ; Clear bit 22.
+    and eax, ~(1 << 22)
+    wrmsr
+
+.Cont:    
     ; Check for FPU.
     ; Increase EAX to 0000_0001h.
     xor eax, eax

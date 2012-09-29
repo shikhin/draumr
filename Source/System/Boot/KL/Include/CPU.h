@@ -39,8 +39,8 @@
 #define PAE_CPUID         (1 << 6)
 
 // Define a macro to simplify the CPUID inline assembly command.
-#define CPUID(EAX, EBX, ECX, EDX) __asm__ __volatile__("cpuid": "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
-                                                        : "a"(EAX), "b"(EBX), "c"(ECX), "d"(EDX))
+#define CPUID(EAX, EBX, ECX, EDX) do { __asm__ __volatile__("cpuid": "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
+                                                        : "a"(EAX), "b"(EBX), "c"(ECX), "d"(EDX)); } while (0) 
 
 /*
  * Initializes all the feature flags required by the KL.
