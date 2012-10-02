@@ -34,23 +34,12 @@
 // A pointer to the BIT structure.
 BIT_t *BIT;
 
-#ifdef _x86
-
-#define BIT_ADDR   0xC2000000
-
-#elif defined(_AMD64)
-
-#define BIT_ADDR   0xFFFF800020000000
-
-#endif
-
-EmptyFunc_t AbortBootServicesFunc;
-
 /* 
  * The Main function for the Kernel.
  */
 void Main()
 {
+    // Store the BIT's address.
     BIT = (BIT_t*)BIT_ADDR;
     
     // Initialize the API.
@@ -58,6 +47,9 @@ void Main()
 
     // Abort boot services.
     AbortBootServicesFunc();
+
+    // Initialize the PMM module.
+    PMMModEntry->Init();
 
     // We shouldn't reach here.
     for(;;)

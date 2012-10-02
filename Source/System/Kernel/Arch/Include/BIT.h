@@ -307,8 +307,21 @@ struct BIT
     uint32_t Arch;
 }_PACKED;
 
+#ifdef _x86
+
+#define BIT_ADDR    0xC2000000
+#define MODULE_SIZE 0x01000000
+
+#elif defined(_AMD64)
+
+#define BIT_ADDR    0xFFFF800020000000
+#define MODULE_SIZE 0x0000000010000000
+
+#endif
+
 typedef struct BIT BIT_t;
 
+// For all function pointers which don't return anything, nor do they take any arguments.
 typedef void     (*EmptyFunc_t)(void);
 
 // Define BIT structure.

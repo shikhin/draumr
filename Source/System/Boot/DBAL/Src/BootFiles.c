@@ -347,6 +347,9 @@ FILE_t BootFilesKL()
         AbortBoot("Incorrect CRC32 value of the KL file.\n");
     }
 
+    // Memset the BSS section to 0.
+    memset((void*)Header->BSSStart, 0, Header->BSSEnd - Header->BSSStart);
+
     FileAPIFunc(FILE_CLOSE);
     return File;
 }
@@ -516,6 +519,9 @@ FILE_t BootFilesKernel(uint32_t Arch)
         DebugPrintText("%s kernel!\n", String);
         AbortBoot("Incorrect CRC32 value of the Kernel file.");
     }
+
+    // Memset the BSS section to 0.
+    memset((void*)(uintptr_t)KernelHeader->BSSStart, 0, KernelHeader->BSSEnd - KernelHeader->BSSStart);
 
     FileAPIFunc(FILE_CLOSE);
     return File;
@@ -717,6 +723,9 @@ FILE_t BootFilesKernelM(uint32_t ModuleFileCode)
         DebugPrintText("%s kernel module!\n", String);
         AbortBoot("Incorrect CRC32 value of the kernel module file.");
     }
+
+    // Memset the BSS section of the module.
+    memset((void*)(uintptr_t)KernelMHeader->BSSStart, 0, KernelMHeader->BSSEnd - KernelMHeader->BSSStart);
 
     FileAPIFunc(FILE_CLOSE);
     return File;

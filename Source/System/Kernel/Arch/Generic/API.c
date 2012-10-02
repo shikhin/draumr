@@ -27,6 +27,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <Standard.h>
 #include <API.h>
 #include <BIT.h>
 
@@ -34,7 +35,20 @@
 void (*OldAbortBootServices)(void);
 
 // AbortBootServicesFunc.
-extern EmptyFunc_t AbortBootServicesFunc;
+EmptyFunc_t AbortBootServicesFunc;
+
+// Define header's for predefined modules.
+PMMHeader_t *PMMModHeader;
+PMMEntry_t  *PMMModEntry;
+
+/*
+ * Initializes the API for all the modules.
+ */
+static void ModAPIInit()
+{
+    PMMModHeader = (PMMHeader_t*)(BIT_ADDR + MODULE_SIZE);   
+    PMMModEntry = (PMMEntry_t*)(uintptr_t)(PMMModHeader->EntryPoint);
+}
 
 /*
  * Initializes the API.
@@ -42,8 +56,10 @@ extern EmptyFunc_t AbortBootServicesFunc;
 void APIInit()
 {
 	// Save the old AbortBootServices - which we'd call via our own function.
-    OldAbortBootServices = (EmptyFunc_t)(size_t)BIT->AbortBootServices;
+    OldAbortBootServices = (EmptyFunc_t)(uintptr_t)BIT->AbortBootServices;
 	
     // Redirect the AbortBootServices function to the interface.
     AbortBootServicesFunc = &AbortBootServicesInt;
+
+    ModAPIInit();
 }

@@ -1,5 +1,5 @@
-/*
- * API for accessing the boot services.
+/* 
+ * Contains structures and definitions for Debug log functions.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -27,45 +27,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _API_H /* API.h */
-#define _API_H
+#ifndef _LOG_H
+#define _LOG_H
 
 #include <Standard.h>
-#include <BIT.h>
-
-struct PMMHeader
-{
-	uint8_t  Identifier[4];
-	uint64_t EntryPoint;
-	uint64_t StartAddr;
-	uint64_t EndAddr;
-	uint64_t BSSStart;
-	uint64_t BSSEnd;
-	uint32_t CRC32;
-} _PACKED;
-
-struct PMMEntry
-{
-	EmptyFunc_t Init;
-} _PACKED;
-
-typedef struct PMMHeader PMMHeader_t;
-typedef struct PMMEntry  PMMEntry_t;
-
-// For other parts of the Kernel.
-extern PMMHeader_t *PMMModHeader;
-extern PMMEntry_t  *PMMModEntry;
-
-extern EmptyFunc_t AbortBootServicesFunc;
 
 /*
- * Initializes the API.
+ * Prints to the screen, in text mode.
+ *     char *Fmt -> the string containing the format parameters, and the original string.
+ *     ...       -> and the rest of the arguments.
  */
-void APIInit(void) _COLD;
+void DebugPrintText(_CONST char *Fmt, ...);
 
-/*
- * Provides interface to AbortBootServices.
- */
-extern void AbortBootServicesInt(void);
-
-#endif /* _API_H */
+#endif /* _LOG_H */

@@ -65,7 +65,7 @@ void Main(uint32_t *BITPointer)
     FILE_t KLFile = BootFilesKL();
 
     // Initialize support for 'output'.
-    OutputInit();
+    //OutputInit();
 
     // Initialize the new API.
     APIInit();

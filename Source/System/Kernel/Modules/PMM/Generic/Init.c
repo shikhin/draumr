@@ -69,13 +69,13 @@ static void Function04()
 
         // Sets is given by ECX + 1. 
         Cache.Size = ECX + 1;
-        // Associativity is given by EBX[31:22]
-        Cache.Associativity = (EBX >> 22); 
+        // Associativity is given by EBX[31:22] + 1.
+        Cache.Associativity = (EBX >> 22) + 1; 
         Cache.Size *= Cache.Associativity;
-        // Partitions is given by EBX[21:12]
-        Cache.Size *= (EBX >> 12) & 0x3FF;
-        // Line size is given by EBX[11:0].
-        Cache.Size *= (EBX & 0xFFF);
+        // Partitions is given by EBX[21:12] + 1.
+        Cache.Size *= ((EBX >> 12) & 0x3FF) + 1;
+        // Line size is given by EBX[11:0] + 1.
+        Cache.Size *= (EBX & 0xFFF) + 1;
 
         // If it is the biggest cache yet found, save it's size & associativity.
         if(Cache.Size > MaxCache.Size)
