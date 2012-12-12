@@ -1,16 +1,10 @@
+# All images.
 *.iso
 *.flp
-*.todo
-*.o
-*.a
-*~
-*.sif
-*.bmp
-.sconsign.dblite
-debugger.out
-bochsout.txt
-*.swp
-*.pyc
+
+# All executables + output files.
+
+## Fixed location binaries.
 Source/System/Boot/BIOS/CD/Stage1
 Source/System/Boot/BIOS/PXE/Stage1
 Source/System/Boot/BIOS/Common/BIOS
@@ -26,9 +20,37 @@ Source/System/Kernel/Modules/VMM/VMMx86
 Source/System/Kernel/Modules/VMM/VMMPAE
 Source/System/Kernel/Modules/VMM/VMMAMD64
 
+## Utilieies.
 Utilities/*.util
 *.util
-Logs/*
+
+## Libraries
+*.a
+
+## Object files.
+*.o
+
+## Backup files.
+*~
+
+## Image files.
+*.sif
+*.bmp
+
+# Build environment related.
+
+## SCons.
+.sconsign.dblite
+
+## Bochs.
+.bochsrc
+debugger.out
+bochsout.txt
+
+## Python.
+*.pyc
+
+## Sublime Text.
 *.sublime*
 .cproject
 .project
