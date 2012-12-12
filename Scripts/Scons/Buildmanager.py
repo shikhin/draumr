@@ -82,8 +82,6 @@ class BuildManager :
 
         if Build == "debug" :
             Env["CPPFLAGS"] += ["-O0"]
-            os.system("find ./Source/Include/ ./Source/Lib/ ./Source/System/ -type f -regex \".*\(h\|c\)$\" -exec pmccabe {} \; > Logs/Debug.log")
-            os.system("sloccount * > Logs/SLOC.log")
         else :
             Env["CPPFLAGS"] += ["-O2"]
 
