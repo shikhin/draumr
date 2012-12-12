@@ -41,7 +41,7 @@ void Main()
 {
     // Store the BIT's address.
     BIT = (BIT_t*)BIT_ADDR;
-    
+
     // Initialize the API.
     APIInit();
 

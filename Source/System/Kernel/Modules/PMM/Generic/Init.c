@@ -285,10 +285,18 @@ static void Function04()
 void GenericInit()
 {
 	  // Some variables for registers.
-	  uint32_t EAX, EBX, ECX, EDX, MaxFunction;
-
-    // Get the brand string, via function EAX=0x00000000.
+	  uint32_t EAX, EBX, ECX, EDX, MaxFunction, MaxExtFunction;
     EAX = EBX = ECX = EDX = 0x00000000;
+
+    // Get the maximum supported extended function via EAX=0x80000000.
+    EAX = 0x80000000;
+    CPUID(EAX, EBX, ECX, EDX);
+
+    // EAX contains the maximum extended function supported.
+    MaxExtFunction = EAX;
+
+    // Get the brand string and maximum supported function via EAX=0x00000000.
+    EAX = 0x00000000;
     CPUID(EAX, EBX, ECX, EDX);
 
     // EAX contains the maximum function supported.

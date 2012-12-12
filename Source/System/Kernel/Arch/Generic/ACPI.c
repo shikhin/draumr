@@ -1,5 +1,5 @@
 /*
- * Entry point for DBAL file.
+ * Generic ACPI tables handling.
  *
  * Copyright (c) 2012, Shikhin Sethi
  * All rights reserved.
@@ -28,52 +28,4 @@
  */
 
 #include <Standard.h>
-#include <FPU.h>
 #include <BIT.h>
-#include <PMM.h>
-#include <BootFiles.h>
-#include <Output.h>
-#include <Abort.h>
-#include <API.h>
-
-/*
- * Function to "jump" to the kernel loader.
- *     void (*EntryPoint)(void) -> the function pointer of the entry point.
- */
-void GotoKL(void (*EntryPoint)(void));
-
-/* 
- * The Main function for the DBAL sub-module.
- *     uint32_t *BITPointer -> the pointer to the BIT.
- */
-void Main(uint32_t *BITPointer)
-{
-    // Initialize the FPU, without which, we can't proceed.
-    FPUInit();
-
-    // Initialize the BIT - especially copy it to our side.
-    BITInit(BITPointer);
-
-    // Initialize the PMM.
-    PMMInit();
-
-    // Initialize the bouncer for the boot files.
-    BootFilesInit();
-
-    // Load the KL file.
-    FILE_t KLFile = BootFilesKL();
-
-    // Initialize support for 'output'.
-    OutputInit();
-
-    // Initialize the new API.
-    APIInit();
-
-    // Go to the kernel loader.
-    BootFileHeader_t *Header = (BootFileHeader_t*)KLFile.Location;
-    GotoKL(Header->EntryPoint);
-
-    // We shouldn't reach here.
-    for(;;)
-        __asm__ __volatile__("hlt");
-}

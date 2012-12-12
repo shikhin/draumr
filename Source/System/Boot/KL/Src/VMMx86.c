@@ -44,7 +44,7 @@ void x86PagingInit()
 {
     char _CONST *ErrorFrameAlloc = "ERROR: Unable to allocate pages for the VMM.";
 
-    // Allocate a page for the page directory, and clear it..
+    // Allocate a page for the page directory, and clear it.
     PageDir = (PageDirEntry_t*)AllocFrameFunc(POOL_BITMAP);
     if(!PageDir)
     {

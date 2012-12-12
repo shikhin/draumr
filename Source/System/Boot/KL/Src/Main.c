@@ -74,7 +74,7 @@ void RegionMap(uint64_t Start, uint64_t End)
             // Switch to text mode.
             VideoAPIFunc(VIDEO_VGA_SWITCH_MODE, MODE_80_25_TEXT);
 
-            AbortBootFunc("ERROR: Unable to allocate pages for the stack.");
+            AbortBootFunc("ERROR: Unable to allocate pages neccessary for boot.");
         }
 
         // Map the physical frame.

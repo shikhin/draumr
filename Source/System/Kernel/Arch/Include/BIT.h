@@ -124,7 +124,7 @@ struct EDIDInfo
     // Various flags which I won't be covering here.
     uint8_t InputDefinition;
     // Defined in cm.
-    uint8_t HorizontalHSize;
+    uint8_t HorizontalSize;
     uint8_t VerticalSize;
     // Gamma.
     // Present as "(Gamma * 100) - 100"
