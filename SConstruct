@@ -42,75 +42,94 @@ Cfg.Parse(ARGUMENTS)
 from Buildmanager import BuildManager
 BldMgr = BuildManager(Cfg)
 Env = BldMgr.CreateEnv()
+
+# The background image.
 Env["BACK"] = "Background.bmp"
 
 # Run through the SConscript files.
 Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 Source = SConscript(dirs=["Source"], exports=["Env"])
-Depends(Source, Utils)
 
-Dependancies = (Env["BIOS"],
-                Env["DBAL"],
-                Env["KL"],
-                Env["Kernelx86"],
-                Env["KernelAMD64"],
-		Env["PMMx86"],
-		Env["PMMx86PAE"],
-		Env["PMMAMD64"],
-		Env["VMMx86"],
-		Env["VMMx86PAE"],
-		Env["VMMAMD64"],)
-
+# The BootImage.comp.
 Image = Env.Image("BootImage.comp", None)
-Depends(Image, Utils)
-Depends(Image, Env["CRC32"])
-Depends(Image, Dependancies)
 
+# The common binary targets.
+Targets = (Env["BIOS"],
+           Env["DBAL"],
+           Env["KL"],
+           Env["Kernelx86"],
+           Env["KernelAMD64"],
+           Env["PMMx86"],
+           Env["PMMx86PAE"],
+           Env["PMMAMD64"],
+           Env["VMMx86"],
+           Env["VMMx86PAE"],
+           Env["VMMAMD64"])
+
+# It depends upon all the common binaries.
+Depends(Image, [Env["CRC32"],
+                Targets])
+
+# If the background image exists, we depend upon the ToSIF utility.
 if os.path.isfile(Env["BACK"]) :
     Depends(Image, Env["ToSIF"])
 
+# If we're building every target:
 if Cfg.Target == "all":
+    # Build the ISO.
     ISO = Env.ISO("Draumr.iso", None)
-    Depends(ISO, Env["CD_STAGE1"])
 
-    PXE = Env.PXE("/tftpboot/Stage1", None) 
-    Depends(PXE, Env["PXE_STAGE1"])
+    # Build PXE binaries.
+    PXE = Env.PXE("/tftpboot/Stage1", None)
 
+    # Build Floppy image.
     Floppy = Env.Floppy("Draumr.flp", None)
-    Depends(Floppy, Env["FLOPPY_STAGE1"])
-    
-    Depends([ISO, PXE, Floppy], [Dependancies, Image])
 
-    Clean("Draumr.iso", "Background.sif")
-    Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
-    Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
-    Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
-    Clean("/tftpboot/Stage1", "/tftpboot/KL")
-   
+    # Set these as the default build target.
+    Depends(ISO, Env["CD_STAGE1"])
+    Depends(PXE, Env["PXE_STAGE1"])
+    Depends(Floppy, Env["FLOPPY_STAGE1"])
+
+    Depends([ISO, PXE, Floppy], Image)
     Default([ISO, PXE, Floppy])
 
-elif Cfg.Target == "iso" :
+# The ISO target.
+elif Cfg.Target == "iso":
+    # Build the ISO image.
     ISO = Env.ISO("Draumr.iso", None)
-    Depends(ISO, [Env["CD_STAGE1"], Dependancies, Image])
      
-    Clean("Draumr.iso", "Background.sif")
+    # The default target.
+    Depends(ISO, Env["CD_STAGE1"])
+    Depends(ISO, Image)
     Default(ISO)
 
-elif Cfg.Target == "pxe" :
+# The PXE target.
+elif Cfg.Target == "pxe":
+    # Build the PXE binaries.
     PXE = Env.PXE("/tftpboot/Stage1", None)
-    Depends(PXE, [Env["PXE_STAGE1"], Dependancies, Image])
 
-    Clean("/tftpboot/Stage1", "Background.sif")
-    Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
-    Clean("/tftpboot/Stage1", "/tftpboot/DBAL")
-    Clean("/tftpboot/Stage1", "/tftpboot/BIOS")
-    Clean("/tftpboot/Stage1", "/tftpboot/KL")
-   
+    # The default target.  
+    Depends(PXE, Env["PXE_STAGE1"])
+    Depends(PXE, Image) 
     Default(PXE)
 
-elif Cfg.Target == "floppy" :
+# The floppy disk target.
+elif Cfg.Target == "floppy":
+    # Build the floppy target.
     Floppy = Env.Floppy("Draumr.flp", None)
-    Depends(Floppy, [Env["FLOPPY_STAGE1"], Dependancies, Image])
 
-    Clean("Draumr.flp", "Background.sif")
+    # The default target.
+    Depends(Floppy, Env["FLOPPY_STAGE1"])
+    Depends(Floppy, Image)
     Default(Floppy)
+
+# Clean respective things (hacky, but can't avoid).
+# Clean the background.sif image.
+Clean(["Draumr.iso", "Draumr.flp"], "Background.sif")
+
+# Clean the images we copy to /tftpboot/.
+for Target in Targets:
+    Clean("/tftpboot/Stage1", "/tftpboot/" + os.path.basename(str(Target[0])))
+
+# Clean the background.sif image.
+Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
