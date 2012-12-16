@@ -25,39 +25,26 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Import required modules.
 import os
-import shutil
-import tempfile
-import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
-from Config import Config
 
-def _image_builder(target, source, env) :
-
-    os.system("%s %s" % (env["CRC32"][0], env["BIOS"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["DBAL"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["KL"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["Kernelx86"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["KernelAMD64"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["PMMx86"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["PMMx86PAE"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["PMMAMD64"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["VMMx86"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["VMMx86PAE"][0]))
-    os.system("%s %s" % (env["CRC32"][0], env["VMMAMD64"][0]))
+def _image_builder(target, source, env):
+    # Run the CRC32 utility on all targets.
+    for Target in env["CUST_TARGETS"]:
+        os.system("%s %s" % (env["CRC32"][0], Target[0]))
     
-    if os.path.isfile(env["BACK"]) :
-
+    if os.path.isfile(env["BACK"]):
+        # Run the ToSIF utility, and then the CRC32 utility.
         os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
         env["BACK"] = "Background.sif"              
         os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
         
-    else :
-        
-        env["BACK"] = 0
-         
+    else:        
+        env["BACK"] = '\0x00'
+                 
     return 0
 
 ImageBuilder = Builder(action = Action(_image_builder, None))

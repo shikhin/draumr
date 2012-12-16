@@ -37,42 +37,28 @@ from Isobuilder import Path
 def _pxe_builder(target, source, env) :
     # Create a temporary directory to build the ISO image structure.
     if not os.path.exists('/tftpboot'):
-        raise StopError("The /tftpboot directory, which would contain the PXE files, isn't present.")
+        raise StopError("The /tftpboot directory required for netboot (PXE) isn't present.")
 
-    # Copy the kernel to the image.
+    # The TFTP directory.
     TftpBoot = "/tftpboot"
-    
-    Stage1 = str(env["PXE_STAGE1"][0])
-    BIOS = str(env["BIOS"][0])
-    DBAL = str(env["DBAL"][0])
-    KL = str(env["KL"][0])
-    Kernelx86 = str(env["Kernelx86"][0])
-    KernelAMD64 = str(env["KernelAMD64"][0])
-    PMMx86 = str(env["PMMx86"][0])
-    PMMx86PAE = str(env["PMMx86PAE"][0])
-    PMMAMD64 = str(env["PMMAMD64"][0])
-    VMMx86 = str(env["VMMx86"][0])
-    VMMx86PAE = str(env["VMMx86PAE"][0])
-    VMMAMD64 = str(env["VMMAMD64"][0])
-    
-    shutil.copy(Stage1, TftpBoot)
-    shutil.copy(BIOS, TftpBoot)
-    shutil.copy(DBAL, TftpBoot)
-    shutil.copy(KL, TftpBoot)
-    shutil.copy(Kernelx86, TftpBoot)
-    shutil.copy(KernelAMD64, TftpBoot)
-    shutil.copy(PMMx86, TftpBoot)
-    shutil.copy(PMMx86PAE, TftpBoot)
-    shutil.copy(PMMAMD64, TftpBoot)
-    shutil.copy(VMMx86, TftpBoot)
-    shutil.copy(VMMx86PAE, TftpBoot)
-    shutil.copy(VMMAMD64, TftpBoot)
 
-    Background = str(env["BACK"])
-    if env["BACK"] != 0:
+    # Copy the Stage1 to /tftpboot.
+    Stage1 = str(env["PXE_STAGE1"][0])
+    shutil.copy(Stage1, TftpBoot)
+
+    # Copy custom targets.
+    for CustTarget in env["CUST_TARGETS"]:
+        Filename = str(CustTarget[0])
+        shutil.copy(Filename, TftpBoot)
+
+    # Copy background image if exists.
+    if env["BACK"] != '\0x00':
+        Background = str(env["BACK"])
         shutil.copy(Background, TftpBoot)
-    
-    print("  [PXE]   %s" % (target[0]))
+
+    # Print a next text.
+    print("  %s[ISO]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+
     return 0
 
 PXEBuilder = Builder(action = Action(_pxe_builder, None))

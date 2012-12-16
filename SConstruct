@@ -32,14 +32,14 @@ import sys
 import os
 sys.path.insert(0, "Scripts/Scons")
 
-# Parse command line parameters.
+from Buildmanager import BuildManager
 from Config import Config
 
+# Parse command line parameters.
 Cfg = Config()
 Cfg.Parse(ARGUMENTS)
 
 # Create an Environment with the toolchain for building.
-from Buildmanager import BuildManager
 BldMgr = BuildManager(Cfg)
 Env = BldMgr.CreateEnv()
 
@@ -51,9 +51,9 @@ Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 Source = SConscript(dirs=["Source"], exports=["Env"])
 
 # The BootImage.comp.
-Image = Env.Image("BootImage.comp", None)
+Image = Env.Image("BootImage.comp", None, Env)
 
-# The common binary targets.
+# The *common* binary Targets.
 Targets = (Env["BIOS"],
            Env["DBAL"],
            Env["KL"],
@@ -66,24 +66,26 @@ Targets = (Env["BIOS"],
            Env["VMMx86PAE"],
            Env["VMMAMD64"])
 
+Env["CUST_TARGETS"] = Targets
+
 # It depends upon all the common binaries.
 Depends(Image, [Env["CRC32"],
                 Targets])
 
 # If the background image exists, we depend upon the ToSIF utility.
-if os.path.isfile(Env["BACK"]) :
+if os.path.isfile(Env["BACK"]):
     Depends(Image, Env["ToSIF"])
 
 # If we're building every target:
 if Cfg.Target == "all":
     # Build the ISO.
-    ISO = Env.ISO("Draumr.iso", None)
+    ISO = Env.ISO("Draumr.iso", None, Env)
 
     # Build PXE binaries.
     PXE = Env.PXE("/tftpboot/Stage1", None)
 
     # Build Floppy image.
-    Floppy = Env.Floppy("Draumr.flp", None)
+    Floppy = Env.Floppy("Draumr.flp", None, Env)
 
     # Set these as the default build target.
     Depends(ISO, Env["CD_STAGE1"])
@@ -96,7 +98,7 @@ if Cfg.Target == "all":
 # The ISO target.
 elif Cfg.Target == "iso":
     # Build the ISO image.
-    ISO = Env.ISO("Draumr.iso", None)
+    ISO = Env.ISO("Draumr.iso", None, Env)
      
     # The default target.
     Depends(ISO, Env["CD_STAGE1"])
@@ -116,7 +118,7 @@ elif Cfg.Target == "pxe":
 # The floppy disk target.
 elif Cfg.Target == "floppy":
     # Build the floppy target.
-    Floppy = Env.Floppy("Draumr.flp", None)
+    Floppy = Env.Floppy("Draumr.flp", None, Env)
 
     # The default target.
     Depends(Floppy, Env["FLOPPY_STAGE1"])

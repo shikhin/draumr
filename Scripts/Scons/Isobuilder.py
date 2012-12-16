@@ -40,45 +40,31 @@ def _iso_builder(target, source, env) :
     # Create a temporary directory to build the ISO image structure.
     Dir = tempfile.mkdtemp()
 
-    # Copy the kernel to the image.
+    # Make a boot directory.
     Boot = Path([Dir, "Boot"])
-
     os.makedirs(Boot)
 
+    # Copy Stage1.
     Stage1 = str(env["CD_STAGE1"][0])
-    BIOS = str(env["BIOS"][0])
-    DBAL = str(env["DBAL"][0])
-    KL = str(env["KL"][0])
-    Kernelx86 = str(env["Kernelx86"][0])
-    KernelAMD64 = str(env["KernelAMD64"][0])
-    PMMx86 = str(env["PMMx86"][0])
-    PMMx86PAE = str(env["PMMx86PAE"][0])
-    PMMAMD64 = str(env["PMMAMD64"][0])
-    VMMx86 = str(env["VMMx86"][0])
-    VMMx86PAE = str(env["VMMx86PAE"][0])
-    VMMAMD64 = str(env["VMMAMD64"][0])
-
     shutil.copy(Stage1, Boot)
-    shutil.copy(BIOS, Boot)
-    shutil.copy(DBAL, Boot)
-    shutil.copy(KL, Boot)
-    shutil.copy(Kernelx86, Boot)
-    shutil.copy(KernelAMD64, Boot)
-    shutil.copy(PMMx86, Boot)
-    shutil.copy(PMMx86PAE, Boot)
-    shutil.copy(PMMAMD64, Boot)
-    shutil.copy(VMMx86, Boot)
-    shutil.copy(VMMx86PAE, Boot)
-    shutil.copy(VMMAMD64, Boot)
- 
-    Background = str(env["BACK"])   
-    if env["BACK"] != 0:
+
+    # Copy custom targets.
+    for CustTarget in env["CUST_TARGETS"]:
+        Filename = str(CustTarget[0])
+        shutil.copy(Filename, Boot)
+
+    # Copy background image if exists.
+    if env["BACK"] != '\0x00':
+        Background = str(env["BACK"])
         shutil.copy(Background, Boot)
 
+    # Make the ISO.
     os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], Dir))
     
-    print("  [ISO]   %s" % (target[0]))
-    # Clean up our mess. :)
+    # Print a nice text.
+    print("  %s[ISO]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+
+    # Clean up our mess.
     shutil.rmtree(Dir)
 
     return 0

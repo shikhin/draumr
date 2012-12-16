@@ -1,4 +1,4 @@
-Copyright (c) 2012, Shikhin Sethi
+Copyright (c) 2012, Shikhin Sethi.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

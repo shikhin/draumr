@@ -27,8 +27,6 @@
 
 import os
 import shutil
-import tempfile
-import glob
 
 from SCons.Builder import Builder
 from SCons.Action import Action
@@ -36,62 +34,31 @@ from Isobuilder import Path
 
 def _floppy_builder(target, source, env) :
     # Create a temporary directory to build the Floppy image structure.
-    Dir = tempfile.mkdtemp()
+    FloppySize = 1474560
+    Destination = open(str(target[0]), "wb")
 
     Stage1 = str(env["FLOPPY_STAGE1"][0])
-    BIOS = str(env["BIOS"][0])
+    shutil.copyfileobj(open(Stage1, 'rb'), Destination)
 
-    DBAL = str(env["DBAL"][0])
-    DBALAligned = Path([Dir, "DBALAligned"])    
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (DBAL, DBALAligned))
+    for CustTarget in env["CUST_TARGETS"]:
+        # Align to 512 byte boundary.
 
-    KL = str(env["KL"][0])
-    KLAligned = Path([Dir, "KLAligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KL, KLAligned))
+        # If alignment is needed.
+        if Destination.tell() % 512:
+            # Align.
+            Destination.seek(512 - (Destination.tell() % 512), 1)
 
-    Kernelx86 = str(env["Kernelx86"][0])
-    Kernelx86Aligned = Path([Dir, "Kernelx86Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (Kernelx86, Kernelx86Aligned))
+        # Copy the file.
+        Filename = str(CustTarget[0])
+        shutil.copyfileobj(open(Filename, 'rb'), Destination)
 
-    KernelAMD64 = str(env["KernelAMD64"][0])
-    KernelAMD64Aligned = Path([Dir, "KernelAMD64Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (KernelAMD64, KernelAMD64Aligned))
+    # Seek to FlppySize - 1, and write a null byte to pad till N.
+    Destination.seek(FloppySize - 1)
+    Destination.write('\x00')
 
-    PMMx86 = str(env["PMMx86"][0])
-    PMMx86Aligned = Path([Dir, "PMMx86Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMx86, PMMx86Aligned))
-
-    PMMx86PAE = str(env["PMMx86PAE"][0])
-    PMMx86PAEAligned = Path([Dir, "PMMx86PAEAligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMx86PAE, PMMx86PAEAligned))
-
-    PMMAMD64 = str(env["PMMAMD64"][0])
-    PMMAMD64Aligned = Path([Dir, "PMMAMD64Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (PMMAMD64, PMMAMD64Aligned))
-
-    VMMx86 = str(env["VMMx86"][0])
-    VMMx86Aligned = Path([Dir, "VMMx86Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMx86, VMMx86Aligned))
-
-    VMMx86PAE = str(env["VMMx86PAE"][0])
-    VMMx86PAEAligned = Path([Dir, "VMMx86PAEAligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMx86PAE, VMMx86PAEAligned))
-
-    VMMAMD64 = str(env["VMMAMD64"][0])
-    VMMAMD64Aligned = Path([Dir, "VMMAMD64Aligned"])
-    os.system("dd if=%s bs=512 of=%s conv=sync > /dev/null 2>&1" % (VMMAMD64, VMMAMD64Aligned))
-  
-    Combined = Path([Dir, "Combined"])
-
-    os.system("cat %s %s %s %s %s %s %s %s %s %s %s %s > %s" % (Stage1, BIOS, DBALAligned, KLAligned, Kernelx86Aligned, KernelAMD64Aligned,
-						                PMMx86Aligned, PMMx86PAEAligned, PMMAMD64Aligned, VMMx86Aligned,
-								VMMx86PAEAligned, VMMAMD64Aligned, Combined))
-
-    os.system("dd if=%s ibs=1474560 count=100 of=%s conv=sync > /dev/null 2>&1" % (Combined, target[0]))
-
-    print("  [FLP]   %s" % (target[0]) ) 
+    # Print a nice text.
+    print("  %s[FLP]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
     
-    shutil.rmtree(Dir)
     return 0
 
 FloppyBuilder = Builder(action = Action(_floppy_builder, None))

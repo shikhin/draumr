@@ -27,35 +27,41 @@
 
 from SCons.Errors import StopError
 
-class Config :
+class Config:
+    # The expected (and parsable) parameters.
     Params = {
-        "build" : ["debug", "release"],
-        "target" : ["iso", "pxe", "floppy", "all"],
+        "build": ["debug", "release"],
+        "target": ["iso", "pxe", "floppy", "all"],
     }
 
-    def __init__(self) :
-        self.Arch = "i586"
+    def __init__(self):
+        # The default values.
+        self.Arch = "x86_64"
         self.Build = "debug"
         self.Target = "all"
 	
-    def GetArch(self) :
+    def GetArch(self):
         return self.Arch
 
-    def GetBuild(self) :
+    def GetBuild(self):
         return self.Build
 
-    def Parse(self, Args) :
-        for Key in Args.keys() :
+    def Parse(self, Args):
+        for Key in Args.keys():
+            # Get the value.
             Value = Args[Key]
 
-            if not self.Validate(Key, Value) :
+            # See if the value is parsable or not.
+            if not self.Validate(Key, Value):
                 raise StopError("Invalid value for %s parameter. Allowed values: %s." % (Key, ", ".join(self.Params[Key])))
 
-            if Key == "build" : self.Build = Value
-            if Key == "target" : self.Target = Value
+            # Set the new values.
+            if Key == "build": self.Build = Value
+            if Key == "target": self.Target = Value
 
-    def Validate(self, Key, Value) :
-        if not Key in self.Params :
+    # Validate.
+    def Validate(self, Key, Value):
+        if not Key in self.Params:
             return False
 
         return Value in self.Params[Key]

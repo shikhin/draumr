@@ -25,78 +25,95 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Import important modules.
 import os
 import sys
 
+# Import all builders.
 from Isobuilder import ISOBuilder
 from Pxebuilder import PXEBuilder
 from Floppybuilder import FloppyBuilder
 from Imagebuilder import ImageBuilder
 
-from SCons.Variables import Variables, EnumVariable
 from SCons.Environment import Environment
 
-# Some Colors we'd be using.
+# Some colors we'd be using.
 Colors = {}
 Colors['Green']  = '\033[92m'
+Colors['Blue']   = '\033[34m'
 Colors['End']    = '\033[0m'
 
-class BuildManager :
-
-    def __init__(self, Config) :
+class BuildManager:
+    def __init__(self, Config):
+        # Save the config (command line parameters parsed).
         self.Config = Config
 
-    def CreateEnv(self) :
+    def CreateEnv(self):
         # If the output is not a terminal, remove the colors.
         if not sys.stdout.isatty():
             for Key, Value in Colors.iteritems():
                Colors[Key] = ''     
 	
-	Arch = self.Config.GetArch()
+        # Get the arch.
+        Arch = self.Config.GetArch()
 
         # Create an Environment with our own tools.
         Env = Environment()
+
+        # Set the tools.
         Env["AS"] = "nasm"
         Env["CC"] = "gcc"
-        Env["CPPFLAGS"] = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-O2", "-Wshadow", "-Wcast-align", "-Wwrite-strings",
-                           "-Wredundant-decls", "-Wnested-externs", 
+        Env["LINK"] = "ld" 
+
+        # Set the compiler flags.
+        Env["CPPFLAGS"] = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-O2", "-Wshadow", "-Wcast-align",
+                           "-Wwrite-strings", "-Wredundant-decls", "-Wnested-externs", 
                            "-Winline", "-Wno-attributes", "-Wno-deprecated-declarations", 
-                           "-Wno-div-by-zero", "-Wno-endif-labels", "-Wfloat-equal", "-Wformat=2", "-Wno-format-extra-args",
-                           "-Winit-self", "-Winvalid-pch",
+                           "-Wno-div-by-zero", "-Wno-endif-labels", "-Wfloat-equal", "-Wformat=2", 
+                           "-Wno-format-extra-args", "-Winit-self", "-Winvalid-pch",
                            "-Wmissing-format-attribute", "-Wmissing-include-dirs",
                            "-Wno-multichar",
                            "-Wno-pointer-to-int-cast", "-Wredundant-decls",
                            "-Wshadow", "-Wno-sign-compare",
                            "-Wswitch", "-Wsystem-headers", "-Wundef",
-                           "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable", "-Wno-unused-result",
-                           "-Wwrite-strings", "-Wdisabled-optimization", "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib", "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+                           "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable",
+                           "-Wno-unused-result", "-Wwrite-strings", "-Wdisabled-optimization",
+                           "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
+                           "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+
+        # The assembler flags.
         Env["ASFLAGS"] = ["-Ox"]
-        Env["LINK"] = "ld" 
+
+        # Set the builders.
         Env["BUILDERS"]["ISO"] = ISOBuilder
         Env["BUILDERS"]["PXE"] = PXEBuilder
         Env["BUILDERS"]["Image"] = ImageBuilder
         Env["BUILDERS"]["Floppy"] = FloppyBuilder
 
-        # Add build specific flags
+        # Get the build.
         Build = self.Config.GetBuild()
 
-        if Build == "debug" :
+        # If it's at debug, have no optimization, else O2 optimization.
+        if Build == "debug":
             Env["CPPFLAGS"] += ["-O0"]
-        else :
+
+        else:
             Env["CPPFLAGS"] += ["-O2"]
 
         # Hide the ugly compiler command lines and display nice messages.
-        Env["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
-        Env["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
-        Env["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
-        Env["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
+        Env["ASCOMSTR"]     = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["CCCOMSTR"]     = "  %s[CC]%s    $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["ARCOMSTR"]     = "  %s[AR]%s    $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["LINKCOMSTR"]   = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
         Env["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End'])
 
-        # Use LD_LIBRARY_PATH if it is specified in the Environment where SCons was executed
-        if "LD_LIBRARY_PATH" in os.environ :
+        # Use LD_LIBRARY_PATH if it is specified in the Environment where SCons was executed.
+        if "LD_LIBRARY_PATH" in os.environ:
             Env["Env"]["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 
         # Save some information in the Environment.
         Env["ARCH"] = Arch
+        Env["COLORS"] = Colors
 
+        # Return the environment.
         return Env
