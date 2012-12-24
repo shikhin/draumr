@@ -25,13 +25,22 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Import config parser.
+import ConfigParser
+
 from SCons.Errors import StopError
 
 class Config:
-    # The expected (and parsable) parameters.
+    # The expected (and parsable) parameters with options.
     Params = {
         "build": ["debug", "release"],
         "target": ["iso", "pxe", "floppy", "all"],
+        "arch": ["x86_64", "i586"]
+    }
+
+    # The expected parameters with any option parsable.
+    ParamsAO = {
+        "pxepath"
     }
 
     def __init__(self):
@@ -39,15 +48,25 @@ class Config:
         self.Arch = "x86_64"
         self.Build = "debug"
         self.Target = "all"
-	
-    def GetArch(self):
-        return self.Arch
+        self.PXEPath = "/tftpboot"
 
-    def GetBuild(self):
-        return self.Build
+        # The configuration file location.
+        self.ConfigFile = "Build.cfg"
 
     def Parse(self, Args):
+        # Get the config file name, so that we can parse it before parsing the options.
         for Key in Args.keys():
+            if Key == "configfile": self.ConfigFile = Args[Key]
+
+        ConfigFile = ConfigParser.SafeConfigParser()
+        ConfigFile.read(self.ConfigFile)
+
+        #if(ConfigFile.has_option('', ''))
+
+        for Key in Args.keys():
+            # We have already looked at the config file option.
+            if Key == "configfile": continue
+
             # Get the value.
             Value = Args[Key]
 
@@ -58,9 +77,15 @@ class Config:
             # Set the new values.
             if Key == "build": self.Build = Value
             if Key == "target": self.Target = Value
+            if Key == "pxepath": self.PXEPath = Value
+            if Key == "arch": self.Arch = Value
 
     # Validate.
     def Validate(self, Key, Value):
+        # If key is in params AO (allowed options), then no need to check for any validity.
+        if Key in self.ParamsAO:
+            return True
+
         if not Key in self.Params:
             return False
 

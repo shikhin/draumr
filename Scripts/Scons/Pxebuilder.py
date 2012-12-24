@@ -35,12 +35,8 @@ from SCons.Action import Action
 from Isobuilder import Path
 
 def _pxe_builder(target, source, env) :
-    # Create a temporary directory to build the ISO image structure.
-    if not os.path.exists('/tftpboot'):
-        raise StopError("The /tftpboot directory required for netboot (PXE) isn't present.")
-
     # The TFTP directory.
-    TftpBoot = "/tftpboot"
+    TftpBoot = env["PXE_PATH"]
 
     # Copy the Stage1 to /tftpboot.
     Stage1 = str(env["PXE_STAGE1"][0])
@@ -57,7 +53,7 @@ def _pxe_builder(target, source, env) :
         shutil.copy(Background, TftpBoot)
 
     # Print a next text.
-    print("  %s[ISO]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+    print("  %s[PXE]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
 
     return 0
 

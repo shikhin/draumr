@@ -2,6 +2,9 @@
 *.iso
 *.flp
 
+# Tools
+Tools/
+
 # All executables + output files.
 
 ## Fixed location binaries.

@@ -51,7 +51,7 @@ Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 Source = SConscript(dirs=["Source"], exports=["Env"])
 
 # The BootImage.comp.
-Image = Env.Image("BootImage.comp", None, Env)
+Image = Env.Image("BootImage.comp", None)
 
 # The *common* binary Targets.
 Targets = (Env["BIOS"],
@@ -79,13 +79,13 @@ if os.path.isfile(Env["BACK"]):
 # If we're building every target:
 if Cfg.Target == "all":
     # Build the ISO.
-    ISO = Env.ISO("Draumr.iso", None, Env)
+    ISO = Env.ISO("Draumr.iso", None)
 
     # Build PXE binaries.
-    PXE = Env.PXE("/tftpboot/Stage1", None)
+    PXE = Env.PXE(os.path.sep.join([Env["PXE_PATH"], "Stage1"]), None)
 
     # Build Floppy image.
-    Floppy = Env.Floppy("Draumr.flp", None, Env)
+    Floppy = Env.Floppy("Draumr.flp", None)
 
     # Set these as the default build target.
     Depends(ISO, Env["CD_STAGE1"])
@@ -98,7 +98,7 @@ if Cfg.Target == "all":
 # The ISO target.
 elif Cfg.Target == "iso":
     # Build the ISO image.
-    ISO = Env.ISO("Draumr.iso", None, Env)
+    ISO = Env.ISO("Draumr.iso", None)
      
     # The default target.
     Depends(ISO, Env["CD_STAGE1"])
@@ -108,7 +108,7 @@ elif Cfg.Target == "iso":
 # The PXE target.
 elif Cfg.Target == "pxe":
     # Build the PXE binaries.
-    PXE = Env.PXE("/tftpboot/Stage1", None)
+    PXE = Env.PXE(os.path.sep.join([Env["PXE_PATH"], "Stage1"]), None)
 
     # The default target.  
     Depends(PXE, Env["PXE_STAGE1"])
@@ -118,7 +118,7 @@ elif Cfg.Target == "pxe":
 # The floppy disk target.
 elif Cfg.Target == "floppy":
     # Build the floppy target.
-    Floppy = Env.Floppy("Draumr.flp", None, Env)
+    Floppy = Env.Floppy("Draumr.flp", None)
 
     # The default target.
     Depends(Floppy, Env["FLOPPY_STAGE1"])

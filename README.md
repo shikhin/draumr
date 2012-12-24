@@ -16,11 +16,11 @@ For building Draumr on your local system, the following pre-requisites are neede
 
 ##Procedure
 
-Do build Draumr, the following simple command is needed:
+To build Draumr, the following simple command is needed:
 
-    scons build=release
+    scons build=release target=iso;
 
-For developmental purposes, the ````build```` attribute can be set to ````debug```` which disables optimization.
+For developmental purposes, the ````build```` attribute can be set to ````debug```` which disables optimization. The ````target```` attribute can be set to ````pxe````, ````floppy```` or ````all```` to build the respective images/targets.
 
 #Help
 

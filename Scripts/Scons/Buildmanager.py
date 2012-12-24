@@ -36,6 +36,7 @@ from Floppybuilder import FloppyBuilder
 from Imagebuilder import ImageBuilder
 
 from SCons.Environment import Environment
+from SCons.Errors import StopError
 
 # Some colors we'd be using.
 Colors = {}
@@ -55,15 +56,15 @@ class BuildManager:
                Colors[Key] = ''     
 	
         # Get the arch.
-        Arch = self.Config.GetArch()
+        Arch = self.Config.Arch
 
         # Create an Environment with our own tools.
         Env = Environment()
 
         # Set the tools.
-        Env["AS"] = "nasm"
-        Env["CC"] = "gcc"
-        Env["LINK"] = "ld" 
+        Env["AS"] = "./Tools/bin/nasm"
+        Env["CC"] = "./Tools/bin/x86_64-elf-gcc"
+        Env["LINK"] = "./Tools/bin/x86_64-elf-ld"
 
         # Set the compiler flags.
         Env["CPPFLAGS"] = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-O2", "-Wshadow", "-Wcast-align",
@@ -91,7 +92,7 @@ class BuildManager:
         Env["BUILDERS"]["Floppy"] = FloppyBuilder
 
         # Get the build.
-        Build = self.Config.GetBuild()
+        Build = self.Config.Build
 
         # If it's at debug, have no optimization, else O2 optimization.
         if Build == "debug":
@@ -114,6 +115,11 @@ class BuildManager:
         # Save some information in the Environment.
         Env["ARCH"] = Arch
         Env["COLORS"] = Colors
+        Env["PXE_PATH"] = self.Config.PXEPath
+
+        if self.Config.Target == "all" or self.Config.Target == "pxe":
+            if not os.path.exists(Env["PXE_PATH"]):
+                raise StopError("The %s directory required for netboot (PXE) isn't present." % (Env["PXE_PATH"]))
 
         # Return the environment.
         return Env
