@@ -35,7 +35,6 @@
 #include <Output.h>
 #include <Abort.h>
 #include <API.h>
- #include <Log.h>
 
 /*
  * Function to "jump" to the kernel loader.

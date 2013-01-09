@@ -32,8 +32,8 @@ import sys
 import os
 sys.path.insert(0, "Scripts/Scons")
 
-from Buildmanager import BuildManager
 from Config import Config
+from Buildmanager import BuildManager
 
 # Parse command line parameters.
 Cfg = Config()
@@ -53,24 +53,27 @@ Source = SConscript(dirs=["Source"], exports=["Env"])
 # The BootImage.comp.
 Image = Env.Image("BootImage.comp", None)
 
-# The *common* binary Targets.
-Targets = [Env["BIOS"],
-           Env["DBAL"],
-           Env["KL"],
-           Env["Kernelx86"],
-           Env["KernelAMD64"],
-           Env["PMMx86"],
-           Env["PMMx86PAE"],
-           Env["PMMAMD64"],
-           Env["VMMx86"],
-           Env["VMMx86PAE"],
-           Env["VMMAMD64"]]
+# The *common* binary targets.
+Env["COMMON_TARGETS"] = [Env["BIOS"],
+                         Env["DBAL"],
+                         Env["KL"],
+                         Env["Kernelx86"],
+                         Env["Kernelx86_64"],
+                         Env["PMMx86"],
+                         Env["PMMx86_64"],
+                         Env["VMMx86"],
+                         Env["VMMx86PAE"],
+                         Env["VMMx86_64"]]
 
-Env["CUST_TARGETS"] = Targets
+# If the arch's i586, remove the unneccessary stuff.
+if Env["ARCH"] == "i586":
+    Env["COMMON_TARGETS"].remove(Env["Kernelx86_64"])
+    Env["COMMON_TARGETS"].remove(Env["PMMx86_64"])
+    Env["COMMON_TARGETS"].remove(Env["VMMx86_64"])
 
 # It depends upon all the common binaries.
 Depends(Image, [Env["CRC32"],
-                Targets])
+                Env["COMMON_TARGETS"]])
 
 # If the background image exists, we depend upon the ToSIF utility.
 if os.path.isfile(Env["BACK"]):
@@ -130,7 +133,7 @@ elif Cfg.Options["target"] == "floppy":
 Clean(["Draumr.iso", "Draumr.flp"], "Background.sif")
 
 # Clean the images we copy to /tftpboot/.
-for Target in Targets:
+for Target in Env["COMMON_TARGETS"]:
     Clean("/tftpboot/Stage1", "/tftpboot/" + os.path.basename(str(Target[0])))
 
 # Clean the background.sif image.

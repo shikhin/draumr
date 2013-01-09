@@ -106,13 +106,16 @@ class BuildManager:
             if not os.path.exists(Env["PXE_PATH"]):
                 raise StopError("The %s directory required for netboot (PXE) isn't present." % (Env["PXE_PATH"]))
 
-        if self.Config.Options["toolset"] == "cross":
-            if not os.path.exists(self.Config.Options["PREFIX"]):
-                if self.Config.Options["PREFIX"] == "./Tools":
-                    os.system("./Crosstools.sh")
+        Tools = ["AS", "CC", "LINK", "AR", "RANLIB"]
 
-                else:
-                    os.system("./Crosstools.sh -p %s" % self.Config.Options["PREFIX"])
+        if self.Config.Options["toolset"] == "cross":
+            for Tool in Tools:
+                if not os.path.exists(self.Config.Options[Tool]):
+                    if self.Config.Options["PREFIX"] == "./Tools":
+                        os.system("./Crosstools.sh")
+
+                    else:
+                        os.system("./Crosstools.sh -p %s" % self.Config.Options["PREFIX"])
 
         # Return the environment.
         return Env
