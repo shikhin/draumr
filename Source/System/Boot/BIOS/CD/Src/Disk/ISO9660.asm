@@ -57,12 +57,12 @@ KL:
     .Size         dd 0                ; The Size of the KL file in bytes.
 
 Kernelx86:
-    .LBA		  dd 0				  ; The LBA of the x86 kernel.
-    .Size		  dd 0                ; The Size of the x86 kernel in bytes.
+    .LBA          dd 0                  ; The LBA of the x86 kernel.
+    .Size          dd 0                ; The Size of the x86 kernel in bytes.
 
 KernelAMD64:
-    .LBA		  dd 0                ; The LBA of the AMD64 kernel.
-    .Size		  dd 0                ; The Size of the AMD64 kernel in bytes.
+    .LBA          dd 0                ; The LBA of the AMD64 kernel.
+    .Size          dd 0                ; The Size of the AMD64 kernel in bytes.
 
 PMMx86:
     .LBA      dd 0                    ; The size and the LBA of the PMM x86 module is unknown.

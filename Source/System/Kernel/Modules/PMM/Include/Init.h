@@ -39,8 +39,8 @@
 // A cache structure (for calculating page colors).
 typedef struct 
 { 
-	uint32_t Size;
-	uint32_t Associativity;
+    uint32_t Size;
+    uint32_t Associativity;
 } Cache_t;
 
 /*

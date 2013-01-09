@@ -46,12 +46,12 @@ Kernelx86 = x86SysEnv.Program("KEx86", ['x86/' + File for File in GenSrc]
 AMD64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/System/Kernel/Arch/AMD64/Link.ld", CCFLAGS = ["-march=nocona", "-m64", "-D _AMD64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], ASFLAGS=["-felf64", "-D _AMD64", "-Ox"])
 AMD64SysEnv.VariantDir('AMD64', 'Generic', duplicate=0)
 KernelAMD64 = AMD64SysEnv.Program("KEAMD64", ['AMD64/' + File for File in GenSrc]
-	                                          + ['AMD64/' + File for File in AMD64Src])
+                                              + ['AMD64/' + File for File in AMD64Src])
 
 Depends(Kernelx86, ['Generic/' + File for File in GenSrc]
-	                + ['x86/' + File for File in x86Src])
+                    + ['x86/' + File for File in x86Src])
 Depends(KernelAMD64, ['Generic/' + File for File in GenSrc]
-	                  + ['AMD64/' + File for File in AMD64Src])
+                      + ['AMD64/' + File for File in AMD64Src])
 
 Env["Kernelx86"] = Kernelx86
 Env["KernelAMD64"] = KernelAMD64

@@ -117,7 +117,7 @@ SECTION .text
 %include "Source/System/Boot/BIOS/CD/Src/Disk/ISO9660.asm"
 
 ExtMain:
-    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.			
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.            
     call BootFilesFind                ; Find the boot files.
     
 .LoadCommonBIOS:

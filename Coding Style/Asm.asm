@@ -32,7 +32,7 @@
 
 ; This is a comment, if neccessary, describing the includes.
 %include "Mod/SubMod/File.asm"
-			
+
 ; This is a comment for a macro, followed by the macro itself - all macros for this file only here.
 %define MACRO (1)
 

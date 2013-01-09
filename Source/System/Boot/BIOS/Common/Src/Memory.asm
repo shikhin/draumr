@@ -500,9 +500,9 @@ E820:
 
 ; Loop till all the entries aren't done.
 .Loop:
-    mov eax, 0xE820		
+    mov eax, 0xE820        
     mov dword [es:di + 20], 1         ; See above.
-    mov ecx, 24		
+    mov ecx, 24        
 
     int 0x15
     jc .Finished                      ; All entries done? Finish.

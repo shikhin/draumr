@@ -84,7 +84,7 @@ Startup:
 Main:
     cli                               ; Stop maskable interrupts till a proper stack is set up.
 
-    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.					
+    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.                    
     call PXEInit
    
     xor ax, ax                        ; Set all the segment registers to 0x0000.
@@ -126,7 +126,7 @@ Main:
     
     mov ecx, 512                      ; Read only 512 bytes.
     mov edi, 0x9000
-    call FileRead                     ; Read the entire file.
+    call FileRead                     
 
 ; Checks common BIOS file from first sector.
 .CheckCBIOSFirstSector:
@@ -156,13 +156,13 @@ Main:
     cmp ecx, 512
     jbe .Finish
 
-    sub ecx, 512                      ; Read the rest bytes.
+    sub ecx, 511                      ; Read the rest bytes.
     
     call FileRead                     ; Read the rest of the file.
 
 .Finish:
     call FileClose                    ; And then close the file.
-
+    
 ; Check the rest of the common BIOS file.
 .CheckCBIOSRest:
     mov ecx, [0x9000 + 12]            ; Get the end of the file in ECX.

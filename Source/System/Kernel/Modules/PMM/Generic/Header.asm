@@ -68,4 +68,4 @@ EXTERN GenericInit
 
  ; The entry structure for the PMM kmodule.
 Start:
-	DEF GenericInit
+    DEF GenericInit

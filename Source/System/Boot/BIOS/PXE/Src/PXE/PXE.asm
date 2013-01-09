@@ -66,6 +66,10 @@ PXENV_CLEANUP:
 SECTION .text
 
  ; The PXE cleanup function, which aborts all PXE services.
+; NOTE: It appears that after aborting all PXE services, once can reclaim the memory used by it.
+; However, the process to reclaim the memory is complex, and several functions might return errors
+; so as to indicate that don't reclaim memory. Moreover, several testbeds don't implement half
+; of the following functions. Thus, all errors would be ignored, and memory won't be reclaimed.
 PXECleanup:
     pushad
 
@@ -74,30 +78,18 @@ PXECleanup:
     mov di, PXENV_CLEANUP
     call PXEAPICall
 
-    ; Abort boot if error.
-    or ax, [PXENV_CLEANUP]
-    jnz .Error
-
     ; Unload the stack.
     mov bx, UNLOAD_STACK
     mov di, PXENV_CLEANUP
     call PXEAPICall
 
-    ; Abort boot if error.
-    or ax, [PXENV_CLEANUP]
-    jnz .Error
-
-    cmp byte [PXEFlags], PXE_NEW_PRESENT
-    jne .Cont
+    and byte [PXEFlags], PXE_NEW_PRESENT
+    jz .Cont
 
 ; PXE! -> use STOP_UNDI.
     mov bx, STOP_UNDI
     mov di, PXENV_CLEANUP
     call PXEAPICall
-
-    ; Abort boot if error.
-    or ax, [PXENV_CLEANUP]
-    jnz .Error
 
     jmp .Return
 
@@ -106,10 +98,6 @@ PXECleanup:
     mov bx, UNDI_CLEANUP
     mov di, PXENV_CLEANUP
     call PXEAPICall
-
-    ; Abort boot if error.
-    or ax, [PXENV_CLEANUP]
-    jnz .Error
 
 .Return:
     popad

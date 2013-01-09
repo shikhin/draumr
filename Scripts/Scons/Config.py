@@ -26,6 +26,7 @@
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Import config parser.
+import os
 import ConfigParser
 
 from SCons.Errors import StopError
@@ -35,25 +36,71 @@ class Config:
     Params = {
         "build": ["debug", "release"],
         "target": ["iso", "pxe", "floppy", "all"],
-        "arch": ["x86_64", "i586"]
+        "arch": ["x86_64", "i586"],
+        "toolset": ["cross", "custom", "default"]
     }
 
     # The expected parameters with any option parsable.
     ParamsAO = {
-        "pxepath"
+        "pxepath",
+        "CC",
+        "AS",
+        "LINK",
+        "AR",
+        "RANLIB",
+        "ASFLAGS",
+        "LINKFLAGS",
+        "CCFLAGS",
+        "PREFIX"
     }
 
     def __init__(self):
         # The default values.
-        self.Arch = "x86_64"
-        self.Build = "debug"
-        self.Target = "all"
-        self.PXEPath = "/tftpboot"
+        self.Options = {
+            "arch": "x86_64",
+            "build": "debug",
+            "target": "all",
+            "pxepath": "/tftpboot",
+            "toolset": "cross",
+
+            # Tools.
+            "AS": "",
+            "CC": "",
+            "LINK": "",
+            "AR": "",
+            "RANLIB": "",  
+
+            "PREFIX": "./Tools",
+
+            # Flags.
+            "CCFLAGS": ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-Wshadow", "-Wcast-align",
+                        "-Wwrite-strings", "-Wredundant-decls", "-Wnested-externs", 
+                        "-Winline", "-Wno-attributes", "-Wno-deprecated-declarations", 
+                        "-Wno-div-by-zero", "-Wno-endif-labels", "-Wfloat-equal", "-Wformat=2", 
+                        "-Wno-format-extra-args", "-Winit-self", "-Winvalid-pch",
+                        "-Wmissing-format-attribute", "-Wmissing-include-dirs",
+                        "-Wno-multichar",
+                        "-Wno-pointer-to-int-cast", "-Wredundant-decls",
+                        "-Wshadow", "-Wno-sign-compare",
+                        "-Wswitch", "-Wsystem-headers", "-Wundef",
+                        "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable",
+                        "-Wno-unused-result", "-Wwrite-strings", "-Wdisabled-optimization",
+                        "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
+                        "-nostartfiles", "-ffreestanding",
+                        "-nodefaultlibs", "-fomit-frame-pointer"],
+            "ASFLAGS": [],
+            "LINKFLAGS": []          
+        }
 
         # The configuration file location.
         self.ConfigFile = "Build.cfg"
 
+    # Could be neater, but hey, I'm not a python programmer, so I keep with basic structures.
     def Parse(self, Args):
+        DefaultOptions = ["arch", "build", "target", "pxepath", "toolset"]
+        ToolsOptions = ["AS", "CS", "LINK", "AR", "RANLIB", "PREFIX"]
+        FlagOptions = ["CCFLAGS", "ASFLAGS", "LINKFLAGS"]
+
         # Get the config file name, so that we can parse it before parsing the options.
         for Key in Args.keys():
             if Key == "configfile": self.ConfigFile = Args[Key]
@@ -61,7 +108,35 @@ class Config:
         ConfigFile = ConfigParser.SafeConfigParser()
         ConfigFile.read(self.ConfigFile)
 
-        #if(ConfigFile.has_option('', ''))
+        # Get build, arch, target, pxepath (and toolset - it won't actually be there, but bah, lazy code).
+        for Option in DefaultOptions:
+            if ConfigFile.has_option('DEFAULT', Option):
+                self.Options[Option] = ConfigFile.get('DEFAULT', Option)
+
+        # If section tools exists:
+        if ConfigFile.has_section('tools'):
+            # If the option toolset exists, get in the values.
+            if ConfigFile.has_option('tools', 'toolset'):
+                self.Options["toolset"] = ConfigFile.get('tools', 'toolset')
+
+            # If the toolset is default or custom, first set all to default.
+            if self.Options["toolset"] == "custom" or self.Options["toolset"] == "default":
+                self.Options["AS"] = "nasm"
+                self.Options["CC"] = "gcc"
+                self.Options["LINK"] = "ld"
+                self.Options["AR"] = "ar"
+                self.Options["RANLIB"] = "ranlib"
+
+            # Now, if the toolset was custom, get all the custom binaries.
+            if self.Options["toolset"] == "custom":
+                for Option in ToolsOptions:
+                    if ConfigFile.has_option('tools', Option):
+                        self.Options[Option] = ConfigFile.get('tools', Option)
+
+            # Look for flags.
+            for Option in FlagOptions:
+                if ConfigFile.has_option('tools', Option):
+                    self.Options[Option] += ConfigFile.get('tools', Option)
 
         for Key in Args.keys():
             # We have already looked at the config file option.
@@ -72,13 +147,42 @@ class Config:
 
             # See if the value is parsable or not.
             if not self.Validate(Key, Value):
-                raise StopError("Invalid value for %s parameter. Allowed values: %s." % (Key, ", ".join(self.Params[Key])))
+                raise StopError("Invalid value for %s parameter. Allowed values: %s." % 
+                                    (Key, ", ".join(self.Params[Key])))
 
             # Set the new values.
-            if Key == "build": self.Build = Value
-            if Key == "target": self.Target = Value
-            if Key == "pxepath": self.PXEPath = Value
-            if Key == "arch": self.Arch = Value
+            for Option in DefaultOptions:
+                if Key == Option:
+                    self.Options[Option] = Value
+
+            # If it's custom, look for toolchain binaries.
+            if self.Toolset == "custom":
+                for Option in ToolsOptions:
+                    if Key == Option:
+                        self.Options[Option] = Value
+
+            # Look for command line options.
+            for Option in FlagOptions:
+                if Key == Option:
+                    self.Options[Option] += Value
+
+        # If it's cross, build the locations.
+        if self.Options["toolset"] == "cross":
+            BinPath = os.path.sep.join([self.Options["PREFIX"], "bin"])
+
+            self.Options["AS"] = os.path.sep.join([BinPath, "nasm"])
+            self.Options["CC"] = os.path.sep.join([BinPath, "x86_64-elf-gcc"])
+            self.Options["LINK"] = os.path.sep.join([BinPath, "x86_64-elf-ld"])
+            self.Options["AR"] = os.path.sep.join([BinPath, "x86_64-elf-ar"])
+            self.Options["RANLIB"] = os.path.sep.join([BinPath, "x86_64-elf-ranlib"])
+
+        # If it's at debug, have no optimization, else O2 optimization.
+        if self.Options["build"] == "debug":
+            self.Options["CCFLAGS"] += ["-O0"]
+
+        else:
+            self.Options["CCFLAGS"] += ["-O2"]
+            self.Options["ASFLAGS"] += ["-Ox"]
 
     # Validate.
     def Validate(self, Key, Value):

@@ -284,8 +284,8 @@ static void Function04()
  */
 void GenericInit()
 {
-	  // Some variables for registers.
-	  uint32_t EAX, EBX, ECX, EDX, MaxFunction, MaxExtFunction;
+      // Some variables for registers.
+      uint32_t EAX, EBX, ECX, EDX, MaxFunction, MaxExtFunction;
     EAX = EBX = ECX = EDX = 0x00000000;
 
     // Get the maximum supported extended function via EAX=0x80000000.
@@ -303,9 +303,9 @@ void GenericInit()
     MaxFunction = EAX;
 
     // Check for "GenuineIntel".
-    if((EBX == 0x756E6547) && 	// "uneG"
-       (EDX == 0x49656E69) &&	  // "Ieni"
-       (ECX == 0x6C65746E))		  // "letn"
+    if((EBX == 0x756E6547) &&     // "uneG"
+       (EDX == 0x49656E69) &&      // "Ieni"
+       (ECX == 0x6C65746E))          // "letn"
     {
         // If Function 04h, deterministic cache parameters is supported, then use it.
         if(MaxFunction >= 0x000000004)

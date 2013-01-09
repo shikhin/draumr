@@ -32,6 +32,7 @@
 #include <BIT.h>
 #include <Output.h>
 #include <BootFiles.h>
+#include <Log.h>
 
 // The old video and file API - saved for access by the new API.
 uint32_t (*OldVideoAPI)(uint32_t APICode, ...);

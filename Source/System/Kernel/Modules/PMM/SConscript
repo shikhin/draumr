@@ -30,8 +30,8 @@
 Import("Env", "SysEnv")
 
 GenSrc = ["Header.asm",
-		  "Init.c",
-		  "Debug.c"]
+          "Init.c",
+          "Debug.c"]
 
 # A target for building the PMM binary.
 x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/System/Kernel/Modules/PMM/x86/Link.ld", CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-felf", "-D _x86"])

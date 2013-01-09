@@ -55,9 +55,9 @@ static void ModAPIInit()
  */
 void APIInit()
 {
-	// Save the old AbortBootServices - which we'd call via our own function.
+    // Save the old AbortBootServices - which we'd call via our own function.
     OldAbortBootServices = (EmptyFunc_t)(uintptr_t)BIT->AbortBootServices;
-	
+    
     // Redirect the AbortBootServices function to the interface.
     AbortBootServicesFunc = &AbortBootServicesInt;
 

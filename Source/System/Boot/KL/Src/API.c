@@ -38,7 +38,7 @@ void (*OldAbortBootServices)(void);
  */
 void APIInit()
 {
-	// Save the old AbortBootServices - which we'd call via our own function.
+    // Save the old AbortBootServices - which we'd call via our own function.
     OldAbortBootServices = (EmptyFunc_t)BIT->AbortBootServices;
 
     // Replace it by the inteface.
@@ -46,5 +46,5 @@ void APIInit()
         BIT->AbortBootServices = (uint32_t)&AbortBootServicesIntAMD64;
 
     else
-    	BIT->AbortBootServices = (uint32_t)&AbortBootServicesIntx86;
+        BIT->AbortBootServices = (uint32_t)&AbortBootServicesIntx86;
 }

@@ -313,9 +313,7 @@ FileRead:
     pop ecx
     pop edi
  
-    ; Clear out status, and set BufferSize to what we just copied.
-    mov word [PXENV_TFTP_READ.Status], 0
-    mov word [PXENV_TFTP_READ.BufferSize], PACKET_SIZE
+    ; Clear out status in AX. PXENV_TFTP_READ should be in readable condition (from first packet read).
     xor ax, ax
     
 .Cont:
@@ -323,8 +321,8 @@ FileRead:
     jnz .ErrorPXEAPI                  ; If any error occured, abort boot.
     
     movzx edx, word [PXENV_TFTP_READ.BufferSize]
-    test dx, dx                       ; If size read is zero, then EOF reached.
-    jz .Return
+    cmp edx, 512                      ; If size read is less than 512, then EOF reached.
+    jb .Return
 
     add edi, edx
 
@@ -351,17 +349,10 @@ FileRead:
         
     mov di, PXENV_TFTP_READ
     mov bx, TFTP_READ
-    call PXEAPICall                    ; Use the API to read.
+    call PXEAPICall                   ; Use the API to read.
 
     pop ecx
     pop edi                           ; And restore DI back again.
-    
-    cmp word [PXENV_TFTP_READ], 0x3B  ; If status is 0x3B - then FILE_NOT_FOUND error, which implies reading AFTER EOF (or so found out with few machines).
-    jne .Cont
-
-    xor ax, ax
-    mov word [PXENV_TFTP_READ], 0     ; If EOF, then no error code should be present, and bytes read should be 0.
-    mov word [PXENV_TFTP_READ.BufferSize], 0  
 
     jmp .Cont
 
@@ -369,7 +360,7 @@ FileRead:
     popad
     ret    
 
-.ErrorPXEAPI:
+.ErrorPXEAPI: 
     ; Set to mode 0x03, or 80*25 text mode.
     mov ax, 0x03
    

@@ -54,36 +54,28 @@ class BuildManager:
         if not sys.stdout.isatty():
             for Key, Value in Colors.iteritems():
                Colors[Key] = ''     
-	
+
         # Get the arch.
-        Arch = self.Config.Arch
+        Arch = self.Config.Options["arch"]
 
         # Create an Environment with our own tools.
         Env = Environment()
 
         # Set the tools.
-        Env["AS"] = "./Tools/bin/nasm"
-        Env["CC"] = "./Tools/bin/x86_64-elf-gcc"
-        Env["LINK"] = "./Tools/bin/x86_64-elf-ld"
-
+        Env["AS"] = self.Config.Options["AS"]
+        Env["CC"] = self.Config.Options["CC"]
+        Env["LINK"] = self.Config.Options["LINK"]
+        Env["AR"] = self.Config.Options["AR"]
+        Env["RANLIB"] = self.Config.Options["RANLIB"]
+        
         # Set the compiler flags.
-        Env["CPPFLAGS"] = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-O2", "-Wshadow", "-Wcast-align",
-                           "-Wwrite-strings", "-Wredundant-decls", "-Wnested-externs", 
-                           "-Winline", "-Wno-attributes", "-Wno-deprecated-declarations", 
-                           "-Wno-div-by-zero", "-Wno-endif-labels", "-Wfloat-equal", "-Wformat=2", 
-                           "-Wno-format-extra-args", "-Winit-self", "-Winvalid-pch",
-                           "-Wmissing-format-attribute", "-Wmissing-include-dirs",
-                           "-Wno-multichar",
-                           "-Wno-pointer-to-int-cast", "-Wredundant-decls",
-                           "-Wshadow", "-Wno-sign-compare",
-                           "-Wswitch", "-Wsystem-headers", "-Wundef",
-                           "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable",
-                           "-Wno-unused-result", "-Wwrite-strings", "-Wdisabled-optimization",
-                           "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
-                           "-nodefaultlibs", "-fno-builtin", "-fomit-frame-pointer"]
+        Env["CCFLAGS"] = self.Config.Options["CCFLAGS"]
 
         # The assembler flags.
-        Env["ASFLAGS"] = ["-Ox"]
+        Env["ASFLAGS"] = self.Config.Options["ASFLAGS"]
+
+        # The linker flags.
+        Env["LINKFLAGS"] = self.Config.Options["LINKFLAGS"]
 
         # Set the builders.
         Env["BUILDERS"]["ISO"] = ISOBuilder
@@ -92,14 +84,7 @@ class BuildManager:
         Env["BUILDERS"]["Floppy"] = FloppyBuilder
 
         # Get the build.
-        Build = self.Config.Build
-
-        # If it's at debug, have no optimization, else O2 optimization.
-        if Build == "debug":
-            Env["CPPFLAGS"] += ["-O0"]
-
-        else:
-            Env["CPPFLAGS"] += ["-O2"]
+        Build = self.Config.Options["build"]
 
         # Hide the ugly compiler command lines and display nice messages.
         Env["ASCOMSTR"]     = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
@@ -115,11 +100,19 @@ class BuildManager:
         # Save some information in the Environment.
         Env["ARCH"] = Arch
         Env["COLORS"] = Colors
-        Env["PXE_PATH"] = self.Config.PXEPath
+        Env["PXE_PATH"] = self.Config.Options["pxepath"]
 
-        if self.Config.Target == "all" or self.Config.Target == "pxe":
+        if self.Config.Options["target"] == "all" or self.Config.Options["target"] == "pxe":
             if not os.path.exists(Env["PXE_PATH"]):
                 raise StopError("The %s directory required for netboot (PXE) isn't present." % (Env["PXE_PATH"]))
+
+        if self.Config.Options["toolset"] == "cross":
+            if not os.path.exists(self.Config.Options["PREFIX"]):
+                if self.Config.Options["PREFIX"] == "./Tools":
+                    os.system("./Crosstools.sh")
+
+                else:
+                    os.system("./Crosstools.sh -p %s" % self.Config.Options["PREFIX"])
 
         # Return the environment.
         return Env

@@ -35,18 +35,18 @@
 
 struct PMMHeader
 {
-	uint8_t  Identifier[4];
-	uint64_t EntryPoint;
-	uint64_t StartAddr;
-	uint64_t EndAddr;
-	uint64_t BSSStart;
-	uint64_t BSSEnd;
-	uint32_t CRC32;
+    uint8_t  Identifier[4];
+    uint64_t EntryPoint;
+    uint64_t StartAddr;
+    uint64_t EndAddr;
+    uint64_t BSSStart;
+    uint64_t BSSEnd;
+    uint32_t CRC32;
 } _PACKED;
 
 struct PMMEntry
 {
-	EmptyFunc_t Init;
+    EmptyFunc_t Init;
 } _PACKED;
 
 typedef struct PMMHeader PMMHeader_t;

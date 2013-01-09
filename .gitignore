@@ -57,3 +57,6 @@ bochsout.txt
 *.sublime*
 .cproject
 .project
+
+## Documentation
+Documentation/Images

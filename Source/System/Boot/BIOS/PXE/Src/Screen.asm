@@ -70,13 +70,13 @@ Print:
     lodsb                             ; Load the value at [@es:@si] in @al.
     test al, al                       ; If AL is the terminator character, stop printing.
 
-    je .PrintDone                  	
-    mov ah, 0x0E	
+    je .PrintDone                      
+    mov ah, 0x0E    
     int 0x10
     jmp .PrintLoop                    ; Loop till the null character not found.
-	
+    
 .PrintDone:
     ; Restore them.
     pop ax
     pop si
-    ret	
+    ret    

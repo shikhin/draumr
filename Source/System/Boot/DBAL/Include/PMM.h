@@ -71,10 +71,10 @@ typedef struct MMapEntry MMapEntry_t;
 #define POOL_BITMAP                    1
 
 // The "remove entry" macro.
-#define REMOVE_ENTRY(EntryNumber) {  																			 \
-									memmove(&MMapEntries[EntryNumber], &MMapEntries[EntryNumber + 1],            \
-		                                    sizeof(MMapEntry_t) * (MMapHeader->Entries - (EntryNumber + 1)));    \
-							        MMapHeader->Entries--;														 \
+#define REMOVE_ENTRY(EntryNumber) {                                                                               \
+                                    memmove(&MMapEntries[EntryNumber], &MMapEntries[EntryNumber + 1],            \
+                                            sizeof(MMapEntry_t) * (MMapHeader->Entries - (EntryNumber + 1)));    \
+                                    MMapHeader->Entries--;                                                         \
                                   }
 
 // Define the pointers to the headers and entries.
