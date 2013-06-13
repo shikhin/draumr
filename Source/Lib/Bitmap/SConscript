@@ -27,16 +27,15 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-
 Import("Env", "SysEnv")
 
 Src = ["Src/Bitmap.c"]
 
-# A target for building the DBAL binary.
-Bitmap = SysEnv.Library("#Source/Lib/Bitmap", [File for File in Src], CCFLAGS = ["-march=i486", "-m32"])
-
-Depends(Bitmap, Src)
+# A target for building the bitmap lib.
+# Same evil I did in DBAL's SConscript.
+BitmapEnv = SysEnv.Clone()
+BitmapEnv.Append(CCFLAGS = ["-march=i486", "-m32"])
+Bitmap = BitmapEnv.Library("#Source/Lib/Bitmap", [File for File in Src])
 
 # Save the Bitmap target in the Environment as we will need it later.
 Env["LIB_BITMAP"] = Bitmap

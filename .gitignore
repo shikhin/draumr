@@ -8,20 +8,20 @@ Tools/
 # All executables + output files.
 
 ## Fixed location binaries.
-Source/System/Boot/BIOS/CD/Stage1
-Source/System/Boot/BIOS/PXE/Stage1
-Source/System/Boot/BIOS/Common/BIOS
-Source/System/Boot/BIOS/Floppy/Stage1
-Source/System/Boot/DBAL/DBAL
-Source/System/Boot/KL/KL
-Source/System/Kernel/Arch/KEx86
-Source/System/Kernel/Arch/KEAMD64
-Source/System/Kernel/Modules/PMM/PMMx86
-Source/System/Kernel/Modules/PMM/PMMPAE
-Source/System/Kernel/Modules/PMM/PMMAMD64
-Source/System/Kernel/Modules/VMM/VMMx86
-Source/System/Kernel/Modules/VMM/VMMPAE
-Source/System/Kernel/Modules/VMM/VMMAMD64
+Source/Boot/CD/Stage1
+Source/Boot/PXE/Stage1
+Source/Boot/Comb/Comb
+Source/Boot/Floppy/Stage1
+Source/Boot/DBAL/DBAL
+Source/Boot/KL/KL
+Source/Kernel/Arch/KEx86
+Source/Kernel/Arch/KEx86_64
+Source/Kernel/Modules/PMM/PMMx86
+Source/Kernel/Modules/PMM/PMMPAE
+Source/Kernel/Modules/PMM/PMMx86_64
+Source/Kernel/Modules/VMM/VMMx86
+Source/Kernel/Modules/VMM/VMMPAE
+Source/Kernel/Modules/VMM/VMMx86_64
 
 ## Utilieies.
 Utilities/*.util
@@ -60,3 +60,10 @@ bochsout.txt
 
 ## Documentation
 Documentation/Images
+
+## LaTeX
+*.aux
+*.log
+*.out
+*.pdf
+*.toc

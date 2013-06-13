@@ -40,7 +40,7 @@ def _floppy_builder(target, source, env) :
     Stage1 = str(env["FLOPPY_STAGE1"][0])
     shutil.copyfileobj(open(Stage1, 'rb'), Destination)
 
-    for CustTarget in env["CUST_TARGETS"]:
+    for CustTarget in env["COMMON_TARGETS"]:
         # Align to 512 byte boundary.
 
         # If alignment is needed.
@@ -52,7 +52,7 @@ def _floppy_builder(target, source, env) :
         Filename = str(CustTarget[0])
         shutil.copyfileobj(open(Filename, 'rb'), Destination)
 
-    # Seek to FlppySize - 1, and write a null byte to pad till N.
+    # Seek to FloppySize - 1, and write a null byte to pad till N.
     Destination.seek(FloppySize - 1)
     Destination.write('\x00')
 

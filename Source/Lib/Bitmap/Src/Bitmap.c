@@ -28,6 +28,7 @@
  */
 
 #include <stdint.h>
+#include <stddef.h>
 #include <Macros.h>
 #include <Bitmap.h>
 

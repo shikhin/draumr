@@ -32,6 +32,7 @@ import sys
 import os
 sys.path.insert(0, "Scripts/Scons")
 
+# Import Config & BuildManager.
 from Config import Config
 from Buildmanager import BuildManager
 
@@ -43,9 +44,6 @@ Cfg.Parse(ARGUMENTS)
 BldMgr = BuildManager(Cfg)
 Env = BldMgr.CreateEnv()
 
-# The background image.
-Env["BACK"] = "Background.bmp"
-
 # Run through the SConscript files.
 Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 Source = SConscript(dirs=["Source"], exports=["Env"])
@@ -54,7 +52,7 @@ Source = SConscript(dirs=["Source"], exports=["Env"])
 Image = Env.Image("BootImage.comp", None)
 
 # The *common* binary targets.
-Env["COMMON_TARGETS"] = [Env["BIOS"],
+Env["COMMON_TARGETS"] = [Env["COMB"],
                          Env["DBAL"],
                          Env["KL"],
                          Env["Kernelx86"],
@@ -75,7 +73,7 @@ if Env["ARCH"] == "i586":
 Depends(Image, [Env["CRC32"],
                 Env["COMMON_TARGETS"]])
 
-# If the background image exists, we depend upon the ToSIF utility.
+# If the background image exists, we depend upon the ToSIF utility too.
 if os.path.isfile(Env["BACK"]):
     Depends(Image, Env["ToSIF"])
 
@@ -95,7 +93,7 @@ if Cfg.Options["target"] == "all":
     Depends(PXE, Env["PXE_STAGE1"])
     Depends(Floppy, Env["FLOPPY_STAGE1"])
 
-    Depends([ISO, PXE, Floppy], Image)
+    Depends([ISO, PXE, Floppy], [Image, Env["COMMON_TARGETS"]])
     Default([ISO, PXE, Floppy])
 
 # The ISO target.
@@ -105,7 +103,7 @@ elif Cfg.Options["target"] == "iso":
      
     # The default target.
     Depends(ISO, Env["CD_STAGE1"])
-    Depends(ISO, Image)
+    Depends(ISO, [Image, Env["COMMON_TARGETS"]])
     Default(ISO)
 
 # The PXE target.
@@ -115,7 +113,7 @@ elif Cfg.Options["target"] == "pxe":
 
     # The default target.  
     Depends(PXE, Env["PXE_STAGE1"])
-    Depends(PXE, Image) 
+    Depends(PXE, [Image, Env["COMMON_TARGETS"]]) 
     Default(PXE)
 
 # The floppy disk target.
@@ -125,16 +123,16 @@ elif Cfg.Options["target"] == "floppy":
 
     # The default target.
     Depends(Floppy, Env["FLOPPY_STAGE1"])
-    Depends(Floppy, Image)
+    Depends(Floppy, [Image, Env["COMMON_TARGETS"]])
     Default(Floppy)
 
 # Clean respective things (hacky, but can't avoid).
 # Clean the background.sif image.
 Clean(["Draumr.iso", "Draumr.flp"], "Background.sif")
 
+# Clean the background.sif image we copy to /tftpboot/.
+Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
+
 # Clean the images we copy to /tftpboot/.
 for Target in Env["COMMON_TARGETS"]:
     Clean("/tftpboot/Stage1", "/tftpboot/" + os.path.basename(str(Target[0])))
-
-# Clean the background.sif image.
-Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")

@@ -86,10 +86,12 @@ class Config:
                         "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable",
                         "-Wno-unused-result", "-Wwrite-strings", "-Wdisabled-optimization",
                         "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
-                        "-nostartfiles", "-ffreestanding",
-                        "-nodefaultlibs", "-fomit-frame-pointer"],
-            "ASFLAGS": [],
-            "LINKFLAGS": []          
+                        "-ffreestanding", "-lgcc", "-fomit-frame-pointer"],
+            "ASFLAGS": ["-felf"],
+            "LINKFLAGS": [],      
+
+            # The background image.
+            "BACK": "Background.bmp"
         }
 
         # The configuration file location.
@@ -156,7 +158,7 @@ class Config:
                     self.Options[Option] = Value
 
             # If it's custom, look for toolchain binaries.
-            if self.Toolset == "custom":
+            if self.Options["toolset"] == "custom":
                 for Option in ToolsOptions:
                     if Key == Option:
                         self.Options[Option] = Value

@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
     Signature[4] = '\0';
 
     // Allocate a buffer for what would be good length.
-    Buf = (uint8_t*)malloc(GOOD_LENGTH);
+    Buf = malloc(GOOD_LENGTH);
     if(!Buf)
     {
         // Close open files.
@@ -267,13 +266,12 @@ int main(int argc, char *argv[])
             perror("Unable to write signature from input file");
             exit(EXIT_FAILURE);
         }
+    
+        printf("  [CRC32] %s -> 0x%X\n", Signature, Seed);
     }
 
     free(Buf);
     fclose(InFile);
-
-    if(Old != Seed)
-        printf("  [CRC32] %s -> 0x%X\n", Signature, Seed);
 
     return 0;
 }

@@ -33,6 +33,7 @@
 
 #include <Compiler.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <Macros.h>
 
 #define _CONST                            const

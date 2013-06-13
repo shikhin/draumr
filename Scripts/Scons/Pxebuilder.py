@@ -43,7 +43,7 @@ def _pxe_builder(target, source, env) :
     shutil.copy(Stage1, TftpBoot)
 
     # Copy custom targets.
-    for CustTarget in env["CUST_TARGETS"]:
+    for CustTarget in env["COMMON_TARGETS"]:
         Filename = str(CustTarget[0])
         shutil.copy(Filename, TftpBoot)
 
@@ -52,7 +52,7 @@ def _pxe_builder(target, source, env) :
         Background = str(env["BACK"])
         shutil.copy(Background, TftpBoot)
 
-    # Print a next text.
+    # Print a nice text.
     print("  %s[PXE]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
 
     return 0

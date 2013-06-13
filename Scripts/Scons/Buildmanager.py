@@ -101,6 +101,7 @@ class BuildManager:
         Env["ARCH"] = Arch
         Env["COLORS"] = Colors
         Env["PXE_PATH"] = self.Config.Options["pxepath"]
+        Env["BACK"] = self.Config.Options["BACK"]
 
         if self.Config.Options["target"] == "all" or self.Config.Options["target"] == "pxe":
             if not os.path.exists(Env["PXE_PATH"]):
@@ -108,14 +109,17 @@ class BuildManager:
 
         Tools = ["AS", "CC", "LINK", "AR", "RANLIB"]
 
+        # Build the cross-compilers.
         if self.Config.Options["toolset"] == "cross":
             for Tool in Tools:
                 if not os.path.exists(self.Config.Options[Tool]):
                     if self.Config.Options["PREFIX"] == "./Tools":
                         os.system("./Crosstools.sh")
-
+                
                     else:
                         os.system("./Crosstools.sh -p %s" % self.Config.Options["PREFIX"])
 
+                    break
+                
         # Return the environment.
         return Env

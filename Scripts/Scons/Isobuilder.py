@@ -49,7 +49,7 @@ def _iso_builder(target, source, env) :
     shutil.copy(Stage1, Boot)
 
     # Copy custom targets.
-    for CustTarget in env["CUST_TARGETS"]:
+    for CustTarget in env["COMMON_TARGETS"]:
         Filename = str(CustTarget[0])
         shutil.copy(Filename, Boot)
 

@@ -27,6 +27,26 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Import important modules.
 Import("Env")
 
-SConscript(dirs=["System"], exports=["Env"])
+# Setup system specific environment
+SysEnv = Env.Clone()
+
+# Modify the CPPPATH, LIBPATH.
+SysEnv["CPPPATH"] = ["#Source/Include", "Include"]
+SysEnv["LIBPATH"] = ["#Source/Lib"]
+
+# Go to:
+#     Boot/Floppy
+#     Boot/CD
+# 	  Boot/PXE
+#     Boot/Comb
+#     Boot/DBAL
+#     Boot/KL
+#     Kernel/Arch
+#     Kernel/Modules/PMM
+#     Kernel/Modules/VMM
+#     Source/Lib
+SConscript(dirs=["Boot/Floppy", "Boot/CD", "Boot/PXE", "Boot/Comb", "Boot/DBAL", "Boot/KL", "Kernel/Arch",
+	       "Kernel/Modules/PMM", "Kernel/Modules/VMM", "#Source/Lib"], exports=["Env", "SysEnv"])

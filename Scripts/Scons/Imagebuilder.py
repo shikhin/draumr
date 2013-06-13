@@ -33,7 +33,7 @@ from SCons.Action import Action
 
 def _image_builder(target, source, env):
     # Run the CRC32 utility on all targets.
-    for Target in env["CUST_TARGETS"]:
+    for Target in env["COMMON_TARGETS"]:
         os.system("%s %s" % (env["CRC32"][0], Target[0]))
     
     if os.path.isfile(env["BACK"]):

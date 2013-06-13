@@ -45,33 +45,33 @@ mkdir -p Tools
 # Get the tools.
 
 # Binutils.
-echo -ne "  $Blue[WGET]$End  Tools/binutils-2.23.1.tar.bz2,    "
-download "http://ftp.gnu.org/gnu/binutils/binutils-2.23.1.tar.bz2"
+echo -ne "  $Blue[WGET]$End  Tools/binutils-2.23.2.tar.bz2,    "
+download "http://ftp.gnu.org/gnu/binutils/binutils-2.23.2.tar.bz2"
 
 # GCC.
-echo -ne "  $Blue[WGET]$End  Tools/gcc-4.7.2.tar.bz2,    "
-download "http://ftp.gnu.org/gnu/gcc/gcc-4.7.2/gcc-4.7.2.tar.bz2"
+echo -ne "  $Blue[WGET]$End  Tools/gcc-4.8.1.tar.bz2,    "
+download "http://ftp.gnu.org/gnu/gcc/gcc-4.8.1/gcc-4.8.1.tar.bz2"
 
 # NASM.
-echo -ne "  $Blue[WGET]$End  Tools/nasm-2.10.06.tar.xz,    "
-download "http://www.nasm.us/pub/nasm/releasebuilds/2.10.06/nasm-2.10.06.tar.xz"
+echo -ne "  $Blue[WGET]$End  Tools/nasm-2.10.07.tar.xz,    "
+download "http://www.nasm.us/pub/nasm/releasebuilds/2.10.07/nasm-2.10.07.tar.xz"
 
 # Untar them.
 
 # Binutils.
-echo -e "  $Blue[UNTAR]$End Tools/binutils-2.23.1.tar.bz2"
-tar -xf Tools/binutils-2.23.1.tar.bz2 -C Tools >/dev/null
-rm Tools/binutils-2.23.1.tar.bz2
+echo -e "  $Blue[UNTAR]$End Tools/binutils-2.23.2.tar.bz2"
+tar -xf Tools/binutils-2.23.2.tar.bz2 -C Tools >/dev/null
+rm Tools/binutils-2.23.2.tar.bz2
 
 # GCC.
-echo -e "  $Blue[UNTAR]$End Tools/gcc-4.7.2.tar.bz2"
-tar -xf Tools/gcc-4.7.2.tar.bz2 -C Tools >/dev/null
-rm Tools/gcc-4.7.2.tar.bz2
+echo -e "  $Blue[UNTAR]$End Tools/gcc-4.8.1.tar.bz2"
+tar -xf Tools/gcc-4.8.1.tar.bz2 -C Tools >/dev/null
+rm Tools/gcc-4.8.1.tar.bz2
 
 # NASM.
-echo -e "  $Blue[UNTAR]$End Tools/nasm-2.10.06.tar.xz"
-tar -xf Tools/nasm-2.10.06.tar.xz -C Tools >/dev/null
-rm Tools/nasm-2.10.06.tar.xz
+echo -e "  $Blue[UNTAR]$End Tools/nasm-2.10.07.tar.xz"
+tar -xf Tools/nasm-2.10.07.tar.xz -C Tools >/dev/null
+rm Tools/nasm-2.10.07.tar.xz
 
 # Build the tools.
 
@@ -80,20 +80,20 @@ mkdir -p Tools/build-binutils
 
 # Configure.
 echo -e "  $Blue[BINUT]$End Configuring"
-cd Tools/build-binutils && ../binutils-2.23.1/configure --target=$TARGET --prefix=$PREFIX --disable-nls
+cd Tools/build-binutils && ../binutils-2.23.2/configure --target=$TARGET --prefix=$PREFIX --disable-nls
 cd ../../
 
 # Compile.
 echo -e "  $Blue[BINUT]$End Compiling"
-make -C Tools/build-binutils all
+make -C Tools/build-binutils/ all
 
 # Install.
 echo -e "  $Blue[BINUT]$End Installing"
-make -C Tools/build-binutils install
+make -C Tools/build-binutils/ install
 
 # Clean.
 echo -e "  $Blue[BINUT]$End Cleaning"
-rm -rf Tools/build-binutils Tools/binutils-2.23.1
+rm -rf Tools/build-binutils Tools/binutils-2.23.2
 
 # GCC.
 mkdir -p Tools/build-gcc
@@ -101,36 +101,46 @@ mkdir -p Tools/build-gcc
 # Configure.
 echo -e "  $Blue[GCC]$End   Configuring"
 export PATH=$PATH:$PREFIX/bin
-cd Tools/build-gcc && ../gcc-4.7.2/configure --target=$TARGET --prefix=$PREFIX --disable-nls --enable-languages=c --without-headers
+cd Tools/build-gcc && ../gcc-4.8.1/configure --target=$TARGET --prefix=$PREFIX --disable-nls --enable-languages=c --without-headers
 cd ../../
+
+export LD_FOR_TARGET=$PREFIX/bin/x86_64-elf-ld
+export OBJDUMP_FOR_TARGET=$PREFIX/bin/x86_64-elf-objdump
+export NM_FOR_TARGET=$PREFIX/bin/x86_64-elf-nm
+export RANLIB_FOR_TARGET=$PREFIX/bin/x86_64-elf-ranlib
+export READELF_FOR_TARGET=$PREFIX/bin/x86_64-elf-readelf
+export STRIP_FOR_TARGET=$PREFIX/bin/x86_64-elf-strip
+export AS_FOR_TARGET=$PREFIX/bin/x86_64-elf-as
 
 # Compile.
 echo -e "  $Blue[GCC]$End   Compiling"
-make -C Tools/build-gcc all-gcc
+make -C Tools/build-gcc/ all-gcc 
+make -C Tools/build-gcc/ all-target-libgcc
 
 # Install.
 echo -e "  $Blue[GCC]$End   Installing"
-make -C Tools/build-gcc install-gcc
+make -C Tools/build-gcc/ install-gcc
+make -C Tools/build-gcc/ install-target-libgcc
 
 # Clean.
 echo -e "  $Blue[GCC]$End   Cleaning"
-rm -rf Tools/build-gcc Tools/gcc-4.7.2
+rm -rf Tools/build-gcc Tools/gcc-4.8.1
 
 # NASM.
 
 # Configure.
 echo -e "  $Blue[NASM]$End  Configuring"
-cd Tools/nasm-2.10.06 && ./configure --prefix=$PREFIX
+cd Tools/nasm-2.10.07 && ./configure --prefix=$PREFIX
 cd ../../
 
 # Compile.
 echo -e "  $Blue[NASM]$End  Compiling"
-make -C Tools/nasm-2.10.06/
+make -C Tools/nasm-2.10.07/
 
 # Install.
 echo -e "  $Blue[NASM]$End  Installing"
-make -C Tools/nasm-2.10.06/ install
+make -C Tools/nasm-2.10.07/ install
  
 # Clean.
 echo -e "  $Blue[NASM]$End  Cleaning"
-rm -rf Tools/nasm-2.10.06
+rm -rf Tools/nasm-2.10.07
