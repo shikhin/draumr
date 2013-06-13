@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -52,12 +52,12 @@ def _floppy_builder(target, source, env) :
         Filename = str(CustTarget[0])
         shutil.copyfileobj(open(Filename, 'rb'), Destination)
 
-    # Seek to FloppySize - 1, and write a null byte to pad till N.
+    # Seek to FloppySize - 1, and write a null byte to pad till FloppySize.
     Destination.seek(FloppySize - 1)
     Destination.write('\x00')
 
     # Print a nice text.
-    print("  %s[FLP]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+    print("  %s[FLP]%s           %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
     
     return 0
 

@@ -2,7 +2,7 @@
 
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -46,10 +46,23 @@ Env = BldMgr.CreateEnv()
 
 # Run through the SConscript files.
 Utils = SConscript(dirs=["Utilities"], exports=["Env"])
-Source = SConscript(dirs=["Source"], exports=["Env"])
 
-# The BootImage.comp.
-Image = Env.Image("BootImage.comp", None)
+# Go to:
+#     Bootloader/BIOS/Floppy
+#     Bootloader/BIOS/ISO
+#     Bootloader/BIOS/PXE
+#     Bootloader/BIOS/Comb
+#     Bootloader/DBAL
+#     Bootloader/KL
+#     Kernel/Arch
+#     Kernel/Modules/PMM
+#     Kernel/Modules/VMM
+#     Lib
+SConscript(dirs=["Bootloader/BIOS/Floppy", "Bootloader/BIOS/ISO", "Bootloader/BIOS/PXE", "Bootloader/BIOS/COMB", "Bootloader/DBAL", "Bootloader/KL", "Kernel/Arch",
+                 "Kernel/Modules/PMM", "Kernel/Modules/VMM", "Lib"], exports=["Env"])
+
+# The BootImage.cmp.
+Image = Env.Image("BootImage.cmp", None)
 
 # The *common* binary targets.
 Env["COMMON_TARGETS"] = [Env["COMB"],
@@ -73,10 +86,6 @@ if Env["ARCH"] == "i586":
 Depends(Image, [Env["CRC32"],
                 Env["COMMON_TARGETS"]])
 
-# If the background image exists, we depend upon the ToSIF utility too.
-if os.path.isfile(Env["BACK"]):
-    Depends(Image, Env["ToSIF"])
-
 # If we're building every target:
 if Cfg.Options["target"] == "all":
     # Build the ISO.
@@ -89,7 +98,7 @@ if Cfg.Options["target"] == "all":
     Floppy = Env.Floppy("Draumr.flp", None)
 
     # Set these as the default build target.
-    Depends(ISO, Env["CD_STAGE1"])
+    Depends(ISO, Env["ISO_STAGE1"])
     Depends(PXE, Env["PXE_STAGE1"])
     Depends(Floppy, Env["FLOPPY_STAGE1"])
 
@@ -102,7 +111,7 @@ elif Cfg.Options["target"] == "iso":
     ISO = Env.ISO("Draumr.iso", None)
      
     # The default target.
-    Depends(ISO, Env["CD_STAGE1"])
+    Depends(ISO, Env["ISO_STAGE1"])
     Depends(ISO, [Image, Env["COMMON_TARGETS"]])
     Default(ISO)
 
@@ -127,12 +136,6 @@ elif Cfg.Options["target"] == "floppy":
     Default(Floppy)
 
 # Clean respective things (hacky, but can't avoid).
-# Clean the background.sif image.
-Clean(["Draumr.iso", "Draumr.flp"], "Background.sif")
-
-# Clean the background.sif image we copy to /tftpboot/.
-Clean("/tftpboot/Stage1", "/tftpboot/Background.sif")
-
 # Clean the images we copy to /tftpboot/.
 for Target in Env["COMMON_TARGETS"]:
     Clean("/tftpboot/Stage1", "/tftpboot/" + os.path.basename(str(Target[0])))

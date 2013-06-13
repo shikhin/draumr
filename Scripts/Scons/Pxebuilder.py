@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -47,13 +47,8 @@ def _pxe_builder(target, source, env) :
         Filename = str(CustTarget[0])
         shutil.copy(Filename, TftpBoot)
 
-    # Copy background image if exists.
-    if env["BACK"] != '\0x00':
-        Background = str(env["BACK"])
-        shutil.copy(Background, TftpBoot)
-
     # Print a nice text.
-    print("  %s[PXE]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+    print("  %s[PXE]%s          %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
 
     return 0
 

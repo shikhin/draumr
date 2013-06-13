@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in Source and binary forms, with or without
@@ -35,16 +35,7 @@ def _image_builder(target, source, env):
     # Run the CRC32 utility on all targets.
     for Target in env["COMMON_TARGETS"]:
         os.system("%s %s" % (env["CRC32"][0], Target[0]))
-    
-    if os.path.isfile(env["BACK"]):
-        # Run the ToSIF utility, and then the CRC32 utility.
-        os.system("%s %s Background.sif" % (env["ToSIF"][0], env["BACK"]))
-        env["BACK"] = "Background.sif"              
-        os.system("%s %s" % (env["CRC32"][0], env["BACK"]))
-        
-    else:        
-        env["BACK"] = '\0x00'
-                 
+                
     return 0
 
 ImageBuilder = Builder(action = Action(_image_builder, None))

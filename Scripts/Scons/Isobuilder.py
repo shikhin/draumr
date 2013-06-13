@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@ def _iso_builder(target, source, env) :
     os.makedirs(Boot)
 
     # Copy Stage1.
-    Stage1 = str(env["CD_STAGE1"][0])
+    Stage1 = str(env["ISO_STAGE1"][0])
     shutil.copy(Stage1, Boot)
 
     # Copy custom targets.
@@ -53,16 +53,11 @@ def _iso_builder(target, source, env) :
         Filename = str(CustTarget[0])
         shutil.copy(Filename, Boot)
 
-    # Copy background image if exists.
-    if env["BACK"] != '\0x00':
-        Background = str(env["BACK"])
-        shutil.copy(Background, Boot)
-
     # Make the ISO.
     os.system("mkisofs -b %s -quiet -input-charset ascii -boot-info-table -boot-load-size 9 -no-emul-boot -o %s %s" % ("Boot/Stage1", target[0], Dir))
     
     # Print a nice text.
-    print("  %s[ISO]%s   %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
+    print("  %s[ISO]%s           %s" % (env["COLORS"]['Blue'], env["COLORS"]['End'], target[0])) 
 
     # Clean up our mess.
     shutil.rmtree(Dir)

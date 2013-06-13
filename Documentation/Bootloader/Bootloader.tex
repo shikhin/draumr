@@ -1,4 +1,4 @@
-\documentclass[11pt,a4paper,oneside]{report}
+\documentclass[a4paper,oneside]{memoir}
 
 \usepackage{hyperref}
 \hypersetup{pdfborder={0 0 0}}
@@ -12,6 +12,8 @@
 \author{Shikhin \textsc{Sethi}}
 \maketitle
 
+\clearpage
+
 \tableofcontents
 
 \chapter{Introduction}
@@ -20,23 +22,23 @@ The following section provides an introduction to the bootloader for the Draumr 
 
 \section{Background}
 
-The Multiboot Specification has helped kernel developers avoid meddling into the realm of bootloaders. The only viable implementation of the Multiboot Specification, the GNU GRand Unified Bootloader (GRUB)\footnote{Other implementations, such as the mboot.c32 module for Syslinux, and kboot, exist, but are not as widely used as GRUB.}, on the other hand, is more widely used for its implementation of the Linux boot protocol than the Multiboot Specification. Furthermore, the Free Software Foundation (FSF) has shown poor interest in the development of the Specification, and there was a gap of more than \textsc{five} years between the last release of GRUB Legacy, GRUB 0.97, and release of the Multiboot Specification version 1.6. Both versions of GRUB also employ several poor mechanisms\footnote{An example of this is the fact that GRUB does not verify, or sanitize the memory-map it passes to the kernel. It furthermore utiilizes the worst, yet simplest, firmware functions to generate this memory-map.} and makes extension of the bootloader to different firmwares difficult.
+The Multiboot Specification has helped kernel developers avoid meddling into the realm of bootloaders. The only viable implementation of the Multiboot Specification, the GNU GRand Unified Bootloader (GRUB)\footnote{Other implementations, such as the mboot.c32 module for Syslinux, and kboot, exist, but are not as widely used as GRUB.}, on the other hand, is more widely used for its implementation of the Linux boot protocol than the Multiboot Specification. Furthermore, the Free Software Foundation (FSF) has shown poor interest in the development of the Specification, and there was a gap of more than \emph{five} years between the last release of GRUB Legacy, GRUB 0.97, and release of the Multiboot Specification version 1.6. Both versions of GRUB also employ several poor mechanisms\footnote{An example of this is the fact that GRUB does not verify, or sanitize the memory-map it passes to the kernel. It furthermore utiilizes the worst, yet simplest, firmware functions to generate this memory-map.} and makes extension of the bootloader to different firmwares difficult.
 
 The necessity for a customized bootloader for Draumr arises with this lack of a good Multiboot Specification, and the author aims at targetting all shortcoming of both, the standard and the implementation, with the presented bootloader.
 
 \section{Terminology}
 
-\subsection{NOT a boot-manager}
+\subsection{\emph{Not} a boot-manager}
 
 Another discrepancy that GRUB introduces is the difference between a bootloader and a boot-manager. A boot-\emph{manager}, as the name suggests, is supposed to exist for the convenience of the user, to help him manage the loading of all Operating Systems (OSs) present on disk. A boot\emph{loader}, on the other hand, only aims at initializing the environment for the kernel to take control.
 
 GRUB aims at being the master of all jacks, by attempting to serve both as a boot-manager and a bootloader. The bootloader for Draumr clearly differentiates between the two, and offers no boot-manager capabilities. Furthermore, no such boot-manager is planned to be developed under the Draumr umbrella-head.
 
-\subsection{NOT a boot-sector}
+\subsection{\emph{Not} a boot-sector}
 
-A boot-sector is \emph{the region of a hard disk, floppy disk, optical disc, or other data storage device that contains machine code to be loaded into random-access memory (RAM) by a computer system's built-in firmware}, and thus, is where the bootloader starts its initialization. The bootloader, on the other hand, encompasses all stages that assume control before the kernel is initiated. 
+A boot-sector is ``the region of a hard disk, floppy disk, optical disc, or other data storage device that contains machine code to be loaded into random-access memory (RAM) by a computer system's built-in firmware," and thus, is where the bootloader starts its initialization. The bootloader, on the other hand, encompasses all stages that assume control before the kernel is initiated. 
 
-\emph{Boot-code} is sometimes used interchangeably with the term \emph{bootloader}. 
+\emph{Boot-code} is used interchangeably with the term \emph{bootloader} in the documentation. 
 
 \section{Target architectures}
 
@@ -71,19 +73,16 @@ The following chapter aims at providing a brief overview of the bootloader, and 
 \section{Generic Overview}
 \label{Generic Overview}
 
-The bootloader builds on the standard \textsc{two}-stage design, and separates the stages as:
+The bootloader builds on the standard two-stage design, and separates the stages as:
 
 \begin{description}
-    \item[Stage 1] \hfill \\
-                    Stage 1 is demarcated as the \emph{firmware specific}, and \emph{boot device specific} stage. This stage thus varies for all boot devices as well firmwares supported. The stage provides a disk access interface, as well as all data that is supposed to be provided by the firmware.
+    \item[Stage 1] is demarcated as the \emph{firmware specific}, and \emph{boot device specific} stage. This stage thus varies for all boot devices as well firmwares supported. The stage provides a disk access interface, as well as all data that is supposed to be provided by the firmware.
 
-    \item[Stage 2] \hfill \\
-                    Stage 2 is demarcated as the \emph{firmware independent}, and \emph{boot device independent} stage. This stage remains common for all supported boot devices, and firmwares. It handles all the generic boot tasks, such as parsing and cleaning of memory map, deciding of an efficient memory mode, et cetera. 
+    \item[Stage 2] is demarcated as the \emph{firmware independent}, and \emph{boot device independent} stage. This stage remains common for all supported boot devices, and firmwares. It handles all the generic boot tasks, such as parsing and cleaning of memory map, deciding of an efficient memory mode, et cetera. 
 
-                    This stage is known as the Draumr Boot Abstraction Layer, or the \textbf{DBAL}.
+    This stage is known as the Draumr Boot Abstraction Layer, or the \textbf{DBAL}.
 
-    \item[Kernel Loader] \hfill \\
-                    The Kernel Loader (KL) is the last stage of the boot-code, and is the only \emph{kernel specific} stage. It initiates the environment for the specific \texttt{x86} or \texttt{x86\_64} kernel, and passes control to it.
+    \item[Kernel Loader]  (KL) is the last stage of the boot-code, and is the only \emph{kernel specific} stage. It initiates the environment for the specific \texttt{x86} or \texttt{x86\_64} kernel, and passes control to it.
 \end{description}
 
 \section{BIOS Overview}
@@ -91,12 +90,11 @@ The bootloader builds on the standard \textsc{two}-stage design, and separates t
 When BIOS serves as the firmware, Stage 1 as specified in \hyperref[Generic Overview]{section \ref*{Generic Overview}, Generic Overview} gets split into:
 
 \begin{description}
-    \item[Stage 1] \hfill \\
-                    Stage 1 here is demarcated as the \emph{firmware specific}, and \emph{boot device specific} stage. This stage varies for all boot devices support. The stage provides a disk access interface to the next stage.
-    \item[Stage 1.5] \hfill \\
-                    Stage 1.5 is demarcated as the \emph{firmware specific}, and \emph{boot device independent} stage. This stage remains common for machines where BIOS serves as the firmware. The stage organizes all data that is supposed to be provided by the firmware, for the next stages.
+    \item[Stage 1] here is demarcated as the \emph{firmware specific}, and \emph{boot device specific} stage. This stage varies for all boot devices support. The stage provides a disk access interface to the next stage.
 
-                    This stage is known as the Common BIOS stage, or the \textbf{COMB}.
+    \item[Stage 1.5]  is demarcated as the \emph{firmware specific}, and \emph{boot device independent} stage. This stage remains common for machines where BIOS serves as the firmware. The stage organizes all data that is supposed to be provided by the firmware, for the next stages.
+
+    This stage is known as the Common BIOS stage, or the \textbf{COMB}.
 \end{description}
 
 \section{UEFI Overview}
@@ -127,22 +125,26 @@ The documentation for the bootloader is divided as follows, where each file repr
 
 Documentation for each component follows the same standard form, defined as:
 
+\subsection{Overview}
+
+This gives a brief overview of the component, and where the corresponding source code lies.
+
+\subsection{Imported}
+
 \begin{enumerate}
-    \item Overview. This gives a brief overview of the component, and where the corresponding source code lies.
-    \item Imported:\\
-        \begin{enumerate}
-            \item CPU state. This explains the state the component expects the CPU to be in.
-            \item Memory state. This explains the state the component expects the memory to be in.
-            \item Hardware state. This explains the state the component expects the hardware to be in.
-            \item API. This explains the API the component imports.
-        \end{enumerate}
-    \item Exported:\\
-        \begin{enumerate}
-            \item CPU state. This explains the state the component leaves the CPU in.
-            \item Memory state. This explains the state the component leaves the memory in.
-            \item Hardware state. This explains the state the component leaves the hardware in.
-            \item API. This explains the API the component exports.
-        \end{enumerate}
+    \item CPU state. This explains the state the component expects the CPU to be in.
+    \item Memory state. This explains the state the component expects the memory to be in.
+    \item Hardware state. This explains the state the component expects the hardware to be in.
+    \item API. This explains the API the component imports.
+\end{enumerate}
+
+\subsection{Exported}
+
+\begin{enumerate}
+    \item CPU state. This explains the state the component leaves the CPU in.
+    \item Memory state. This explains the state the component leaves the memory in.
+    \item Hardware state. This explains the state the component leaves the hardware in.
+   \item API. This explains the API the component exports.
 \end{enumerate}
 
 \end{document}

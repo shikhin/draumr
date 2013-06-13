@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -87,21 +87,20 @@ class BuildManager:
         Build = self.Config.Options["build"]
 
         # Hide the ugly compiler command lines and display nice messages.
-        Env["ASCOMSTR"]     = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
-        Env["CCCOMSTR"]     = "  %s[CC]%s    $SOURCE" % (Colors['Green'], Colors['End'])
-        Env["ARCOMSTR"]     = "  %s[AR]%s    $SOURCE" % (Colors['Green'], Colors['End'])
-        Env["LINKCOMSTR"]   = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
-        Env["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End'])
+        Env["ASCOMSTR"]     = "  %s[AS]%s            $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["CCCOMSTR"]     = "  %s[CC]%s            $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["ARCOMSTR"]     = "  %s[AR]%s            $SOURCE" % (Colors['Green'], Colors['End'])
+        Env["LINKCOMSTR"]   = "  %s[LINK]%s          $TARGET" % (Colors['Green'], Colors['End'])
+        Env["RANLIBCOMSTR"] = "  %s[RLIB]%s          $TARGET" % (Colors['Green'], Colors['End'])
 
-        # Use LD_LIBRARY_PATH if it is specified in the Environment where SCons was executed.
-        if "LD_LIBRARY_PATH" in os.environ:
-            Env["Env"]["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+        # Set CPPPATH, LIBPATH.
+        Env["CPPPATH"] = ["#Include", "Include"]
+        Env["LIBPATH"] = ["#Lib"]
 
         # Save some information in the Environment.
         Env["ARCH"] = Arch
         Env["COLORS"] = Colors
         Env["PXE_PATH"] = self.Config.Options["pxepath"]
-        Env["BACK"] = self.Config.Options["BACK"]
 
         if self.Config.Options["target"] == "all" or self.Config.Options["target"] == "pxe":
             if not os.path.exists(Env["PXE_PATH"]):

@@ -2,7 +2,7 @@
 
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -37,27 +37,14 @@ Import("Env")
 SysEnv = Environment()
 SysEnv.Append(CCFLAGS = ["-std=c99", "-Wall", "-Wextra", "-pedantic", "-Werror"])
 
-# Some colors we'd be using.
-Colors = {}
-Colors['Green']  = '\033[92m'
-Colors['Blue']   = '\033[34m'
-Colors['End']    = '\033[0m'
-
-# If the output is not a terminal, remove the colors.
-if not sys.stdout.isatty():
-    for Key, Value in Colors.iteritems():
-        Colors[Key] = ''     
-
 # Hide the ugly compiler command lines and display nice messages.
-SysEnv["ASCOMSTR"] = "  %s[AS]%s    $SOURCE" % (Colors['Green'], Colors['End'])
-SysEnv["CCCOMSTR"] = "  %s[CC]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
-SysEnv["ARCOMSTR"] = "  %s[AR]%s    $SOURCE" % (Colors ['Green'], Colors['End'])
-SysEnv["LINKCOMSTR"] = "  %s[LINK]%s  $TARGET" % (Colors['Green'], Colors['End'])
-SysEnv["RANLIBCOMSTR"] = "  %s[RLIB]%s  $TARGET" % (Colors['Green'], Colors['End'])
+SysEnv["ASCOMSTR"]      = Env["ASCOMSTR"]
+SysEnv["CCCOMSTR"]      = Env["CCCOMSTR"]
+SysEnv["ARCOMSTR"]      = Env["ARCOMSTR"]
+SysEnv["LINKCOMSTR"]    = Env["LINKCOMSTR"]
+SysEnv["RANLIBCOMSTR"]  = Env["RANLIBCOMSTR"]
 
 CRC32 = SysEnv.Program("CRC32.util", "CRC32.c")
-ToSIF = SysEnv.Program("ToSIF.util", "ToSIF.c")
 
 # Save the CRC32 target in the Environment as we will need it later.
 Env["CRC32"] = CRC32
-Env["ToSIF"] = ToSIF

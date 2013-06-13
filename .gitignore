@@ -42,6 +42,9 @@ Utilities/*.util
 
 # Build environment related.
 
+## Configuration.
+Build.cfg
+
 ## SCons.
 .sconsign.dblite
 

@@ -1,7 +1,7 @@
 /* 
  * Contains CRC32 generator - and expects to be present in root of tree.
  *
- * Copyright (c) 2012, Shikhin Sethi
+ * Copyright (c) 2013, Shikhin Sethi
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

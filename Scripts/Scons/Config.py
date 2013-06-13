@@ -1,6 +1,6 @@
  # Draumr build system.
  #
- # Copyright (c) 2012, Shikhin Sethi
+ # Copyright (c) 2013, Shikhin Sethi
  # All rights reserved.
  #
  # Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ class Config:
         "build": ["debug", "release"],
         "target": ["iso", "pxe", "floppy", "all"],
         "arch": ["x86_64", "i586"],
-        "toolset": ["cross", "custom", "default"]
+        "toolset": ["cross", "custom", "host"]
     }
 
     # The expected parameters with any option parsable.
@@ -58,8 +58,8 @@ class Config:
         # The default values.
         self.Options = {
             "arch": "x86_64",
-            "build": "debug",
-            "target": "all",
+            "build": "release",
+            "target": "iso",
             "pxepath": "/tftpboot",
             "toolset": "cross",
 
@@ -79,19 +79,15 @@ class Config:
                         "-Wno-div-by-zero", "-Wno-endif-labels", "-Wfloat-equal", "-Wformat=2", 
                         "-Wno-format-extra-args", "-Winit-self", "-Winvalid-pch",
                         "-Wmissing-format-attribute", "-Wmissing-include-dirs",
-                        "-Wno-multichar",
-                        "-Wno-pointer-to-int-cast", "-Wredundant-decls",
+                        "-Wno-multichar", "-Wno-pointer-to-int-cast", "-Wredundant-decls",
                         "-Wshadow", "-Wno-sign-compare",
                         "-Wswitch", "-Wsystem-headers", "-Wundef",
                         "-Wno-pragmas", "-Wno-unused-but-set-parameter", "-Wno-unused-but-set-variable",
                         "-Wno-unused-result", "-Wwrite-strings", "-Wdisabled-optimization",
-                        "-Werror", "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
-                        "-ffreestanding", "-lgcc", "-fomit-frame-pointer"],
+                        "-pedantic-errors", "-Wpointer-arith", "-nostdlib",
+                        "-ffreestanding", "-lgcc"],
             "ASFLAGS": ["-felf"],
-            "LINKFLAGS": [],      
-
-            # The background image.
-            "BACK": "Background.bmp"
+            "LINKFLAGS": []
         }
 
         # The configuration file location.
@@ -121,8 +117,8 @@ class Config:
             if ConfigFile.has_option('tools', 'toolset'):
                 self.Options["toolset"] = ConfigFile.get('tools', 'toolset')
 
-            # If the toolset is default or custom, first set all to default.
-            if self.Options["toolset"] == "custom" or self.Options["toolset"] == "default":
+            # If the toolset is default or custom, first set all to host.
+            if self.Options["toolset"] == "custom" or self.Options["toolset"] == "host":
                 self.Options["AS"] = "nasm"
                 self.Options["CC"] = "gcc"
                 self.Options["LINK"] = "ld"
