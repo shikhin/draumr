@@ -27,7 +27,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("Env", "SysEnv")
+Import("Env")
 
 # The generic source.
 GenSrc = ["Header.asm",
@@ -41,19 +41,19 @@ x86Src = ["APIInterface.asm"]
 x86_64Src = ["APIInterface.asm"]
 
 # A target for building the KL binary.
-x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/Kernel/Arch/x86/Link.ld")
+x86Env = Env.Clone(LINKFLAGS = "-m elf_i386 -TSource/Kernel/Arch/x86/Link.ld")
 
-x86SysEnv.Append(CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-D _x86"])
-x86SysEnv.VariantDir('x86', 'Generic', duplicate=0)
-Kernelx86 = x86SysEnv.Program("KEx86", ['x86/' + File for File in GenSrc]
+x86Env.Append(CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-D _x86"])
+x86Env.VariantDir('x86', 'Generic', duplicate=0)
+Kernelx86 = x86Env.Program("KEx86", ['x86/' + File for File in GenSrc]
                                         + ['x86/' + File for File in x86Src])
 
-x86_64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/Kernel/Arch/x86_64/Link.ld")
+x86_64Env = Env.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/Kernel/Arch/x86_64/Link.ld")
 
-x86_64SysEnv.Append(CCFLAGS = ["-march=nocona", "-m64", "-D _x86_64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], 
+x86_64Env.Append(CCFLAGS = ["-march=nocona", "-m64", "-D _x86_64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], 
 					ASFLAGS=["-felf64", "-D _x86_64"])
-x86_64SysEnv.VariantDir('x86_64', 'Generic', duplicate=0)
-Kernelx86_64 = x86_64SysEnv.Program("KEx86_64", ['x86_64/' + File for File in GenSrc]
+x86_64Env.VariantDir('x86_64', 'Generic', duplicate=0)
+Kernelx86_64 = x86_64Env.Program("KEx86_64", ['x86_64/' + File for File in GenSrc]
                                               + ['x86_64/' + File for File in x86_64Src])
 
 Env["Kernelx86"] = Kernelx86

@@ -27,7 +27,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("Env", "SysEnv")
+Import("Env")
 
 Src = ["Src/Header.asm",
        "Src/Main.c",
@@ -40,7 +40,7 @@ Src = ["Src/Header.asm",
        "Src/APIInterface.asm"]
 
 # A target for building the KL binary.
-KLEnv = SysEnv.Clone()
+KLEnv = Env.Clone()
 KLEnv.Append(CCFLAGS = ["-march=i586", "-m32"])
 KL = KLEnv.Program("KL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/Boot/KL/Link.ld")
 

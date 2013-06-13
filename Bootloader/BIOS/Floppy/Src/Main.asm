@@ -1,4 +1,4 @@
- ; Entry point for CD Bootloader Stage 1
+ ; Entry point for Floppy Stage 1.
  ;
  ; Copyright (c) 2013, Shikhin Sethi
  ; All rights reserved.
@@ -28,102 +28,76 @@
 BITS 16
 CPU 386
 
-GLOBAL Startup
+SECTION .text
 
-SECTION .data
+%include "Include/Macros.inc"
 
-%define BD_CD        0
-%define BD_FLOPPY    1
-%define BD_PXE       2
-
-; End (of) line.
-%define EL           0x0A, 0x0D
-
-; The error slogan! (hehe)
-ErrorMsg:
-    db "ERROR! ERROR! ERROR!", EL, EL, 0
-
-; Abort boot if can't open CBIOS file.
-ErrorOpenCBIOSMsg:
-    db "Unable to open the common BIOS file.", EL, 0
-
-; Or file is incorrect.
-ErrorCBIOSHeaderMsg:
-    db "The common BIOS's header has been found to be corrupt.", EL, 0
-
-; Or the CRC value is incorrect.
-ErrorCBIOSCRCMsg:
-    db "Incorrect CRC32 value of the common BIOS file.", EL, 0
+%include "Bootloader/BIOS/Floppy/Src/Abort.asm"
+%include "Bootloader/BIOS/Floppy/Src/Screen.asm"
+%include "Bootloader/BIOS/Floppy/Src/Disk.asm"
+%include "Lib/CRC32/CRC32.asm"
 
 SECTION .base
+
+%define BD_ISO      0
 
  ; Entry point where the BIOS hands control.
- ;     DL    -> Expects the drive number to be present in dl.
+ ;     DL    -> Expects the drive number to be present in DL.
  ;     CS:IP -> Expects CS:IP to point to the linear address 0x7C00.
-Startup:
-    jmp 0x0000:Main                   ; Some BIOS' load the bootloader at 0x0000:0x7C00, while others
-                                      ; load it at 0x07C0:0x0000. Do a far jump to reload this value
-                                      ; to a standard 0x0000:0xIP.
+FUNC(start):
+    ; Some BIOS' load the bootloader at 0x0000:0x7C00, while others
+    ; load it at 0x07C0:0x0000. Do a far jump to reload this value
+    ; to a standard 0x0000:0xIP.
+    jmp 0x0000:resetCS
 
-SECTION .text
-%include "Source/Boot/Floppy/Src/Abort.asm"
-%include "Source/Boot/Floppy/Src/Screen.asm"
-%include "Source/Boot/Floppy/Src/Disk.asm"
-%include "Source/Lib/CRC32/CRC32.asm"
+resetCS:
+    xor ax, ax
 
-SECTION .base
-Main:
-    xor ax, ax                        ; Set all the segment registers to 0x0000.
-
+    ; Set the stack.
     mov ss, ax
-    mov sp, Startup                   ; Set the stack to start from Startup (0x7C00) and continue below.
+    mov sp, start                   
 
+    ; Zero segment registers.
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     
-    mov [BootDrive], dl               ; Save @dl which contains the Boot Drive number for future references.
-   
+    ; Save DL.
+    mov [Disk_bootDrive], dl
+    
     ; Set to mode 0x03, or 80*25 text mode.
     mov ax, 0x03
-   
-    ; SWITCH! 
     int 0x10
 
-    call BootFileGet                  ; Get the complete boot file (us).
-    jmp ExtMain
+    call Disk_getStage1
+    jmp init
 
-; Pad out the remaining bytes in the first 512 bytes, and then define the boot signature.
-    times 510-($-$$) db 0
-
-BIOSSignature:
+; Pad to 512 bytes, and then the boot signature.
+    times 510 - ($ - $$) db 0
     dw 0xAA55
 
-BigVal1: dd 0xFFFFFFFF, 0x00000000
-BigVal2: dd 0xFFFFFFFE, 0xE0000000
-BigVal3: dd 0x00000000, 0x00000000
+init:
+    call Display_init        
+    call Disk_initBootFiles
 
-ExtMain:
-    call ScreenInit                   ; Initialize the entire screen to blue, and disable the hardware cursor.        
-    call BootFilesInit                ; Initialize boot file data - get the size currently.
+.loadCOMB:
+    ; Open file 0, COMB.
+    xor ax, ax
+    call Disk_openFile
 
-.LoadCommonBIOS:
-    xor ax, ax                        ; Open File 0, or common BIOS file.
-
-    call FileOpen                     ; Open the File.
-    jc .ErrorOpenCBIOS
+    jc .ERRORTODO
     
-    ; ECX contains size of file we are opening.
+    ; Save size returned by Disk_openFile.
     push ecx
 
-    mov ecx, 0x200                    ; Read only 0x200 bytes.
+    ; Read 512 bytes of COMB.
+    mov ecx, 0x200
     mov edi, 0x9000
-    
-    call FileRead                     ; Read the entire file.
+    call Disk_readFile
 
-; Does all checks related to the first sector of the common BIOS file.
-.CheckCBIOS1:
+; Check COMB file.
+.checkCOMB1:
     cmp dword [0x9000], "COMB"        ; Check the signature.
     jne .ErrorCBIOSHeader
 
@@ -204,6 +178,6 @@ ExtMain:
     mov si, ErrorCBIOSCRCMsg
     jmp AbortBoot
 
-SECTION .pad
-; Define DRAUMRSS - so that it can be used to check the sanity of the file.
-db "DRAUMRSS"                         ; Define the boot signature - DRAUMRSS.
+SECTION .signature
+; Define the file signature that it can be used to check the sanity of the file.
+db "DRAUMR00"

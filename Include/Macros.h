@@ -27,11 +27,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// The MAX macro - to find the maximum of two values.
+/* For GCC, which is the only compiler we support right now */
+#ifdef __GNUC__
+// Structure and variable related.
+#define _PACKED     __attribute__((packed))
+#define _ALIGNED(x) __attribute__((aligned(x)))
+
+// Functions related.
+#define _INLINE     __attribute__((always_inline))
+#define _NORETURN   __attribute__((noreturn))
+#define _TARGET(x)  __attribute__((__target__(x)))
+
+// Optimization related.
+#define _HOT        __attribute__((hot))
+#define _COLD       __attribute__((cold))
+
+// _WORDSIZE
+#ifdef __x86_64__ 
+#define _WORDSIZE 64
+#else
+#define _WORDSIZE 32
+#endif
+
+#define va_list        __builtin_va_list
+#define va_start(x, y) __builtin_va_start(x, y)
+#define va_arg(x, y)   __builtin_va_arg(x, y)
+#define va_end(x)      __builtin_va_end(x)
+
+#else
+#error "Compiler not supported."
+#endif
+
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-// The MIN macro - to find the minimum of two values.
-#define MIN(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-// To find a specific bit.
 #define BIT(x)     (1 << (x))

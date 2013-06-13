@@ -28,7 +28,7 @@
  */
  
 OUTPUT_FORMAT("binary")
-ENTRY(Startup)
+ENTRY(start)
 
 SECTIONS
 {
@@ -48,10 +48,10 @@ SECTIONS
         *(.data)                                                                                             
     }
 
-    .pad 0x8DF8 :
+    .signature (0x9000 - 0x8) :
     {
-        pad = .;
-        *(.pad)
+        signature = .;
+        *(.signature)
     }
 
     end = .;

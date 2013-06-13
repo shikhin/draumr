@@ -51,7 +51,7 @@ Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 #     Bootloader/BIOS/Floppy
 #     Bootloader/BIOS/ISO
 #     Bootloader/BIOS/PXE
-#     Bootloader/BIOS/Comb
+#     Bootloader/BIOS/COMB
 #     Bootloader/DBAL
 #     Bootloader/KL
 #     Kernel/Arch

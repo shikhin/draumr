@@ -27,7 +27,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("Env", "SysEnv")
+Import("Env")
 
 Src = ["Link.ld",
        "Format/Format.inc",
@@ -40,8 +40,8 @@ Src = ["Link.ld",
        "Src/BootServices.asm"]
 
 # A target for building the Comb binary.
-Comb = SysEnv.Program("Comb", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TSource/Boot/Comb/Link.ld")
-Depends(Comb, Src)
+COMB = Env.Program("COMB", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TBootloader/BIOS/COMB/Link.ld")
+Depends(COMB, Src)
 
-# Save the Comb target in the Environment as we will need it later.
-Env["COMB"] = Comb
+# Save the COMB target in the Environment as we will need it later.
+Env["COMB"] = COMB

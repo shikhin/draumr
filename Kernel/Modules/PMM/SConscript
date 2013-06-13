@@ -27,7 +27,7 @@
  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Import("Env", "SysEnv")
+Import("Env", "Env")
 
 # The generic source.
 GenSrc = ["Header.asm",
@@ -35,18 +35,18 @@ GenSrc = ["Header.asm",
           "Debug.c"]
 
 # A target for building the PMM binary.
-x86SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_i386 -TSource/Kernel/Modules/PMM/x86/Link.ld")
+x86Env = Env.Clone(LINKFLAGS = "-m elf_i386 -TSource/Kernel/Modules/PMM/x86/Link.ld")
 
-x86SysEnv.Append(CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-D _x86"])
-x86SysEnv.VariantDir('x86', 'Generic', duplicate=0)
-PMMx86 = x86SysEnv.Program("PMMx86", ['x86/' + File for File in GenSrc])
+x86Env.Append(CCFLAGS = ["-march=i586", "-m32", "-D _x86"], ASFLAGS=["-D _x86"])
+x86Env.VariantDir('x86', 'Generic', duplicate=0)
+PMMx86 = x86Env.Program("PMMx86", ['x86/' + File for File in GenSrc])
 
-x86_64SysEnv = SysEnv.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/Kernel/Modules/PMM/x86_64/Link.ld")
+x86_64Env = Env.Clone(LINKFLAGS = "-m elf_x86_64 -TSource/Kernel/Modules/PMM/x86_64/Link.ld")
 
-x86_64SysEnv.Append(CCFLAGS = ["-march=nocona", "-m64", "-D _x86_64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], 
+x86_64Env.Append(CCFLAGS = ["-march=nocona", "-m64", "-D _x86_64", "-mcmodel=large", "-mno-red-zone", "-mno-mmx", "-mno-sse", "-mno-sse2", "-mno-sse3", "-mno-3dnow"], 
 					ASFLAGS=["-felf64", "-D _x86_64"])
-x86_64SysEnv.VariantDir('x86_64', 'Generic', duplicate=0)
-PMMx86_64 = x86_64SysEnv.Program("PMMx86_64", ['x86_64/' + File for File in GenSrc])
+x86_64Env.VariantDir('x86_64', 'Generic', duplicate=0)
+PMMx86_64 = x86_64Env.Program("PMMx86_64", ['x86_64/' + File for File in GenSrc])
 
 Env["PMMx86"] = PMMx86
 Env["PMMx86_64"] = PMMx86_64
