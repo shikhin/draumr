@@ -30,7 +30,7 @@
 # Insert our own script path in front of the others.
 import sys
 import os
-sys.path.insert(0, "Scripts/Scons")
+sys.path.insert(0, "SCons")
 
 # Import Config & BuildManager.
 from Config import Config
@@ -51,36 +51,19 @@ Utils = SConscript(dirs=["Utilities"], exports=["Env"])
 #     Bootloader/BIOS/Floppy
 #     Bootloader/BIOS/ISO
 #     Bootloader/BIOS/PXE
-#     Bootloader/BIOS/COMB
-#     Bootloader/DBAL
-#     Bootloader/KL
+#     Bootloader/BIOS/Stage15
+#     Bootloader/BAL
+#     Bootloader/Loader
 #     Kernel/Arch
 #     Kernel/Modules/PMM
 #     Kernel/Modules/VMM
 #     Lib
-SConscript(dirs=["Bootloader/BIOS/Floppy", "Bootloader/BIOS/ISO", "Bootloader/BIOS/PXE", "Bootloader/BIOS/COMB", "Bootloader/DBAL", "Bootloader/KL", "Kernel/Arch",
+SConscript(dirs=["Bootloader/BIOS/Floppy", "Bootloader/BIOS/ISO", "Bootloader/BIOS/PXE",
+                 "Bootloader/BIOS/Stage15", "Bootloader/BAL", "Bootloader/Loader", "Kernel/Arch",
                  "Kernel/Modules/PMM", "Kernel/Modules/VMM", "Lib"], exports=["Env"])
 
 # The BootImage.cmp.
 Image = Env.Image("BootImage.cmp", None)
-
-# The *common* binary targets.
-Env["COMMON_TARGETS"] = [Env["COMB"],
-                         Env["DBAL"],
-                         Env["KL"],
-                         Env["Kernelx86"],
-                         Env["Kernelx86_64"],
-                         Env["PMMx86"],
-                         Env["PMMx86_64"],
-                         Env["VMMx86"],
-                         Env["VMMx86PAE"],
-                         Env["VMMx86_64"]]
-
-# If the arch's i586, remove the unneccessary stuff.
-if Env["ARCH"] == "i586":
-    Env["COMMON_TARGETS"].remove(Env["Kernelx86_64"])
-    Env["COMMON_TARGETS"].remove(Env["PMMx86_64"])
-    Env["COMMON_TARGETS"].remove(Env["VMMx86_64"])
 
 # It depends upon all the common binaries.
 Depends(Image, [Env["CRC32"],

@@ -39,9 +39,9 @@ COMB:
     .LBA      dd 9                    ; The LBA for the starting of the COMB File.
     .Size     dd 0x2000               ; The size of the COMB File - now we know the exact number.
 
-DBAL:
-    .LBA      dd 25                   ; The LBA of the starting of the DBAL File - hardcoded, since the COMB is packed to 8KiB.
-    .Size     dd 0                    ; The size for the DBAL file is unknown.
+BAL:
+    .LBA      dd 25                   ; The LBA of the starting of the BAL File - hardcoded, since the COMB is packed to 8KiB.
+    .Size     dd 0                    ; The size for the BAL file is unknown.
 
 KL:
     .LBA      dd 0 
@@ -215,9 +215,9 @@ SECTION .text
 BootFilesInit:
     pushad
 
-; Handle the size and LBA of the DBAL.
-.DBAL:
-    mov eax, [DBAL.LBA]               ; Get the LBA into EAX.
+; Handle the size and LBA of the BAL.
+.BAL:
+    mov eax, [BAL.LBA]               ; Get the LBA into EAX.
     mov ecx, 1                        ; Read one sectors.
     mov di, 0x9000                    ; We'd be reading at 0x9000 - temporary address of all these files. 
     
@@ -228,12 +228,12 @@ BootFilesInit:
 
     add ecx, 0x1FF                    ; Pad it to the last 512 byte boundary.
     and ecx, ~0x1FF
-    mov [DBAL.Size], ecx              ; And store it!
+    mov [BAL.Size], ecx              ; And store it!
 
 ; Handle the size and LBA of the KL.
 .KL:
-    shr ecx, 9                        ; Shift left ECX (size of DBAL) by 9, dividing by 512.
-    add ecx, [DBAL.LBA]               ; Add it to the LBA to get the LBA of KL.
+    shr ecx, 9                        ; Shift left ECX (size of BAL) by 9, dividing by 512.
+    add ecx, [BAL.LBA]               ; Add it to the LBA to get the LBA of KL.
 
     mov dword [KL.LBA], ecx
 
@@ -407,7 +407,7 @@ FloppyReadSectorM:
  ; Opens a file to be read from.
  ;     AL    -> contains the code number of the file to open.
  ;      0    -> Common BIOS File.
- ;      1    -> DBAL.
+ ;      1    -> BAL.
  ;      3    -> KL.
  ;      4    -> Kernel x86.
  ;      5    -> Kernel x86_64.

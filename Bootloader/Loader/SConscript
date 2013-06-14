@@ -31,25 +31,18 @@ Import("Env")
 
 Src = ["Src/Header.asm",
        "Src/Main.c",
-       "Src/BIT.c",
+       "Src/CPU.c",
+       "Src/VMMx86.c",
+       "Src/VMMPAE.c",
+       "Src/VMMx86_64.c",
        "Src/String.c",
-       "Src/PMM.c",
-       "Src/Debug.c",
-       "Src/Abort.c",
-       "Src/BootFiles.c",
-       "Src/Output.c",
-       "Src/FPU.asm",
-       "Src/CPU.asm",
-       "Src/Math.c",
-       "Src/API.c"]
+       "Src/API.c",
+       "Src/APIInterface.asm"]
 
-# An environment building the DBAL binary.
-# NOTE that this may be totally unneccessary, but I haven't figured out
-# how do cleanly add some CCFLAGS options then remove them without screwing up.
-# I'm probably being evil, but hey!
-DBALEnv = Env.Clone()
-DBALEnv.Append(CCFLAGS = ["-march=i586", "-m32"])
-DBAL = DBALEnv.Program("DBAL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/Boot/DBAL/Link.ld", LIBS=['Bitmap'])
+# A target for building the KL binary.
+KLEnv = Env.Clone()
+KLEnv.Append(CCFLAGS = ["-march=i586", "-m32"])
+KL = KLEnv.Program("LOADER", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/Boot/KL/Link.ld")
 
-# Save the DBAL target in the Environment as we will need it later.
-Env["DBAL"] = DBAL
+# Save the KL target in the Environment as we will need it later.
+Env["LOADER"] = KL

@@ -119,6 +119,31 @@ class BuildManager:
                         os.system("./Crosstools.sh -p %s" % self.Config.Options["PREFIX"])
 
                     break
+
+        # Deduce the common targets.
+        Env["COMMON_TARGETS"] = [Env["STAGE_15"],
+                                 Env["BAL"],
+                                 Env["LOADER"],
+                                 Env["Kernelx86"],
+                                 Env["Kernelx86_64"],
+                                 Env["PMMx86"],
+                                 Env["PMMx86_64"],
+                                 Env["VMMx86"],
+                                 Env["VMMx86PAE"],
+                                 Env["VMMx86_64"]]
+
+        # If the arch's i586, remove the x86_64 stuff.
+        if Env["ARCH"] == "i586":
+            Env["COMMON_TARGETS"].remove(Env["Kernelx86_64"])
+            Env["COMMON_TARGETS"].remove(Env["PMMx86_64"])
+            Env["COMMON_TARGETS"].remove(Env["VMMx86_64"])
+
+        # If the arch's x86_64, remove the x86 stuff.
+        if Env["ARCH"] == "x86_64":
+            Env["COMMON_TARGETS"].remove(Env["Kernelx86"])
+            Env["COMMON_TARGETS"].remove(Env["PMMx86"])
+            Env["COMMON_TARGETS"].remove(Env["VMMx86"])
+            Env["COMMON_TARGETS"].remove(Env["VMMx86PAE"])
                 
         # Return the environment.
         return Env

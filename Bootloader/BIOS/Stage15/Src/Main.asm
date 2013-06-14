@@ -58,7 +58,7 @@ BIT:
     .MPS          dd 0                ; The 32-bit address of the MPS tables.
     .SMBIOS       dd 0                ; The 32-bit address of the SMBIOS tables.
 
-    .AbortBootServices dd AbortBootServicesAPI   ; Aborts all boot services provided by DBAL + firmware.
+    .AbortBootServices dd AbortBootServicesAPI   ; Aborts all boot services provided by BAL + firmware.
 
     .MMap         dd MMapHeader       ; The 32-bit address of the MMap.
     .HighestAddress  dq 0             ; The highest accessible address by the MMap.
@@ -102,16 +102,16 @@ ErrorMsg:
     db "ERROR! ERROR! ERROR!", EL, EL, 0
 
 ; Abort boot if can't open CBIOS file.
-ErrorOpenDBALMsg:
-    db "Unable to open the DBAL file.", EL, 0
+ErrorOpenBALMsg:
+    db "Unable to open the BAL file.", EL, 0
 
 ; Or file is incorrect.
-ErrorDBALHeaderMsg:
-    db "Corrupt DBAL header.", EL, 0
+ErrorBALHeaderMsg:
+    db "Corrupt BAL header.", EL, 0
 
 ; Or the CRC value is incorrect.
-ErrorDBALCRCMsg:
-    db "Incorrect CRC32 value of the DBAL file.", EL, 0
+ErrorBALCRCMsg:
+    db "Incorrect CRC32 value of the BAL file.", EL, 0
 
 SECTION .text
 
@@ -152,12 +152,12 @@ Startup:
     call MMapBuild
     call VideoInit
 
-.LoadDBAL:    
-    xor ax, ax                        ; Open file 1, or DBAL file.
+.LoadBAL:    
+    xor ax, ax                        ; Open file 1, or BAL file.
     inc ax
     
     call [FileOpen]                   ; Open the File.
-    jc .ErrorOpenDBAL
+    jc .ErrorOpenBAL
     
     ; ECX contains size of file we are opening.
     push ecx
@@ -166,12 +166,12 @@ Startup:
     mov edi, 0xE000
     call [FileRead]         
     
-.CheckDBAL1:
-    cmp dword [0xE000], "DBAL"        ; Check the signature.
-    jne .ErrorDBALHeader
+.CheckBAL1:
+    cmp dword [0xE000], "BAL"        ; Check the signature.
+    jne .ErrorBALHeader
     
     cmp dword [0xE008], 0xE000        ; Check the starting address.
-    jne .ErrorDBALHeader
+    jne .ErrorBALHeader
     
     mov ecx, [0xE000 + 12]            ; Get the end of file in ECX - actual file size.
     sub ecx, 0xE000                   ; Subtract 0xE000 from it to get it's size.
@@ -184,7 +184,7 @@ Startup:
     shr edx, 9                        ; Here we have the number of sectors of the file (according to the fs/boot medium).
     
     cmp ecx, edx
-    jne .ErrorDBALHeader              ; If they aren't equal, error.
+    jne .ErrorBALHeader              ; If they aren't equal, error.
   
 .LoadRestFile:
     add edi, 0x200
@@ -201,11 +201,11 @@ Startup:
     call [FileClose]                  ; And then close the file.
 
     ; Switch to protected mode - since we might be crossing our boundary here.
-    mov ebx, .CheckDBAL2
+    mov ebx, .CheckBAL2
     call PMSwitch
 
 BITS 32
-.CheckDBAL2:   
+.CheckBAL2:   
     mov ecx, [0xE000 + 12]            ; Get the end of the file in ECX.
     mov esi, 0xE000 + 28              ; Calculate CRC from above byte 24.
     
@@ -220,7 +220,7 @@ BITS 32
     je .BSSZero
     
     ; If error occured, switch to real mode.
-    mov ebx, .ErrorDBALCRC
+    mov ebx, .ErrorBALCRC
     call RMSwitch
 
 .BSSZero:
@@ -237,24 +237,24 @@ BITS 32
     jmp .Cont
 
 BITS 16
-.ErrorOpenDBAL:
-    mov si, ErrorOpenDBALMsg
+.ErrorOpenBAL:
+    mov si, ErrorOpenBALMsg
     jmp AbortBoot
 
-.ErrorDBALHeader:
-    mov si, ErrorDBALHeaderMsg
+.ErrorBALHeader:
+    mov si, ErrorBALHeaderMsg
     jmp AbortBoot
 
-.ErrorDBALCRC:
-    mov si, ErrorDBALCRCMsg
+.ErrorBALCRC:
+    mov si, ErrorBALCRCMsg
     jmp AbortBoot
 
 BITS 32
 .Cont:
     call TablesFind
 
-; Jump to the DBAL file here.
-.JmpToDBAL:
+; Jump to the BAL file here.
+.JmpToBAL:
     ; Reset the stack - who needs all the junk anyway?
     mov esp, 0x7C00
     ; Store the address of the BIT in the EAX register - we are going to be needing it later on.
@@ -263,4 +263,4 @@ BITS 32
     call [0xE004]
 
 SECTION .pad
-    db "COMB"
+    db "STAGE_15"

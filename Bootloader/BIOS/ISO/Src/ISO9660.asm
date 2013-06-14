@@ -29,7 +29,7 @@ SECTION .data
 
 ; Some error strings.
 FilesNotFoundMsg:
-    db "Required files (DBAL, Comb, KL, Kernel, Modules) not present on disk.", EL, 0
+    db "Required files (BAL, Comb, KL, Kernel, Modules) not present on disk.", EL, 0
 
 ; Save all LBA/sizes here.
 Root:
@@ -44,9 +44,9 @@ Comb:
     .LBA          dd 0                ; The LBA of the Comb file.
     .Size         dd 0                ; The Size of the Comb file in bytes.
 
-DBAL:
-    .LBA          dd 0                ; The LBA of the DBAL file.
-    .Size         dd 0                ; The Size of the DBAL file in bytes.
+BAL:
+    .LBA          dd 0                ; The LBA of the BAL file.
+    .Size         dd 0                ; The Size of the BAL file in bytes.
 
 Background:
     .LBA          dd 0                ; The LBA of the Background file.
@@ -94,7 +94,7 @@ FILE:
     .LBA    dd 0                      ; The LBA of the sector we are going to "read next".
     .Size   dd 0                      ; The size of the file left to read (as reported by the file system).
     .Extra  dd 0                      ; The number of "extra" bytes read in the last "transaction".
-                                      ; And I'll just explain it over here. In cases of Comb and DBAL file,
+                                      ; And I'll just explain it over here. In cases of Comb and BAL file,
                                       ; we need to read exact on spot. Thus, if we read anything extra in 
                                       ; the last transaction, we carry that much over.
     
@@ -139,7 +139,7 @@ CheckRecordBootDir:
 .1:
 .1KL:
     ; Compare for KL.
-    cmp word  [di + 33], "KL"
+    cmp word  [di + 33], "LOADER"
     jne .Return
 
     mov esi, KL
@@ -149,20 +149,20 @@ CheckRecordBootDir:
 .2:
 .2Comb:
     ; Check if it's the common BIOS boot file.
-    cmp dword [di + 33], "Comb"
-    jne .2DBAL
+    cmp dword [di + 33], "STAGE_15"
+    jne .2BAL
 
     ; If it is, load esi with Comb and go to file found.
     mov esi, Comb
     jmp .FileFound
 
-.2DBAL:
-    ; Check if it's the DBAL.
-    cmp dword [di + 33], "DBAL"
+.2BAL:
+    ; Check if it's the BAL.
+    cmp dword [di + 33], "BAL"
     jne .Return
 
     ; If it is, go to file found.
-    mov esi, DBAL
+    mov esi, BAL
     jmp .FileFound
 
 ; Identifier size 8.
@@ -415,7 +415,7 @@ BootFilesFind:
  ; Opens a file to be read from.
  ;     AL    -> contains the code number of the file to open.
  ;      0    -> Common BIOS File.
- ;      1    -> DBAL.
+ ;      1    -> BAL.
  ;      2    -> Background Image.
  ;      3    -> KL.
  ;      4    -> Kernel x86.

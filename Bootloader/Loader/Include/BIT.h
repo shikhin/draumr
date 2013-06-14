@@ -268,7 +268,7 @@ struct BIT
     uint32_t MPS;                    // The 32-bit address of the MPS tables.
     uint32_t SMBIOS;                 // The 32-bit address of the SMBIOS tables.
 
-    uint32_t AbortBootServices;      // Abort all boot services given by DBAL + firmware.
+    uint32_t AbortBootServices;      // Abort all boot services given by BAL + firmware.
 
     uint32_t MMap;                    // The 32-bit address of the Memory Map.  
     uint64_t HighestAddress;          // Highest accessible memory address.
@@ -289,10 +289,10 @@ struct BIT
         VBEModeInfo_t ModeInfo;        // The mode we switched to's information.
 
         FILE_t BackgroundImg;                      // Pointer to the boot image.
-        uint32_t AbortBoot;                        // The abort boot function - provided by the DBAL.
+        uint32_t AbortBoot;                        // The abort boot function - provided by the BAL.
     }_PACKED Video;
 
-    // Define the DBAL PMM related things here.
+    // Define the BAL PMM related things here.
     struct
     {
         // AllocFrame, FreeFrame, AllocContigFrames, FreeContigFrames.
@@ -300,7 +300,7 @@ struct BIT
         uint32_t FreeFrame;
         uint32_t AllocContigFrames;
         uint32_t FreeContigFrames;
-    }_PACKED DBALPMM;
+    }_PACKED BALPMM;
 
     // The architecture of the kernel.
     uint32_t Arch;

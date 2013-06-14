@@ -52,7 +52,7 @@ FILE:
     
 Files:
     .COMB         dw COMBStr          ; Define the COMB String in the table.
-    .DBAL         dw DBALStr          ; And the DBAL string in the table.
+    .BAL         dw BALStr          ; And the BAL string in the table.
     .Background   dw BackgroundStr    ; And the Background string in the table.
     .KL           dw KLStr            ; And the KL string in the table.
     .Kernelx86    dw Kernelx86Str     ; And the x86 kernel string in the table.
@@ -72,10 +72,10 @@ FirstPacket:
 ; A flag to signify first packet - 1 if yes, 0 if not.
 FirstPacketFlag: db 0
     
-COMBStr:         db "Comb", 0
-DBALStr:         db "DBAL", 0
+COMBStr:         db "STAGE_15", 0
+BALStr:         db "BAL", 0
 BackgroundStr:   db "Background.sif", 0
-KLStr:           db "KL", 0
+KLStr:           db "LOADER", 0
 Kernelx86Str:    db "KEx86", 0
 Kernelx86_64Str: db "KEx86_64", 0
 PMMx86Str:       db "PMMx86", 0
@@ -89,7 +89,7 @@ SECTION .text
  ; Opens a file to be read from.
  ;     AL     -> contains the code number of the file to open.
  ;      0     -> Common COMB File.
- ;      1     -> DBAL.
+ ;      1     -> BAL.
  ;      2     -> Background image.
  ;      3     -> KL.
  ;      4     -> Kernel x86.
@@ -201,11 +201,11 @@ GetFileSize:
     xor ecx, ecx
     
     ; The COMB boot file.
-    cmp dword [FirstPacket], "COMB"
+    cmp dword [FirstPacket], "STAGE_15"
     je .BootFiles
 
-    ; The DBAL file.
-    cmp dword [FirstPacket], "DBAL"
+    ; The BAL file.
+    cmp dword [FirstPacket], "BAL"
     je .BootFiles
 
     ; The kernel loader file.

@@ -135,7 +135,7 @@ ExtMain:
     
 ; Check common BIOS file - basic first sector testing.
 .CheckCBIOSFirstSector:
-    cmp dword [0x9000], "COMB"        ; Check the signature.
+    cmp dword [0x9000], "STAGE_15"        ; Check the signature.
     jne .ErrorCBIOSHeader
 
     ; If the starting address isn't 0x9000, abort.

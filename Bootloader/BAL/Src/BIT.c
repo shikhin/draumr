@@ -52,10 +52,10 @@ void BITInit(uint32_t *BITPointer)
     BIT.Video.OutputRevert = (uint32_t)&OutputRevert;
     BIT.Video.AbortBoot = (uint32_t)&AbortBoot;
 
-    BIT.DBALPMM.AllocContigFrames = (uint32_t)&PMMAllocContigFrames;
-    BIT.DBALPMM.AllocFrame = (uint32_t)&PMMAllocFrame;
-    BIT.DBALPMM.FreeContigFrames = (uint32_t)&PMMFreeContigFrames;
-    BIT.DBALPMM.FreeFrame = (uint32_t)&PMMFreeFrame;
+    BIT.BALPMM.AllocContigFrames = (uint32_t)&PMMAllocContigFrames;
+    BIT.BALPMM.AllocFrame = (uint32_t)&PMMAllocFrame;
+    BIT.BALPMM.FreeContigFrames = (uint32_t)&PMMFreeContigFrames;
+    BIT.BALPMM.FreeFrame = (uint32_t)&PMMFreeFrame;
 
     FileAPIFunc = (FileAPIFunc_t)BIT.FileAPI;
     VideoAPIFunc = (VideoAPIFunc_t)BIT.Video.VideoAPI;

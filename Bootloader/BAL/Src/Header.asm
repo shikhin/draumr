@@ -1,4 +1,4 @@
- ; Contains macros defined to "define" the Common BIOS File Header.
+ ; Header definition for BAL file.
  ;
  ; Copyright (c) 2013, Shikhin Sethi
  ; All rights reserved.
@@ -19,47 +19,62 @@
  ; WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  ; DISCLAIMED. IN NO EVENT SHALL SHIKHIN SETHI BE LIABLE FOR ANY
  ; DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- ; - INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION - HOWEVER CAUSED AND
+ ; (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ ; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
  ; ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-; Offset 0        Common BIOS File Identifier.
-; Offset 4        Address of entry point.
-; Offset 8        Start of file.
-; Offset 12       End of file.
-; Offset 16       Starting address of BSS section.
-; Offset 20       Ending address of BSS section.
-; Offset 24       CRC32 remainder.
+BITS 32
+CPU 586
 
-; This should just be at offset 0 of the file - identifies the file at Common BIOS File.
-%define COMMON_BIOS db "COMB"
+%include "Source/Boot/BAL/Format/Format.inc"
 
-; Defines the entry point of the Common BIOS file.
-%macro ENTRY_POINT 1
-    dd %1
-%endmacro 
+SECTION .header
 
-; Defines the starting address of BSS section.
-%macro BSS_START 1
-    dd %1
-%endmacro
+EXTERN bss
+EXTERN end
+EXTERN file_end
+EXTERN Main
+EXTERN CPUCheck
+EXTERN BIT
 
-; Defines the ending address of BSS section.
-%macro BSS_END 1
-    dd %1
-%endmacro
+; Define the BAL Header
+BAL
+ENTRY_POINT       Start
+FILE_START        0xE000
+FILE_END          file_end
+BSS_START         bss
+BSS_END           end
+CRC32_DEFINE
 
-; Defines the end of the file.
-%macro FILE_END 1
-    dd %1
-%endmacro
+SECTION .text
 
-; Defines the start of the file.
-%macro FILE_START 1
-    dd %1
-%endmacro
+GLOBAL Start
 
-; The CRC32 remainder.
-%define CRC32_DEFINE dd 0
+ ; The entry point for the BAL sub-module.
+ ;     EAX -> the 32-bit address of the BIT.
+ ;     ESP -> this should be equal to 0x7C00 - for clearing.
+Start:
+    ; Check if CPU is supported or not.
+    call CPUCheck
+
+    push eax
+    call Main
+
+    ; We wouldn't be returning here.
+
+GLOBAL GotoKL
+
+ ; "Jump" to the kernel loader.
+ ;     ESP + 4 -> this should contain the address of the entry point.
+GotoKL:
+    ; Get the address of the entry point.
+    mov ebx, [esp + 4]
+
+    ; Preset EAX and ESP for the KL.
+    mov eax, BIT
+    mov esp, 0x7C00
+
+    ; Call the kernel loader.
+    call ebx

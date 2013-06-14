@@ -8,20 +8,20 @@ Tools/
 # All executables + output files.
 
 ## Fixed location binaries.
-Source/Boot/CD/Stage1
-Source/Boot/PXE/Stage1
-Source/Boot/Comb/Comb
-Source/Boot/Floppy/Stage1
-Source/Boot/DBAL/DBAL
-Source/Boot/KL/KL
-Source/Kernel/Arch/KEx86
-Source/Kernel/Arch/KEx86_64
-Source/Kernel/Modules/PMM/PMMx86
-Source/Kernel/Modules/PMM/PMMPAE
-Source/Kernel/Modules/PMM/PMMx86_64
-Source/Kernel/Modules/VMM/VMMx86
-Source/Kernel/Modules/VMM/VMMPAE
-Source/Kernel/Modules/VMM/VMMx86_64
+Bootloader/BIOS/ISO/Stage1
+Bootloader/BIOS/PXE/Stage1
+Bootloader/BIOS/Floppy/Stage1
+Bootloader/BIOS/Stage15/Stage15
+Bootloader/BIOS/BAL/BAL
+Bootloader/BIOS/Loader/Loader
+Kernel/Arch/KEx86
+Kernel/Arch/KEx86_64
+Kernel/Modules/PMM/PMMx86
+Kernel/Modules/PMM/PMMPAE
+Kernel/Modules/PMM/PMMx86_64
+Kernel/Modules/VMM/VMMx86
+Kernel/Modules/VMM/VMMPAE
+Kernel/Modules/VMM/VMMx86_64
 
 ## Utilieies.
 Utilities/*.util
@@ -70,3 +70,4 @@ Documentation/Images
 *.out
 *.pdf
 *.toc
+*.lot

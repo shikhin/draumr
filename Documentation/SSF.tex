@@ -1,0 +1,103 @@
+\documentclass[a4paper,oneside]{memoir}
+
+\usepackage{hyperref}
+\usepackage[hypcap]{caption}
+\hypersetup{pdfborder={0 0 0}}
+
+\usepackage{dirtree}
+
+\begin{document}
+
+% Title.
+\title{Simple System Format\\\small Preliminary Draft}
+\author{Shikhin \textsc{Sethi}}
+\maketitle
+
+\clearpage
+
+\tableofcontents
+\listoftables
+
+\chapter{Introduction}
+
+The following chapter provides an introduction to the Simple System Format, designed for the Draumr project.
+
+\section{Background}
+
+Pre-dominant executable file formats such as the Executable and Linkable Format (ELF) and the Portable Executable (PE) format are powerful, documented, and meet their respective goals for user-space binaries. Both the formats have a large variety of tools that work natively on and for them, enciting many kernel developers to use either as an executable file format for their kernel(s). However, most of the extensibility and power provided by such formats is only visible in uses such as dynamic linking, relocations, and other advanced user-space concepts. The formats hence lose most of their sheen when used in a bootloader or kernel.
+
+Due to the aforesaid reasons, Draumr adopts a custom file format named as the Simple System Format (SSF). The executable file format is simplistic, yet meets its purpose, accounting for the first `S' in \emph{SSF}. It has been designed with all system binaries (the bootloader binaries, kernel, and kernel modules) kept in mind, and does not aim at being a general-purpose user-space file format, thus accounting for the second `S' in \emph{SSF}.
+
+\chapter{Format}
+
+\section{Overview}
+
+Each binary in SSF contains three pre-defined sections:
+
+\begin{enumerate}
+\item \textbf{code}: this section contains all the code, and must be the first section in the binary.
+\item \textbf{data}: succeeding the code section, this section contains all the non-executable data in the binary.
+\item \textbf{bss}: this section contains reserved space for statically-allocated variables, and must be zero-initialized by the loader. 
+\end{enumerate}
+
+All sections must be present in the same order as described above, sequentially following each other. Due to space restrictions for bootloader binaries, it is not neccessary for sections to be page-aligned, though it is recommended for the kernel and kernel modules. Due to lack of need, arbitrary sections are not allowed.
+
+\section{Debugging symbols}
+
+All file formats, that including a.out, provide support for a symbol table, which helps in debugging. This functionality finds its usage in kernel development too. However, since Draumr is a modular, microkernel, it is easier to separate the symbol table from the binary (by help of tools like \texttt{ld}, which provide special support to generate a map file), which is why the feature does not find its place in SSF.
+
+\section{File header}
+
+All SSF binaries must have a file header at the 0\textsuperscript{th} byte, filled with relevant information, as described by \hyperref[tab:File header]{Table \ref*{tab:File header}, File header}.
+
+\hyperref[tab:File identifiers]{Table \ref*{tab:File identifiers}, List of file identifiers}, lists identifiers for all bootloader, kernel, and kernel module binaries. \hyperref[tab:Arch identifiers]{Table \ref*{tab:Arch identifiers}, List of architecture identifiers}, lists identifiers for all architectures supported.
+
+\begin{table}
+    \centering
+    \begin{tabular}{ l l l p{4.75cm} }
+        \hline
+            Byte & Length \small (bytes)    & Name                & Description                                          \\ \hline
+            0    & 4                        & SFS\_ident          & Contains ``SSF0" to identify a SSF binary.           \\
+            4    & 4                        & SFS\_fileIdent      & File identifier (refer \hyperref[tab:File identifiers]{Table \ref*{tab:File identifiers}, List of file identifiers}). \\
+            8    & 2                        & SFS\_archIdent      & Architecture identifier (refer \hyperref[tab:Arch identifiers]{Table \ref*{tab:Arch identifiers}, List of architecture identifiers}). \\
+            10   & 8                        & SFS\_startAddr      & The address where the binary should be mapped from.  \\
+            18   & 4                        & SFS\_codeLen        & The length of the code section.                      \\
+            22   & 4                        & SFS\_dataLen        & The length of the data section.                      \\
+            26   & 4                        & SFS\_bssLen         & The length of the bss section.                       \\
+            30   & 8                        & SFS\_entryPoint     & The address of the entry point.                      \\
+            38   & 4                        & SFS\_CRC32          & The CRC32 remainder of the file, excluding the header and the bss section. \\
+        \hline
+    \end{tabular}
+    \caption{SFS file header. \label{tab:File header}}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{ l l }
+        \hline
+            File                                      & Identifier  \\ \hline
+            Stage 1.5                                 & 0x00000001  \\
+            Boot Abstraction Layer                    & 0x00000002  \\
+            Loader                                    & 0x00000003  \\
+            Kernel                                    & 0x00000004  \\
+            Physical Memory Manager (module)          & 0x00000005  \\
+            Virtual Memory Manager (module)           & 0x00000006  \\
+        \hline
+    \end{tabular}
+    \caption{List of file identifiers. \label{tab:File identifiers}}
+\end{table}
+
+\begin{table}
+    \centering
+    \begin{tabular}{ l l }
+        \hline
+            Architecture          & Identifier  \\ \hline
+            \texttt{x86}          & 0x0001      \\
+            \texttt{x86} with PAE & 0x0002      \\
+            \texttt{x86\_64}      & 0x0003      \\
+        \hline
+    \end{tabular}
+    \caption{List of architecture identifiers. \label{tab:Arch identifiers}}
+\end{table}
+
+\end{document}

@@ -18,7 +18,7 @@
 
 \chapter{Introduction}
 
-The following section provides an introduction to the bootloader for the Draumr project.
+The following chapter provides an introduction to the bootloader for the Draumr project.
 
 \section{Background}
 
@@ -71,7 +71,7 @@ The bootloader also makes it easy to write new modules, to add support for boot 
 The following chapter aims at providing a brief overview of the bootloader, and its components.
 
 \section{Generic Overview}
-\label{Generic Overview}
+\label{sec:Generic Overview}
 
 The bootloader builds on the standard two-stage design, and separates the stages as:
 
@@ -80,26 +80,24 @@ The bootloader builds on the standard two-stage design, and separates the stages
 
     \item[Stage 2] is demarcated as the \emph{firmware independent}, and \emph{boot device independent} stage. This stage remains common for all supported boot devices, and firmwares. It handles all the generic boot tasks, such as parsing and cleaning of memory map, deciding of an efficient memory mode, et cetera. 
 
-    This stage is known as the Draumr Boot Abstraction Layer, or the \textbf{DBAL}.
+    This stage is known as the Boot Abstraction Layer, abbreviated to \textbf{BAL}.
 
-    \item[Kernel Loader]  (KL) is the last stage of the boot-code, and is the only \emph{kernel specific} stage. It initiates the environment for the specific \texttt{x86} or \texttt{x86\_64} kernel, and passes control to it.
+    \item[Loader] is the last stage of the boot-code, and it initiates the environment for the specific \texttt{x86} or \texttt{x86\_64} kernel, passing control to it.
 \end{description}
 
 \section{BIOS Overview}
 
-When BIOS serves as the firmware, Stage 1 as specified in \hyperref[Generic Overview]{section \ref*{Generic Overview}, Generic Overview} gets split into:
+When BIOS serves as the firmware, Stage 1 as specified in \hyperref[sec:Generic Overview]{Section \ref*{sec:Generic Overview}, Generic Overview} gets split into:
 
 \begin{description}
     \item[Stage 1] here is demarcated as the \emph{firmware specific}, and \emph{boot device specific} stage. This stage varies for all boot devices support. The stage provides a disk access interface to the next stage.
 
     \item[Stage 1.5]  is demarcated as the \emph{firmware specific}, and \emph{boot device independent} stage. This stage remains common for machines where BIOS serves as the firmware. The stage organizes all data that is supposed to be provided by the firmware, for the next stages.
-
-    This stage is known as the Common BIOS stage, or the \textbf{COMB}.
 \end{description}
 
 \section{UEFI Overview}
 
-When UEFI serves as the firmware, the design remains same as described in \hyperref[Generic Overview]{section \ref*{Generic Overview}, Generic Overview}.
+When UEFI serves as the firmware, the design remains same as described in \hyperref[sec:Generic Overview]{Section \ref*{sec:Generic Overview}, Generic Overview}.
 
 \chapter{Documentation}
 
@@ -114,11 +112,11 @@ The documentation for the bootloader is divided as follows, where each file repr
     .2 Bootloader.pdf.
     .2 BIOS.
     .3 Stage1.pdf.
-    .3 COMB.pdf.
+    .3 Stage15.pdf.
     .2 UEFI.
     .3 Stage1.pdf.
-    .2 DBAL.pdf.
-    .2 KL.pdf.
+    .2 BAL.pdf.
+    .2 Loader.pdf.
 }
 
 \section{Structure}

@@ -1,4 +1,4 @@
- ; API to access functions provided by DBAL.
+ ; API to access functions provided by BAL.
  ;
  ; Copyright (c) 2013, Shikhin Sethi
  ; All rights reserved.

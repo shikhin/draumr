@@ -113,10 +113,10 @@ void Main(BIT_t *BITPointer)
     FileAPIFunc = (FileAPIFunc_t)BIT->FileAPI;
     VideoAPIFunc = (VideoAPIFunc_t)BIT->Video.VideoAPI;
 
-    AllocFrameFunc = (AllocFrameFunc_t)BIT->DBALPMM.AllocFrame;
-    FreeFrameFunc = (FreeFrameFunc_t)BIT->DBALPMM.FreeFrame;
-    AllocContigFramesFunc = (AllocContigFramesFunc_t)BIT->DBALPMM.AllocContigFrames;
-    FreeContigFramesFunc = (FreeContigFramesFunc_t)BIT->DBALPMM.FreeContigFrames;
+    AllocFrameFunc = (AllocFrameFunc_t)BIT->BALPMM.AllocFrame;
+    FreeFrameFunc = (FreeFrameFunc_t)BIT->BALPMM.FreeFrame;
+    AllocContigFramesFunc = (AllocContigFramesFunc_t)BIT->BALPMM.AllocContigFrames;
+    FreeContigFramesFunc = (FreeContigFramesFunc_t)BIT->BALPMM.FreeContigFrames;
 
     AbortBootFunc = (AbortBootFunc_t)BIT->Video.AbortBoot;
 

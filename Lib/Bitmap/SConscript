@@ -32,7 +32,7 @@ Import("Env")
 Src = ["Src/Bitmap.c"]
 
 # A target for building the bitmap lib.
-# Same evil I did in DBAL's SConscript.
+# Same evil I did in BAL's SConscript.
 BitmapEnv = Env.Clone()
 BitmapEnv.Append(CCFLAGS = ["-march=i486", "-m32"])
 Bitmap = BitmapEnv.Library("#Source/Lib/Bitmap", [File for File in Src])

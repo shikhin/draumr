@@ -1,5 +1,5 @@
 /*
- * Entry point for DBAL file.
+ * Entry point for BAL file.
  *
  * Copyright (c) 2013, Shikhin Sethi
  * All rights reserved.
@@ -43,7 +43,7 @@
 void GotoKL(void (*EntryPoint)(void));
 
 /* 
- * The Main function for the DBAL sub-module.
+ * The Main function for the BAL sub-module.
  *     uint32_t *BITPointer -> the pointer to the BIT.
  */
 void Main(uint32_t *BITPointer)

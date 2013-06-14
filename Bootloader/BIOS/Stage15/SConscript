@@ -29,20 +29,19 @@
 
 Import("Env")
 
-Src = ["Src/Header.asm",
-       "Src/Main.c",
-       "Src/CPU.c",
-       "Src/VMMx86.c",
-       "Src/VMMPAE.c",
-       "Src/VMMx86_64.c",
-       "Src/String.c",
-       "Src/API.c",
-       "Src/APIInterface.asm"]
+Src = ["Link.ld",
+       "Format/Format.inc",
+       "Src/Main.asm",
+       "Src/API.asm",
+       "Src/A20.asm",
+       "Src/Memory.asm",
+       "Src/Video.asm",
+       "Src/Tables.asm",
+       "Src/BootServices.asm"]
 
-# A target for building the KL binary.
-KLEnv = Env.Clone()
-KLEnv.Append(CCFLAGS = ["-march=i586", "-m32"])
-KL = KLEnv.Program("KL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/Boot/KL/Link.ld")
+# A target for building the Comb binary.
+COMB = Env.Program("STAGE_15", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TBootloader/BIOS/COMB/Link.ld")
+Depends(COMB, Src)
 
-# Save the KL target in the Environment as we will need it later.
-Env["KL"] = KL
+# Save the COMB target in the Environment as we will need it later.
+Env["STAGE_15"] = COMB

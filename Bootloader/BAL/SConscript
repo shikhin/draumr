@@ -29,19 +29,27 @@
 
 Import("Env")
 
-Src = ["Link.ld",
-       "Format/Format.inc",
-       "Src/Main.asm",
-       "Src/API.asm",
-       "Src/A20.asm",
-       "Src/Memory.asm",
-       "Src/Video.asm",
-       "Src/Tables.asm",
-       "Src/BootServices.asm"]
+Src = ["Src/Header.asm",
+       "Src/Main.c",
+       "Src/BIT.c",
+       "Src/String.c",
+       "Src/PMM.c",
+       "Src/Debug.c",
+       "Src/Abort.c",
+       "Src/BootFiles.c",
+       "Src/Output.c",
+       "Src/FPU.asm",
+       "Src/CPU.asm",
+       "Src/Math.c",
+       "Src/API.c"]
 
-# A target for building the Comb binary.
-COMB = Env.Program("COMB", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TBootloader/BIOS/COMB/Link.ld")
-Depends(COMB, Src)
+# An environment building the BAL binary.
+# NOTE that this may be totally unneccessary, but I haven't figured out
+# how do cleanly add some CCFLAGS options then remove them without screwing up.
+# I'm probably being evil, but hey!
+BALEnv = Env.Clone()
+BALEnv.Append(CCFLAGS = ["-march=i586", "-m32"])
+BAL = BALEnv.Program("BAL", [File for File in Src], LINKFLAGS = "-m elf_i386 -TSource/Boot/BAL/Link.ld", LIBS=['Bitmap'])
 
-# Save the COMB target in the Environment as we will need it later.
-Env["COMB"] = COMB
+# Save the BAL target in the Environment as we will need it later.
+Env["BAL"] = BAL

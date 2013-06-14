@@ -130,7 +130,7 @@ Main:
 
 ; Checks common BIOS file from first sector.
 .CheckCBIOSFirstSector:
-    cmp dword [0x9000], "COMB"        ; Check the signature.
+    cmp dword [0x9000], "STAGE_15"        ; Check the signature.
     jne .ErrorCBIOSHeader
 
     cmp dword [0x9008], 0x9000        ; Check whether starting address is 0x9000 or not.
