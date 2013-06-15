@@ -81,9 +81,9 @@ if Cfg.Options["target"] == "all":
     Floppy = Env.Floppy("Draumr.flp", None)
 
     # Set these as the default build target.
-    Depends(ISO, Env["ISO_STAGE1"])
-    Depends(PXE, Env["PXE_STAGE1"])
-    Depends(Floppy, Env["FLOPPY_STAGE1"])
+    Depends(ISO, Env["ISO_STAGE_1"])
+    Depends(PXE, Env["PXE_STAGE_1"])
+    Depends(Floppy, Env["FLOPPY_STAGE_1"])
 
     Depends([ISO, PXE, Floppy], [Image, Env["COMMON_TARGETS"]])
     Default([ISO, PXE, Floppy])
@@ -94,7 +94,7 @@ elif Cfg.Options["target"] == "iso":
     ISO = Env.ISO("Draumr.iso", None)
      
     # The default target.
-    Depends(ISO, Env["ISO_STAGE1"])
+    Depends(ISO, Env["ISO_STAGE_1"])
     Depends(ISO, [Image, Env["COMMON_TARGETS"]])
     Default(ISO)
 
@@ -104,7 +104,7 @@ elif Cfg.Options["target"] == "pxe":
     PXE = Env.PXE(os.path.sep.join([Env["PXE_PATH"], "Stage1"]), None)
 
     # The default target.  
-    Depends(PXE, Env["PXE_STAGE1"])
+    Depends(PXE, Env["PXE_STAGE_1"])
     Depends(PXE, [Image, Env["COMMON_TARGETS"]]) 
     Default(PXE)
 
@@ -114,7 +114,7 @@ elif Cfg.Options["target"] == "floppy":
     Floppy = Env.Floppy("Draumr.flp", None)
 
     # The default target.
-    Depends(Floppy, Env["FLOPPY_STAGE1"])
+    Depends(Floppy, Env["FLOPPY_STAGE_1"])
     Depends(Floppy, [Image, Env["COMMON_TARGETS"]])
     Default(Floppy)
 

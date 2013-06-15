@@ -31,6 +31,7 @@ CPU 386
 SECTION .text
 
 %include "Include/Macros.inc"
+%include "Include/SSF.inc"
 
 %include "Bootloader/BIOS/Floppy/Src/Abort.asm"
 %include "Bootloader/BIOS/Floppy/Src/Screen.asm"
@@ -38,8 +39,6 @@ SECTION .text
 %include "Lib/CRC32/CRC32.asm"
 
 SECTION .base
-
-%define BD_ISO      0
 
  ; Entry point where the BIOS hands control.
  ;     DL    -> Expects the drive number to be present in DL.
@@ -73,7 +72,7 @@ resetCS:
     call Disk_getStage1
     jmp init
 
-; Pad to 512 bytes, and then the boot signature.
+    ; Pad to 512 bytes, and then the boot signature.
     times 510 - ($ - $$) db 0
     dw 0xAA55
 
@@ -81,8 +80,8 @@ init:
     call Display_init        
     call Disk_initBootFiles
 
-.loadCOMB:
-    ; Open file 0, COMB.
+.loadStage15:
+    ; Open file 0, Stage 1.5.
     xor ax, ax
     call Disk_openFile
 
@@ -91,13 +90,13 @@ init:
     ; Save size returned by Disk_openFile.
     push ecx
 
-    ; Read 512 bytes of COMB.
+    ; Read 512 bytes of Stage 1.5.
     mov ecx, 0x200
     mov edi, 0x9000
     call Disk_readFile
 
-; Check COMB file.
-.checkCOMB1:
+; Check Stage 1.5.
+.checkStage15Header:
     cmp dword [0x9000], "STAGE_15"        ; Check the signature.
     jne .ErrorCBIOSHeader
 

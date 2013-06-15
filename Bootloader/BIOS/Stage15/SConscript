@@ -30,7 +30,7 @@
 Import("Env")
 
 Src = ["Link.ld",
-       "Format/Format.inc",
+       "#Include/SSF.inc",
        "Src/Main.asm",
        "Src/API.asm",
        "Src/A20.asm",

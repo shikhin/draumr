@@ -28,6 +28,10 @@ Pre-dominant executable file formats such as the Executable and Linkable Format 
 
 Due to the aforesaid reasons, Draumr adopts a custom file format named as the Simple System Format (SSF). The executable file format is simplistic, yet meets its purpose, accounting for the first `S' in \emph{SSF}. It has been designed with all system binaries (the bootloader binaries, kernel, and kernel modules) kept in mind, and does not aim at being a general-purpose user-space file format, thus accounting for the second `S' in \emph{SSF}.
 
+\section{Implementation}
+
+Macros related to SSF are defined in \texttt{\href{run:./../Include/SSF.inc}{Include/SSF.inc}}.
+
 \chapter{Format}
 
 \section{Overview}
@@ -44,7 +48,7 @@ All sections must be present in the same order as described above, sequentially 
 
 \section{Debugging symbols}
 
-All file formats, that including a.out, provide support for a symbol table, which helps in debugging. This functionality finds its usage in kernel development too. However, since Draumr is a modular, microkernel, it is easier to separate the symbol table from the binary (by help of tools like \texttt{ld}, which provide special support to generate a map file), which is why the feature does not find its place in SSF.
+All file formats, that including a.out, provide support for a symbol table, which helps in debugging. This functionality finds its usage in kernel development too. However, since Draumr is a \emph{modular microkernel}, it is easier to separate the symbol table from all the kernel and kernel module binaries (by help of tools like \texttt{ld}, which provide special support to generate a map file), which is why the feature does not find its place in SSF.
 
 \section{File header}
 

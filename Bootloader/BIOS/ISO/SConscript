@@ -40,4 +40,4 @@ Stage1 = Env.Program("Stage1", "Src/Main.asm", LINKFLAGS = "-m elf_i386 -TBootlo
 Depends(Stage1, Src)
 
 # Save the Stage 1 target in the Environment as we will need it later.
-Env["ISO_STAGE1"] = Stage1
+Env["ISO_STAGE_1"] = Stage1

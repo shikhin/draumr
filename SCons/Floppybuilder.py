@@ -37,7 +37,7 @@ def _floppy_builder(target, source, env) :
     FloppySize = 1474560
     Destination = open(str(target[0]), "wb")
 
-    Stage1 = str(env["FLOPPY_STAGE1"][0])
+    Stage1 = str(env["FLOPPY_STAGE_1"][0])
     shutil.copyfileobj(open(Stage1, 'rb'), Destination)
 
     for CustTarget in env["COMMON_TARGETS"]:

@@ -45,7 +45,7 @@ def _iso_builder(target, source, env) :
     os.makedirs(Boot)
 
     # Copy Stage1.
-    Stage1 = str(env["ISO_STAGE1"][0])
+    Stage1 = str(env["ISO_STAGE_1"][0])
     shutil.copy(Stage1, Boot)
 
     # Copy custom targets.

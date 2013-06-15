@@ -39,7 +39,7 @@ def _pxe_builder(target, source, env) :
     TftpBoot = env["PXE_PATH"]
 
     # Copy the Stage1 to /tftpboot.
-    Stage1 = str(env["PXE_STAGE1"][0])
+    Stage1 = str(env["PXE_STAGE_1"][0])
     shutil.copy(Stage1, TftpBoot)
 
     # Copy custom targets.
