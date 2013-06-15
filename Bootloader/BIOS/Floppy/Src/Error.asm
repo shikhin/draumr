@@ -1,4 +1,4 @@
- ; Functions for aborting boot (using both advanced, and non advanced methods).
+ ; Error handling functions.
  ;
  ; Copyright (c) 2013, Shikhin Sethi
  ; All rights reserved.
@@ -25,51 +25,68 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-SECTION .base
+; The error message in two parts.
+errorMessage0:
+    db "Boot error: ", 0x00
+
+errorMessage1:
+    db ". Aborting boot.", 0x00
 
  ; Function for aborting boot.
- ;     ES:SI -> should contain the error message to print. 
-AbortBoot:
+ ;     EAX -> should contain the error code.
+Error_abortBoot:
+    ; Disable interrupts till we're done messing with the PIT.
     cli
     
-    ; Save SI.
-    push si
+    ; Print the beginning of the error message.
+    mov si, errorMessage0
+    call Display_outputString
 
-    ; Print the Error (slogan) Message.
-    mov si, ErrorMsg
-    call Print
+    ; The error code.
+    call Display_outputHex
 
-    ; Restore SI.
-    pop si
+    ; End of error message.
+    mov si, errorMessage1
+    call Display_outputString
 
-    ; Print error message on to screen.
-    call Print
-
-.Beep: 
+; Beep at note A, 5th octave, 880Hz, credits to contrapunctus from #music at freenode.
+;   reloadValue = 1193180/frequency; (1193180 -> PIT oscillator)
+;               = 1193180/880 = 0x54C;
+.beep:
+    ; Write to command register (0x43).
+    ;   10b  -> channel 2.
+    ;   11b  -> access mode lobyte/hibyte.
+    ;   011b -> mode 3, square wave generator.
+    ;   0b   -> 16-bit binary mode.
     mov al, 10110110b          
+    out 0x43, al
 
-    out 0x43, al 
-
-    ; Create I/O delay for old machines.
+    ; I/O delay.
     jmp $+2
     jmp $+2
 
-    mov al, 0xD1                      ; Send lower 16-bits of count for frequency to play.            
+    ; Write to channel 2, data port (0x42).
+    ; Lower 8-bits.
+    mov al, 0x4C
     out 0x42, al            
 
-    ; Create I/O delay for old machines.
+    ; I/O delay.
     jmp $+2
     jmp $+2
 
-    mov al, 0x11                      ; Send higher 16-bits of count for frequency to play.
+    ; Upper 8-bits.
+    mov al, 0x05
     out 0x42, al        
     
+    ; Port 0x61 controls gate input for PC speaker.
+    ; Bit 0 enables timer input to PC speaker; bit 1 enables speaker.
     in al, 0x61                  
-    or al, 00000011b                  ; Set the Speaker enable (and other required) bit.
-    out 0x61, al                      ; SPEAK.                   
+    or al, 00000011b
+    out 0x61, al                   
    
+    ; Can enable interrupts.
     sti
 
-.Halt:
+.halt:
     hlt
-    jmp .Halt
+    jmp .halt

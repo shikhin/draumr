@@ -33,8 +33,6 @@ SECTION .text
 %include "Include/Macros.inc"
 %include "Include/SSF.inc"
 
-%include "Bootloader/BIOS/Floppy/Src/Abort.asm"
-%include "Bootloader/BIOS/Floppy/Src/Screen.asm"
 %include "Bootloader/BIOS/Floppy/Src/Disk.asm"
 %include "Lib/CRC32/CRC32.asm"
 
@@ -48,6 +46,9 @@ FUNC(start):
     ; load it at 0x07C0:0x0000. Do a far jump to reload this value
     ; to a standard 0x0000:0xIP.
     jmp 0x0000:resetCS
+
+%include "Bootloader/BIOS/Floppy/Src/Error.asm"
+%include "Bootloader/BIOS/Floppy/Src/Display.asm"
 
 resetCS:
     xor ax, ax
@@ -65,8 +66,8 @@ resetCS:
     ; Save DL.
     mov [Disk_bootDrive], dl
     
-    ; Set to mode 0x03, or 80*25 text mode.
-    mov ax, 0x03
+    ; Set mode (ah = 0x00) to 0x03 (al), or 80*25 text mode.
+    mov ax, 0x0003
     int 0x10
 
     call Disk_getStage1

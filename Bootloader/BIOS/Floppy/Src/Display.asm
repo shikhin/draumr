@@ -1,4 +1,4 @@
- ; Functions to print to the screen and initialize it.
+ ; Functions to display text/numbers.
  ;
  ; Copyright (c) 2013, Shikhin Sethi
  ; All rights reserved.
@@ -25,52 +25,72 @@
  ; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
- ; Clears the screen to get rid of BIOS' messages, and disables the hardware cursor.
-ScreenInit:
-    pushad                            ; Push all general purpose registers to save them.
-    push es                           ; And es.
+ ; Clears the display to get rid of BIOS messages, and disables the hardware cursor.
+Display_init:
+    pushad
+    push es
    
     ; Set es to 0xB800.
     mov ax, 0xB800
     mov es, ax
-    
-    xor ebx, ebx
-    xor edx, edx
-    mov eax, 0x200
-    int 0x10                          ; Set the position of the hardware cursor to 00, 00 so that later BIOS calls
-                                      ; print at the right place.
-    mov ecx, 0x2600
-    mov eax, 0x100
-    int 0x10                          ; Hide the hardware cursor.
 
+    ; Set the cursor to 00,00 so that all future BIOS calls print at the right place.
+    ; AH = 0x02, int 0x10, to set cursor position.
+    ; BH = 0x00, page number.
+    ; DH = row; DL = column.
+    xor bx, bx
+    xor dx, dx
+    mov ah, 0x02
+    int 0x10
+
+    ; Hide the cursor.
+    ; AH = 0x01, int 0x10, cursor shape.
+    ; CL = bottom scan line containing cursor; CH = 0x10 = invisible cursor.
+    ; AL needs to be equal to 0x03 (current mode) to prevent bugs on some systems.
+    mov cx, 0x1000
+    mov ah, 0x01
+    int 0x10
+
+    ; Clear screen to blue background, white foreground, spaces.
     xor di, di
-    mov ecx, 1000                     ; Since we are clearing DWORDs over here, we put the count as Count/4.
-    mov eax, 0x0F200F20               ; Set the value to set the screen to: Blue background, white foreground, blank spaces.
-    rep stosd                         ; Clear the entire screen. 
-    
-    pop es                            ; Restore es
-    popad                             ; Pop all general registers back to save them.
+    mov ecx, 1000
+    mov eax, 0x0F200F20
+    rep stosd
+
+    pop es
+    popad
     ret
 
-
- ; Prints a message on the screen using the BIOS.
- ;     SI -> should contain the address of the null terminated string.
-Print:
-    ; Save some registers.
+ ; Outputs a string using the BIOS.
+ ;     ES:SI -> should contain the address of the null terminated string.
+Display_outputString:
     push si
     push ax
 
-.PrintLoop:
-    lodsb                             ; Load the value at [@es:@si] in @al.
-    test al, al                       ; If AL is the terminator character, stop printing.
+    ; Some BIOSs' may destroy BP if display is getting scrolled.
+    push bp
 
-    je .PrintDone                      
-    mov ah, 0x0E    
+.loop:
+    ; Load the value at [es:si] in al.
+    lodsb
+
+    ; Stop if it's the null terminator.
+    test al, al
+    jz .printDone
+
+    ; Output character; AH = 0x0E; AL = character; BH = page number = 0x00;    
+    mov ah, 0x0E
+    xor bh, bh
     int 0x10
-    jmp .PrintLoop                    ; Loop till the null character not found.
-    
-.PrintDone:
-    ; Restore them.
+    jmp .loop
+
+.printDone:
+    pop bp
     pop ax
     pop si
-    ret    
+    ret
+
+ ; Outputs a hexadecimal value.
+ ;     EAX -> contains the value to output.
+Display_outputHex:
+    ret 
